@@ -14,11 +14,13 @@ echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
 
 module purge
-module load texlive
-# module load openmpi/4.0.5/amd
 module load conda
 source activate an
+module load texlive
+# module load openmpi/4.0.5/amd
 # module load openmpi/4.1.4/gcc
+# module load mpich/3.2.1/gcc
+# module load hdf5/1.12.2/intel-mpi
 
 # cd data/swimming
 # python bmask.py

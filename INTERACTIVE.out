@@ -14,3 +14,24 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Thu Aug 10 14:29:16 BST 2023
 ---------------------------------------------------------------
+slurmstepd-gold66: error: *** JOB 4473595 ON gold66 CANCELLED AT 2023-08-10T19:29:44 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on gold66.
+
+Submit time  : 2023-08-10T14:29:05
+Start time   : 2023-08-10T14:29:15
+End time     : 2023-08-10T19:29:44
+Elapsed time : 05:00:29 (Timelimit=05:00:00)
+
+Job ID: 4473595
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 02:23:57
+CPU Efficiency: 0.75% of 13-08:30:56 core-walltime
+Job Wall-clock time: 05:00:29
+Memory Utilized: 869.88 GB
+Memory Efficiency: 58.91% of 1.44 TB
+
