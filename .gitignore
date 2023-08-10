@@ -1,0 +1,19 @@
+# Big files
+mpi.csv
+high-dim-flow.ipynb
+Phi*.png
+V*.png
+U*.png
+*.png
+*.ipynb
+*.gif
+*.h5
+
+*.pdf
+*.npy
+*.npz
+*.vti
+*.vtr
+*.pvd
+*.pvti
+*.pvtr

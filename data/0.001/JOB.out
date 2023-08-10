@@ -1,0 +1,85 @@
+Running SLURM prolog script on ruby021.cluster.local
+===============================================================================
+Job started on Fri Jun  2 15:09:34 BST 2023
+Job ID          : 3400658
+Job name        : fbb
+WorkDir         : /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/0.001
+Command         : /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/0.001/subOpt
+Partition       : amd
+Num hosts       : 16
+Num cores       : 1024
+Num of tasks    : 1024
+Hosts allocated : ruby[021-036]
+Job Output Follows ...
+===============================================================================
+Starting calculation at Fri Jun  2 15:09:34 BST 2023
+---------------------------------------------------------------
+make: Entering directory `/mainfs/home/jmom1n15/Lotus/solver/src/geom'
+make: `libgeom.a' is up to date.
+make: Leaving directory `/mainfs/home/jmom1n15/Lotus/solver/src/geom'
+make: Entering directory `/mainfs/home/jmom1n15/Lotus/solver/src/oop'
+make: `libfluid.a' is up to date.
+make: Leaving directory `/mainfs/home/jmom1n15/Lotus/solver/src/oop'
+mpif90 -cpp -DMPION  -Ofast -funroll-loops --param max-unroll-times=4  -I/home/jmom1n15/Lotus/solver/src/oop -I/home/jmom1n15/Lotus/solver/src/geom/geom_lib_include -c lotus.f90
+mpif90 -cpp -DMPION  -Ofast -funroll-loops --param max-unroll-times=4  -o lotus lotus.o -L/home/jmom1n15/Lotus/solver/src/oop/. -L/home/jmom1n15/Lotus/solver/src/geom/. -lfluid -lgeom
+ Setting up the grid, body and fluid
+ -----------------------------------
+composite(4096.0)=4096
+  products :1*2**12
+composite(4096.0)=4096
+  products :1*2**12
+composite(64.0)=64
+  products :1*2**6
+ Stretched grid sections:
+  negative: r= 0.4%, h_max=21.5
+  positive: r= 0.4%, h_max=16.3
+ grid symmetry:  F
+ Stretched grid sections:
+  negative: r= 0.5%, h_max=25.9
+  positive: r= 0.5%, h_max=25.9
+ grid symmetry:  T
+ Starting time update loop
+ -----------------------------------
+Time:          0.000
+Time:          1.000
+Time:          2.000
+Time:          3.000
+Time:          4.000
+Time:          5.000
+Time:          6.000
+Time:          7.000
+ Loop complete: writing restart files and exiting
+ -----------------------------------
+Number of proccessors :1024
+Run folder            :/ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/0.001/256
+No read folder
+Folder /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/0.001/256 exists!
+Moving contents to trash
+Setting up in /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/0.001/256
+No postprocessing set up
+No stopping criteria, the simulation will run its course
+Making executable 
+Finished executable 
+Running executable 
+Run all python files for postprocessing
+Popping back up
+==============================================================================
+Running epilogue script on ruby021.
+
+Submit time  : 2023-06-02T08:37:29
+Start time   : 2023-06-02T15:09:26
+End time     : 2023-06-03T06:06:54
+Elapsed time : 14:57:20 (Timelimit=2-12:00:00)
+
+Job ID: 3400658
+Cluster: i5
+User/Group: jmom1n15/mm
+State: COMPLETED (exit code 0)
+Nodes: 16
+Cores per node: 64
+CPU Utilized: 618-08:44:01
+CPU Efficiency: 96.91% of 638-02:29:20 core-walltime
+Job Wall-clock time: 14:57:20
+Memory Utilized: 444.81 GB (estimated maximum)
+Memory Efficiency: 12.36% of 3.52 TB (3.52 GB/core)
+
