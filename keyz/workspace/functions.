@@ -1,0 +1,43 @@
+import h5py
+
+def load_hdf5(file_path):
+    """
+    Load data from the hdf5 file.
+
+    Args:
+        file_path (str): Path to the hdf5 file.
+
+    Returns:
+        dict: Data from the hdf5 file.
+    """
+    data = {}
+    with h5py.File(file_path, "r") as f:
+        data["U"] = f["U"][:]
+        data["S"] = f["S"][:]
+        data["V"] = f["V"][:]
+    return data
+
+def calculate_spod(data):
+    """
+    Calculate the Spectral Proper Orthogonal Decomposition (SPOD) modes.
+
+    Args:
+        data (dict): Data from hdf5 file.
+
+    Returns:
+        ndarray: SPOD modes.
+    """
+    # Use PySPOD library or custom implementation to calculate SPOD modes
+    spod_modes = ...
+    return spod_modes
+
+def save_spod_hdf5(spod_modes, file_path):
+    """
+    Save the SPOD modes and singular values in the hdf5 format.
+
+    Args:
+        spod_modes (ndarray): SPOD modes.
+        file_path (str): Output file path.
+    """
+    with h5py.File(file_path, "w") as f:
+        f.create_dataset("spod_modes", data=spod_modes)

@@ -1,0 +1,204 @@
+Based on the provided design document, here is the proposed file structure and code implementation for the scientific Python package:
+
+1. `entrypoint.py` - The entry point of the package.
+
+```python
+import preprocessing
+import spod
+import dmd
+import resolvent
+import plotting
+
+def main():
+    # Example usage of the package
+    data = preprocessing.load_data("data.npy")
+    mean_subtracted_data = preprocessing.subtract_mean(data)
+    svd = preprocessing.calculate_svd(mean_subtracted_data)
+    preprocessing.save_hdf5(data, svd, "output.hdf5")
+
+    spod_data = spod.load_hdf5("output.hdf5")
+    spod_modes = spod.calculate_spod(spod_data)
+    spod.save_spod_hdf5(spod_modes, "spod_output.hdf5")
+
+    dmd_data = dmd.load_svd_hdf5("output.hdf5")
+    dmd_modes = dmd.calculate_dmd(dmd_data)
+    dmd_eigenvalues = dmd.calculate_dmd_eigenvalues(dmd_modes)
+    dmd.save_dmd_hdf5(dmd_modes, dmd_eigenvalues, "dmd_output.hdf5")
+
+    resolvent_data = resolvent.load_dmd_hdf5("dmd_output.hdf5")
+    resolvent_gain = resolvent.calculate_resolvent_gain(resolvent_data)
+    resolvent.save_resolvent_peaks(resolvent_gain, "resolvent_peaks.txt")
+
+    dmd_modes = dmd.load_dmd_hdf5("dmd_output.hdf5")
+    plotting.plot_dmd_modes(dmd_modes)
+
+if __name__ == "__main__":
+    main()
+```
+
+2. `preprocessing.py` - Module for preprocessing functions.
+
+```python
+import numpy as np
+import h5py
+
+def load_data(file_path):
+    """
+    Load 3D flow field data from a .npy file.
+
+    Args:
+        file_path (str): Path to the data file.
+
+    Returns:
+        ndarray: 3D flow field data.
+    """
+    return np.load(file_path)
+
+def subtract_mean(data):
+    """
+    Subtract the mean flow field from each time step.
+
+    Args:
+        data (ndarray): 3D flow field data.
+
+    Returns:
+        ndarray: Mean subtracted flow field data.
+    """
+    mean_field = np.mean(data, axis=2)
+    return data - mean_field[:, :, np.newaxis]
+
+def calculate_svd(data):
+    """
+    Compute the Singular Value Decomposition (SVD) of the mean subtracted flow field.
+
+    Args:
+        data (ndarray): Mean subtracted flow field data.
+
+    Returns:
+        tuple: SVD of the mean subtracted flow field (U, S, V).
+    """
+    U, S, V = np.linalg.svd(data)
+    return U, S, V
+
+def save_hdf5(data, svd, file_path):
+    """
+    Save the flow fields (u, v, p) and SVD in the hdf5 format.
+
+    Args:
+        data (ndarray): 3D flow field data.
+        svd (tuple): SVD of the mean subtracted flow field (U, S, V).
+        file_path (str): Output file path.
+    """
+    with h5py.File(file_path, "w") as f:
+        f.create_dataset("data", data=data)
+        f.create_dataset("U", data=svd[0])
+        f.create_dataset("S", data=svd[1])
+        f.create_dataset("V", data=svd[2])
+```
+
+3. `spod.py` - Module for SPOD functions.
+
+```python
+import h5py
+
+def load_hdf5(file_path):
+    """
+    Load data from the hdf5 file.
+
+    Args:
+        file_path (str): Path to the hdf5 file.
+
+    Returns:
+        dict: Data from the hdf5 file.
+    """
+    data = {}
+    with h5py.File(file_path, "r") as f:
+        data["U"] = f["U"][:]
+        data["S"] = f["S"][:]
+        data["V"] = f["V"][:]
+    return data
+
+def calculate_spod(data):
+    """
+    Calculate the Spectral Proper Orthogonal Decomposition (SPOD) modes.
+
+    Args:
+        data (dict): Data from hdf5 file.
+
+    Returns:
+        ndarray: SPOD modes.
+    """
+    # Use PySPOD library or custom implementation to calculate SPOD modes
+    spod_modes = ...
+    return spod_modes
+
+def save_spod_hdf5(spod_modes, file_path):
+    """
+    Save the SPOD modes and singular values in the hdf5 format.
+
+    Args:
+        spod_modes (ndarray): SPOD modes.
+        file_path (str): Output file path.
+    """
+    with h5py.File(file_path, "w") as f:
+        f.create_dataset("spod_modes", data=spod_modes)
+```
+
+4. `dmd.py` - Module for DMD functions.
+
+```python
+import h5py
+
+def load_svd_hdf5(file_path):
+    """
+    Load the SVD data from the hdf5 file.
+
+    Args:
+        file_path (str): Path to the hdf5 file.
+
+    Returns:
+        dict: SVD data.
+    """
+    svd_data = {}
+    with h5py.File(file_path, "r") as f:
+        svd_data["U"] = f["U"][:]
+        svd_data["S"] = f["S"][:]
+        svd_data["V"] = f["V"][:]
+    return svd_data
+
+def calculate_dmd(svd_data):
+    """
+    Compute the Dynamic Mode Decomposition (DMD) modes.
+
+    Args:
+        svd_data (dict): SVD data.
+
+    Returns:
+        ndarray: DMD modes.
+    """
+    # Use a predefined algorithm or library to compute DMD modes
+    dmd_modes = ...
+    return dmd_modes
+
+def calculate_dmd_eigenvalues(dmd_modes):
+    """
+    Compute the eigenvalues of the DMD modes.
+
+    Args:
+        dmd_modes (ndarray): DMD modes.
+
+    Returns:
+        ndarray: DMD eigenvalues.
+    """
+    # Use a predefined algorithm or library to compute DMD eigenvalues
+    dmd_eigenvalues = ...
+    return dmd_eigenvalues
+
+def save_dmd_hdf5(dmd_modes, dmd_eigenvalues, file_path):
+    """
+    Save the DMD modes and eigenvalues in the hdf5 format.
+
+    Args:
+        dmd_modes (ndarray): DMD modes.
+        dmd_eigenvalues (ndarray): DMD eigenvalues.
+        file_path (str): Output file path

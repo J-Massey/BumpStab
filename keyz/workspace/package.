@@ -1,0 +1,31 @@
+import preprocessing
+import spod
+import dmd
+import resolvent
+import plotting
+
+def main():
+    # Example usage of the package
+    data = preprocessing.load_data("data.npy")
+    mean_subtracted_data = preprocessing.subtract_mean(data)
+    svd = preprocessing.calculate_svd(mean_subtracted_data)
+    preprocessing.save_hdf5(data, svd, "output.hdf5")
+
+    spod_data = spod.load_hdf5("output.hdf5")
+    spod_modes = spod.calculate_spod(spod_data)
+    spod.save_spod_hdf5(spod_modes, "spod_output.hdf5")
+
+    dmd_data = dmd.load_svd_hdf5("output.hdf5")
+    dmd_modes = dmd.calculate_dmd(dmd_data)
+    dmd_eigenvalues = dmd.calculate_dmd_eigenvalues(dmd_modes)
+    dmd.save_dmd_hdf5(dmd_modes, dmd_eigenvalues, "dmd_output.hdf5")
+
+    resolvent_data = resolvent.load_dmd_hdf5("dmd_output.hdf5")
+    resolvent_gain = resolvent.calculate_resolvent_gain(resolvent_data)
+    resolvent.save_resolvent_peaks(resolvent_gain, "resolvent_peaks.txt")
+
+    dmd_modes = dmd.load_dmd_hdf5("dmd_output.hdf5")
+    plotting.plot_dmd_modes(dmd_modes)
+
+if __name__ == "__main__":
+    main()
