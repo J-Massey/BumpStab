@@ -1,9 +1,13 @@
 import h5py
 import numpy as np
 
-u = np.load("u.npy")
-v = np.load("v.npy")
-p = np.load("p.npy")
+# u = np.load("u.npy")
+# v = np.load("v.npy")
+# p = np.load("p.npy")
+
+u = np.random.random((100, 150, 170))
+v = np.random.random((100, 150, 170))
+p = np.random.random((100, 150, 170))
 
 combined_data = np.stack([u, v, p], axis=0)
 
@@ -20,4 +24,4 @@ with h5py.File('uvp.hdf5', 'w') as f:
     group.attrs['ylims'] = ylims
 
     # Create datasets within the group
-    dset_combined = group.create_dataset('combined_data', data=combined_data, compression="lzf")
+    dset_combined = group.create_dataset('uvp', data=combined_data, compression="lzf")

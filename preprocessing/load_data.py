@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import h5py
 
 class LoadData:
     def __init__(self, path, xlims, ylims, tlims, T):
@@ -14,21 +15,17 @@ class LoadData:
         self.pys = None
         self.T = T
 
-    def load(self, field):
-        data = np.load(os.path.join(self.path, field + ".npy"))
-        data = np.einsum("ijk -> kji", data)
+    def load(self):
+        with h5py.File(os.path.join(self.path, "uvp.hdf5"), "r") as f:
+            group = f["data_group"]
+            data = np.array(group['combined_data'])
+
+            # Read the metadata attributes
+            self.xlims = group.attrs['xlims']
+            self.ylims = group.attrs['ylims']
+        # data = np.einsum("ijk -> kji", data)
         self.nx, self.ny, self.nt = data.shape
         return data #[::2, ::2, :]
-    
-    def collect_uvp(self):
-        u = self.load("u")
-        v = self.load("v")
-        p = self.load("p")
-        assert u.shape == v.shape == p.shape
-        self.nx, self.ny, self.nt = u.shape
-        uvp = np.concatenate((u, v, p), axis=0)
-        del u, v, p
-        return uvp
 
     def wake(self):
         # Assume the body length has been normalised
