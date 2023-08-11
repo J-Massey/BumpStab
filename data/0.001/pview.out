@@ -1006,3 +1006,26 @@ Client connected.
 
 [0m
 [0m[33m( 191.994s) [pvserver.0      ]      vtkDataObject.cxx:499   WARN| vtkMultiBlockDataSet (0x4434220): Attempted to ShallowCopy from null.[0m
+slurmstepd-ruby054: error: *** JOB 4481877 ON ruby054 CANCELLED AT 2023-08-11T15:58:38 DUE TO TIME LIMIT ***
+srun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd-ruby054: error: *** STEP 4481877.0 ON ruby054 CANCELLED AT 2023-08-11T15:58:38 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on ruby054.
+
+Submit time  : 2023-08-11T12:08:15
+Start time   : 2023-08-11T12:08:19
+End time     : 2023-08-11T15:58:38
+Elapsed time : 03:50:19 (Timelimit=03:50:00)
+
+Job ID: 4481877
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 00:00:01
+CPU Efficiency: 0.00% of 10-05:40:16 core-walltime
+Job Wall-clock time: 03:50:19
+Memory Utilized: 53.95 GB
+Memory Efficiency: 23.98% of 225.00 GB
+
