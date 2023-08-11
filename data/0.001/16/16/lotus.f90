@@ -12,12 +12,12 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=12
+    real, parameter    :: finish=8
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
     real, parameter    :: thicc=0.03*L
-    real, parameter    :: A = 0.1*L, St_d = 0.3, k_x=128.0, k_z=128.0, h_roughness=0.001
+    real, parameter    :: A = 0.1*L, St_d = 0.3, k_x=16.0, k_z=16.0, h_roughness=0.001
     real, parameter    :: a_coeff = 0.28, &
                           b_coeff = -0.13, &
                           c_coeff = 0.05, &
@@ -47,7 +47,7 @@ program swimming_plate
       if(ndims==2) then
         z = 0.0
       else
-        z = 0.015625
+        z = 0.0625
       end if
       m = [1.0, 1.0, z]
       n = composite(L*m,prnt=root)
@@ -61,7 +61,7 @@ program swimming_plate
     !
     ! -- Initialise fluid
       call flow%init(n/b,geom,V=[1.,0.,0.],nu=nu,exit=.true.)
-      ! if(ndims==3) call flow%velocity%e(3)%perturb(0.05,zero_ave=.true.)
+      if(ndims==3) call flow%velocity%e(3)%perturb(0.05,zero_ave=.true.)
       ! flow%time = 0
     !
       if(root) print *,'Starting time update loop'
@@ -87,13 +87,13 @@ program swimming_plate
   
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
-        if((t>(finish-4)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
+        if((t>(finish-1)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
         ! exit
       end do time_loop
       
       if(root) print *,'Loop complete: writing restart files and exiting'
       if(root) print *,'-----------------------------------'
-      ! call flow%write(geom, write_vtr=.true.)
+      call flow%write(geom, write_vtr=.true.)
     call mympi_end
   contains
   !

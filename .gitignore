@@ -8,6 +8,7 @@ U*.png
 *.ipynb
 *.gif
 *.h5
+*.hdf5
 
 *.pdf
 *.npy

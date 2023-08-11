@@ -1,18 +1,18 @@
 import h5py
 import numpy as np
 
-# u = np.load("u.npy")
-# v = np.load("v.npy")
-# p = np.load("p.npy")
+u = np.load("u.npy")
+v = np.load("v.npy")
+p = np.load("p.npy")
 
-u = np.random.random((100, 150, 170))
-v = np.random.random((100, 150, 170))
-p = np.random.random((100, 150, 170))
+# u = np.random.random((100, 150, 170))
+# v = np.random.random((100, 150, 170))
+# p = np.random.random((100, 150, 170))
 
 combined_data = np.stack([u, v, p], axis=0)
 
 # Sample metadata
-xlims = [-0.25, 2]
+xlims = [-0.35, 2]
 ylims = [-0.35, 0.35]
 
 with h5py.File('uvp.hdf5', 'w') as f:
