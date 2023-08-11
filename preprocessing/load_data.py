@@ -48,6 +48,7 @@ class LoadData:
         uvp = self._load_data()
         if uvp is not None:
             uvp = uvp[:, mask, :, :]
+            _, self.nx, self.ny, self.nt = uvp.shape
         return uvp
 
     def wake(self):
@@ -61,6 +62,7 @@ class LoadData:
         """Extract data in body region."""
         pxs = np.linspace(*self.xlims, self.nx)
         mask = (pxs > 0) & (pxs < 1)
+        self.xlims = [0, 1]
         return self._filter_data(mask)
 
     def unwarp_velocity_field(self):
@@ -85,6 +87,18 @@ class LoadData:
                 
         return uvp_warped
 
+    def flat_wake(self):
+        """Flatten the velocity field."""
+        uvp = self.wake()
+        print(self.nx, self.ny, self.nt)
+        return uvp.reshape(3 * self.nx * self.ny, self.nt)
+    
+    def flat_body(self):
+        """Flatten the velocity field."""
+        uvp = self.unwarp_velocity_field()
+        print(self.nx, self.ny, self.nt)
+        return uvp.reshape(3 * self.nx * self.ny, self.nt)
+
 def fwarp(t: float, pxs: np.ndarray):
     """Warping function based on time and position."""
     # Define constants
@@ -98,5 +112,29 @@ def fwarp(t: float, pxs: np.ndarray):
 
 # Sample usage
 # data_loader = LoadData("data/0/uvp/uvp.hdf5")
-# print(data_loader.unwarp_velocity_field())
+# print(data_loader._load_data().shape)
+# print(data_loader.xlims)
+
+# data_loader = LoadData("data/0/uvp/uvp.hdf5")
+# print(data_loader.wake().shape)
+# print(data_loader.xlims)
+
+# data_loader = LoadData("data/0/uvp/uvp.hdf5")
+# print(data_loader.body().shape)
+# print(data_loader.xlims)
+
+# data_loader = LoadData("data/0/uvp/uvp.hdf5")
+# print(data_loader.unwarp_velocity_field().shape)
+# print(data_loader.xlims)
+
+data_loader = LoadData("data/0/uvp/uvp.hdf5")
+print(data_loader.flat_body().shape)
+print(data_loader.xlims)
+
+data_loader = LoadData("data/0/uvp/uvp.hdf5")
+print(data_loader.flat_wake().shape)
+print(data_loader.xlims)
+
+
+
 

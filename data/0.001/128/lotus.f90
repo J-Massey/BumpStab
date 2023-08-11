@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=12
+    real, parameter    :: finish=8
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
@@ -61,7 +61,7 @@ program swimming_plate
     !
     ! -- Initialise fluid
       call flow%init(n/b,geom,V=[1.,0.,0.],nu=nu,exit=.true.)
-      ! if(ndims==3) call flow%velocity%e(3)%perturb(0.05,zero_ave=.true.)
+      if(ndims==3) call flow%velocity%e(3)%perturb(0.05,zero_ave=.true.)
       ! flow%time = 0
     !
       if(root) print *,'Starting time update loop'
@@ -87,7 +87,7 @@ program swimming_plate
   
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
-        if((t>(finish-4)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
+        if((t>(finish-1)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
         ! exit
       end do time_loop
       

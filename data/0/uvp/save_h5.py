@@ -1,13 +1,13 @@
 import h5py
 import numpy as np
 
-# u = np.load("u.npy")
-# v = np.load("v.npy")
-# p = np.load("p.npy")
+u = np.load("u.npy")
+v = np.load("v.npy")
+p = np.load("p.npy")
 
-u = np.random.random((10, 15, 17))
-v = np.random.random((10, 15, 17))
-p = np.random.random((10, 15, 17))
+# u = np.random.random((100, 150, 170))
+# v = np.random.random((100, 150, 170))
+# p = np.random.random((100, 150, 170))
 
 combined_data = np.stack([u, v, p], axis=0)
 
