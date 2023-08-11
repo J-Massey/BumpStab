@@ -93,7 +93,7 @@ program swimming_plate
       
       if(root) print *,'Loop complete: writing restart files and exiting'
       if(root) print *,'-----------------------------------'
-      ! call flow%write(geom, write_vtr=.true.)
+      call flow%write(geom, write_vtr=.true.)
     call mympi_end
   contains
   !
