@@ -9,7 +9,7 @@ U*.png
 *.gif
 *.h5
 *.hdf5
-!testdata.hdf5
+# !testdata.hdf5
 
 *.pdf
 *.npy
