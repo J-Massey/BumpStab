@@ -27,6 +27,6 @@ module load texlive
 # python collect_save.py
 # cd ../..
 # python src/DMD-RA-working.py
-cd data/0/uvp
-python save_h5.py
+# cd data/0/uvp
+# python save_h5.py
 sleep 720000

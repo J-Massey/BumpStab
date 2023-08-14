@@ -11,6 +11,8 @@ U*.png
 *.hdf5
 !testdata.hdf5
 
+data/
+
 *.pdf
 *.npy
 *.npz
@@ -19,3 +21,4 @@ U*.png
 *.pvd
 *.pvti
 *.pvtr
+data/0/uvp/uvp.hdf5

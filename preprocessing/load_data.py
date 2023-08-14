@@ -128,7 +128,7 @@ def fwarp(t: float, pxs: np.ndarray):
 # print(data_loader.xlims)
 
 data_loader = LoadData("data/0/uvp/uvp.hdf5")
-print(data_loader.flat_body().shape)
+print(data_loader.wake().shape)
 print(data_loader.xlims)
 
 data_loader = LoadData("data/0/uvp/uvp.hdf5")
