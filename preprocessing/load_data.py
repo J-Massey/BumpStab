@@ -24,9 +24,9 @@ class LoadData:
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
         try:
-            print(f"Loading data from {self.path}...")
+            print(f"----- Loading data from {self.path} -----")
             self.uvp = np.load(self.path, mmap_mode='r')
-            print(f"Data loaded successfully.")
+            print(f"Data of shape {self.uvp.shape} loaded.")
             _, self.nx, self.ny, self.nt = self.uvp.shape
         except Exception as e:
             print(f"Error loading data: {e}")
@@ -102,7 +102,7 @@ class LoadData:
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
         if region=='wake':
-            return self.unwarped_wake.reshape(3 * self.nx * self.ny, self.nt)
+            return self.wake.reshape(3 * self.nx * self.ny, self.nt)
         elif region=='body':
             return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
         else:
@@ -121,8 +121,8 @@ def fwarp(t: float, pxs: np.ndarray):
     return A * (B * pxs**2 - C * pxs + D) * np.sin(2 * np.pi * (t - (k * pxs)))
 
 
+# Sample usage
 if __name__ == "__main__":
-    # Sample usage
-    data_loader = LoadData("data/0/uvp/uvp.npy", T=15)
-    print(data_loader.flat_subdomain('body').shape)
+    data_loader = LoadData("data/0/uvp/uvp.npy", T=4)
+    data_loader.flat_subdomain('body').shape
 

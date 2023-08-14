@@ -31,13 +31,13 @@ if __name__ == "__main__":
     data_dir = sp = f"{os.getcwd()}/data/0.001/128/data"
     root = "u"
     fn = fns(data_dir, root)
-    data = collect_data(fn, data_dir)
-    np.save(f"{data_dir}/u.npy", data)
+    u = collect_data(fn, data_dir)
     root = "v"
     fn = fns(data_dir, root)
-    data = collect_data(fn, data_dir)
-    np.save(f"{data_dir}/v.npy", data)
+    v = collect_data(fn, data_dir)
     root = "p"
     fn = fns(data_dir, root)
-    data = collect_data(fn, data_dir)
-    np.save(f"{data_dir}/p.npy", data)
+    p = collect_data(fn, data_dir)
+    combined_data = np.stack([u, v, p], axis=0)
+    combined_data = np.transpose(combined_data, (0, 3, 2, 1))
+    np.save(f"{data_dir}/uvp.npy", combined_data)
