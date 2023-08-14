@@ -1,0 +1,84 @@
+Running SLURM prolog script on ruby052.cluster.local
+===============================================================================
+Job started on Sun Jun 18 10:11:16 BST 2023
+Job ID          : 3869972
+Job name        : fbb16
+WorkDir         : /mainfs/scratch/jmom1n15/full-body-bumps/0.001/16
+Command         : /mainfs/scratch/jmom1n15/full-body-bumps/0.001/16/subOpt
+Partition       : amd
+Num hosts       : 16
+Num cores       : 1024
+Num of tasks    : 1024
+Hosts allocated : ruby[052-054,058-070]
+Job Output Follows ...
+===============================================================================
+Starting calculation at Sun Jun 18 10:11:16 BST 2023
+---------------------------------------------------------------
+make: Entering directory `/mainfs/home/jmom1n15/Lotus/solver/src/geom'
+make: `libgeom.a' is up to date.
+make: Leaving directory `/mainfs/home/jmom1n15/Lotus/solver/src/geom'
+make: Entering directory `/mainfs/home/jmom1n15/Lotus/solver/src/oop'
+make: `libfluid.a' is up to date.
+make: Leaving directory `/mainfs/home/jmom1n15/Lotus/solver/src/oop'
+mpif90 -cpp -DMPION  -Ofast -funroll-loops --param max-unroll-times=4  -I/home/jmom1n15/Lotus/solver/src/oop -I/home/jmom1n15/Lotus/solver/src/geom/geom_lib_include -c lotus.f90
+mpif90 -cpp -DMPION  -Ofast -funroll-loops --param max-unroll-times=4  -o lotus lotus.o -L/home/jmom1n15/Lotus/solver/src/oop/. -L/home/jmom1n15/Lotus/solver/src/geom/. -lfluid -lgeom
+ Setting up the grid, body and fluid
+ -----------------------------------
+composite(4096.0)=4096
+  products :1*2**12
+composite(4096.0)=4096
+  products :1*2**12
+composite(256.0)=256
+  products :1*2**8
+ Stretched grid sections:
+  negative: r= 0.4%, h_max=21.5
+  positive: r= 0.4%, h_max=16.3
+ grid symmetry:  F
+ Stretched grid sections:
+  negative: r= 0.5%, h_max=25.9
+  positive: r= 0.5%, h_max=25.9
+ grid symmetry:  T
+ Starting time update loop
+ -----------------------------------
+Time:          0.000
+Time:          1.000
+Time:          2.000
+Time:          3.000
+Time:          4.000
+Time:          5.000
+Time:          6.000
+Time:          7.000
+ Loop complete: writing restart files and exiting
+ -----------------------------------
+Number of proccessors :1024
+Run folder            :/mainfs/scratch/jmom1n15/full-body-bumps/0.001/16/16
+No read folder
+Creating /mainfs/scratch/jmom1n15/full-body-bumps/0.001/16/16
+Setting up in /mainfs/scratch/jmom1n15/full-body-bumps/0.001/16/16
+No postprocessing set up
+No stopping criteria, the simulation will run its course
+Making executable 
+Finished executable 
+Running executable 
+Run all python files for postprocessing
+Popping back up
+==============================================================================
+Running epilogue script on ruby052.
+
+Submit time  : 2023-06-18T09:46:49
+Start time   : 2023-06-18T10:11:15
+End time     : 2023-06-20T17:52:30
+Elapsed time : 2-07:41:15 (Timelimit=2-12:00:00)
+
+Job ID: 3869972
+Cluster: i5
+User/Group: jmom1n15/mm
+State: COMPLETED (exit code 0)
+Nodes: 16
+Cores per node: 64
+CPU Utilized: 2368-21:18:48
+CPU Efficiency: 99.70% of 2376-00:00:00 core-walltime
+Job Wall-clock time: 2-07:41:15
+Memory Utilized: 1.49 TB (estimated maximum)
+Memory Efficiency: 42.27% of 3.52 TB (3.52 GB/core)
+

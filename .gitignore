@@ -8,6 +8,10 @@ U*.png
 *.ipynb
 *.gif
 *.h5
+*.hdf5
+!testdata.hdf5
+
+data/
 
 *.pdf
 *.npy
@@ -17,3 +21,4 @@ U*.png
 *.pvd
 *.pvti
 *.pvtr
+data/0/uvp/uvp.hdf5
