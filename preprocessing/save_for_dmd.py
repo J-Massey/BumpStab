@@ -7,7 +7,7 @@ import time
 
 class SVDSave:
     def __init__(self, path, subdomain):
-        self.uvp = LoadData(path).flat_subdomain(subdomain)
+        self.uvp = LoadData(path, T=14).flat_subdomain(subdomain)
         self.path = path
         self.subdomain = subdomain
 
@@ -47,7 +47,7 @@ class SVDSave:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "test"
+    case = "0"
     doms = ["body", "wake"]
     for dom in doms:
         svd_save = SVDSave(f"data/{case}/data/uvp.npy", dom)
