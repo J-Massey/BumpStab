@@ -1,98 +1,108 @@
-import os
 import numpy as np
-import h5py
+import time
+
 
 class LoadData:
-    def __init__(self, path, T=1):
+    def __init__(self, path, T=1, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
         """
         Initialize the LoadData class.
-        
+
         Args:
         - path (str): Path to the data directory.
         - filename (str, optional): Name of the HDF5 file. Defaults to "uvp.hdf5".
         - T (int, optional): Time parameter. Defaults to 1.
         """
         self.path = path
-        self.xlims = [0, 1]  # Default values
-        self.ylims = [0, 1]  # Default values
+        self.xlims = xlims  # Default values
+        self.ylims = ylims  # Default values
         self.T = T
-        self._load_metadata()
-
-    def _load_metadata(self):
-        """Load metadata from the file and set class attributes."""
-        try:
-            _, self.nx, self.ny, self.nt = group['uvp'].shape
-        except Exception as e:
-            print(f"Error loading data: {e}")
+        self._load_data()
+        self._wake_data_cache = None # Cache for wake data
+        self._body_data_cache = None # Cache for body data
 
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
         try:
-            uvp = np.load(self.path)
-            uvp = np.array(group['uvp'])
-            uvp_mean = uvp.mean(axis=3, keepdims=True)
-            uvp = uvp - uvp_mean
-            del uvp_mean
-            return uvp
+            print(f"Loading data from {self.path}...")
+            self.uvp = np.load(self.path, mmap_mode='r')
+            print(f"Data loaded successfully.")
+            _, self.nx, self.ny, self.nt = self.uvp.shape
         except Exception as e:
             print(f"Error loading data: {e}")
             return None
+        
+    def _subtract_mean(self):
+        t0 = time.time()
+        print("\n----- Subtracting mean -----")
+        uvp_mean = self.uvp.mean(axis=3, keepdims=True)
+        self.uvp = self.uvp - uvp_mean
+        print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
+        del uvp_mean
 
     def _filter_data(self, mask):
         """Filter data based on a provided mask."""
-        uvp = self._load_data()
-        if uvp is not None:
-            uvp = uvp[:, mask, :, :]
-            _, self.nx, self.ny, self.nt = uvp.shape
-        return uvp
+        print("\n----- Masking data -----")
+        t0 = time.time()
+        self.uvp = self.uvp[:, mask, :, :]
+        _, self.nx, self.ny, self.nt = self.uvp.shape
+        print(f"Data masked in {time.time() - t0:.2f} seconds.")
 
+    @property
     def wake(self):
         """Extract data in the wake."""
-        pxs = np.linspace(*self.xlims, self.nx)
-        mask = pxs > 1
-        self.xlims[0] = 1
-        return self._filter_data(mask)
+        if self._wake_data_cache is None:
+            pxs = np.linspace(*self.xlims, self.nx)
+            mask = pxs > 1
+            self.xlims[0] = 1
+            self._filter_data(mask)
+            self._subtract_mean()
+            self._wake_data_cache = self.uvp
+        return self._wake_data_cache
 
+    @property
     def body(self):
         """Extract data in body region."""
-        pxs = np.linspace(*self.xlims, self.nx)
-        mask = (pxs > 0) & (pxs < 1)
-        self.xlims = [0, 1]
-        return self._filter_data(mask)
+        if self._body_data_cache is None:
+            pxs = np.linspace(*self.xlims, self.nx)
+            mask = (pxs > 0) & (pxs < 1)
+            self.xlims = [0, 1]
+            self._filter_data(mask)
+            self._subtract_mean()
+            self._body_data_cache = self.uvp
+        return self._body_data_cache
 
-    def unwarp_velocity_field(self):
+    @property
+    def unwarped_body(self):
         """Unwarp the velocity field in the body region."""
-        uvp = self.body()
         pxs = np.linspace(*self.xlims, self.nx)
         ts = np.linspace(0, self.T, self.nt)
-        dy = (- self.ylims[0] + self.ylims[1]) / self.ny
-        uvp_warped = np.full(uvp.shape, np.nan)
-        
+        dy = (-self.ylims[0] + self.ylims[1]) / self.ny
+        unwarped = np.full(self.body.shape, np.nan)
+
         for idt, t in enumerate(ts):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
-            shifts = np.round(fw/dy).astype(int)
+            shifts = np.round(fw / dy).astype(int)
 
-            for i in range(uvp.shape[1]):
+            for i in range(self.body.shape[1]):
                 shift = shifts[i]
                 if shift > 0:
-                    uvp_warped[:, i, shift:, idt] = uvp[:, i, :-shift, idt]
+                    unwarped[:, i, shift:, idt] = self.body[:, i, :-shift, idt]
                 elif shift < 0:
-                    uvp_warped[:, i, :shift, idt] = uvp[:, i, -shift:, idt]
-                
-        return uvp_warped
+                    unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
+        
+        del self.body, self._body_data_cache
+        return unwarped
 
-    def flat_wake(self):
+    def flat_subdomain(self, region):
         """Flatten the velocity field."""
-        uvp = self.wake()
-        print(self.nx, self.ny, self.nt)
-        return uvp.reshape(3 * self.nx * self.ny, self.nt)
-    
-    def flat_body(self):
-        """Flatten the velocity field."""
-        uvp = self.unwarp_velocity_field()
-        print(self.nx, self.ny, self.nt)
-        return uvp.reshape(3 * self.nx * self.ny, self.nt)
+        if region=='wake':
+            return self.unwarped_wake.reshape(3 * self.nx * self.ny, self.nt)
+        elif region=='body':
+            return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
+        else:
+            raise ValueError("Invalid region. Must be 'wake' or 'body'.")
+
 
 def fwarp(t: float, pxs: np.ndarray):
     """Warping function based on time and position."""
@@ -103,33 +113,10 @@ def fwarp(t: float, pxs: np.ndarray):
     D = 0.05
     k = 1.42
 
-    return A * (B * pxs**2 - C * pxs + D) * np.sin(2*np.pi * (t - (k * pxs)))
+    return A * (B * pxs**2 - C * pxs + D) * np.sin(2 * np.pi * (t - (k * pxs)))
+
 
 # Sample usage
-# data_loader = LoadData("data/0/uvp/uvp.hdf5")
-# print(data_loader._load_data().shape)
-# print(data_loader.xlims)
-
-# data_loader = LoadData("data/0/uvp/uvp.hdf5")
-# print(data_loader.wake().shape)
-# print(data_loader.xlims)
-
-# data_loader = LoadData("data/0/uvp/uvp.hdf5")
-# print(data_loader.body().shape)
-# print(data_loader.xlims)
-
-# data_loader = LoadData("data/0/uvp/uvp.hdf5")
-# print(data_loader.unwarp_velocity_field().shape)
-# print(data_loader.xlims)
-
-data_loader = LoadData("data/0/uvp/uvp.hdf5")
-print(data_loader.wake().shape)
-print(data_loader.xlims)
-
-data_loader = LoadData("data/0/uvp/uvp.hdf5")
-print(data_loader.flat_wake().shape)
-print(data_loader.xlims)
-
-
-
+data_loader = LoadData("data/0/uvp/uvp.npy", T=15)
+print(data_loader.flat_subdomain('body').shape)
 
