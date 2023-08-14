@@ -1,7 +1,7 @@
-Running SLURM prolog script on gold64.cluster.local
+Running SLURM prolog script on gold59.cluster.local
 ===============================================================================
-Job started on Mon Aug 14 07:59:33 BST 2023
-Job ID          : 4538526
+Job started on Mon Aug 14 13:36:36 BST 2023
+Job ID          : 4540516
 Job name        : DMD
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
@@ -9,8 +9,9 @@ Partition       : highmem
 Num hosts       : 1
 Num cores       : 64
 Num of tasks    : 64
-Hosts allocated : gold64
+Hosts allocated : gold59
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Mon Aug 14 07:59:34 BST 2023
+Starting calculation at Mon Aug 14 13:36:36 BST 2023
 ---------------------------------------------------------------
+8it [01:18, 10.72s/it]9it [01:32, 11.90s/it]0it [00:00, ?it/s]1it [00:01,  1.10s/it]2it [00:03,  1.98s/it]3it [00:06,  2.16s/it]4it [00:08,  2.21s/it]10it [01:48, 12.97s/it]5it [00:10,  2.24s/it]6it [00:12,  2.22s/it]7it [00:15,  2.21s/it]8it [00:17,  2.21s/it]9it [00:19,  2.17s/it]10it [00:21,  2.15s/it]11it [02:03, 13.56s/it]11it [00:24,  2.39s/it]12it [02:15, 13.27s/it]12it [00:36,  5.26s/it]13it [02:28, 13.18s/it]13it [00:49,  7.57s/it]14it [01:02,  9.27s/it]14it [02:41, 13.19s/it]
