@@ -1,17 +1,18 @@
 import h5py
 import numpy as np
 
-u = np.load("u.npy")
-v = np.load("v.npy")
-p = np.load("p.npy")
+# u = np.load("u.npy")
+# v = np.load("v.npy")
+# p = np.load("p.npy")
 
-# u = np.random.random((100, 150, 170))
-# v = np.random.random((100, 150, 170))
-# p = np.random.random((100, 150, 170))
+# # u = np.random.random((100, 150, 170))
+# # v = np.random.random((100, 150, 170))
+# # p = np.random.random((100, 150, 170))
 
-combined_data = np.stack([u, v, p], axis=0)
+# combined_data = np.stack([u, v, p], axis=0)
 
-np.save("uvp.npy", combined_data)
+# np.save("uvp.npy", combined_data)
+uvp = np.load("uvp.npy")
 
 # # Sample metadata
 # xlims = [-0.35, 2]

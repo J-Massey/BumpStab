@@ -21,24 +21,19 @@ class LoadData:
     def _load_metadata(self):
         """Load metadata from the file and set class attributes."""
         try:
-            with h5py.File(self.path, "r") as f:
-                group = f["data_group"]
-                self.xlims = group.attrs['xlims']
-                self.ylims = group.attrs['ylims']
-                _, self.nx, self.ny, self.nt = group['uvp'].shape
+            _, self.nx, self.ny, self.nt = group['uvp'].shape
         except Exception as e:
             print(f"Error loading data: {e}")
 
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
         try:
-            with h5py.File(self.path, "r") as f:
-                group = f["data_group"]
-                uvp = np.array(group['uvp'])
-                uvp_mean = uvp.mean(axis=3, keepdims=True)
-                uvp = uvp - uvp_mean
-                del uvp_mean
-                return uvp
+            uvp = np.load(self.path)
+            uvp = np.array(group['uvp'])
+            uvp_mean = uvp.mean(axis=3, keepdims=True)
+            uvp = uvp - uvp_mean
+            del uvp_mean
+            return uvp
         except Exception as e:
             print(f"Error loading data: {e}")
             return None
