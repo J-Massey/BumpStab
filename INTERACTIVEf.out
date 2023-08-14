@@ -14,3 +14,51 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Mon Aug 14 18:53:37 BST 2023
 ---------------------------------------------------------------
+[0m[31m2023-08-14 18:55:02.354 (  71.758s) [        851B3880]       vtkXMLReader.cxx:919    ERR| vtkXMLPImageDataReader (0x2404650): Cannot find PImageData element in file.[0m
+[0m[31m2023-08-14 18:55:02.360 (  71.763s) [        851B3880]       vtkExecutive.cxx:753    ERR| vtkCompositeDataPipeline (0x21bbb00): Algorithm vtkXMLPImageDataReader(0x2404650) returned failure for request: vtkInformation (0x220ca00)
+  Debug: Off
+  Modified Time: 172483
+  Reference Count: 1
+  Registered Events: (none)
+  Request: REQUEST_INFORMATION
+  ALGORITHM_AFTER_FORWARD: 1
+  FORWARD_DIRECTION: 0
+
+[0m
+Watching directory: /mainfs/scratch/jmom1n15/BumpStab/data/0.001/128/128-save
+Traceback (most recent call last):
+  File "data/watch_simdir.py", line 38, in <module>
+    body_snap(directory_to_watch, path, bcount)
+  File "data/watch_simdir.py", line 16, in body_snap
+    bsim.save_sdf_low_memory(fn, count, f"{os.getcwd()}/data/0.001/128/uvp")
+  File "/mainfs/scratch/jmom1n15/lotusvis/lotusvis/flow_field.py", line 180, in save_sdf_low_memory
+    snap = io.read_vti(fn, self.length_scale)
+  File "/mainfs/scratch/jmom1n15/lotusvis/lotusvis/io.py", line 25, in read_vti
+    velocity = np.array(point_data.GetVectors("Velocity")).reshape(sh + (len(sh),))
+ValueError: cannot reshape array of size 1 into shape (0,0,0,3)
+Traceback (most recent call last):
+  File "data/collect_save.py", line 34, in <module>
+    data = collect_data(fn, data_dir)
+  File "data/collect_save.py", line 19, in collect_data
+    resize_shape = np.load(f"{data_dir}/{fns[0]}")
+IndexError: string index out of range
+==============================================================================
+Running epilogue script on gold60.
+
+Submit time  : 2023-08-14T18:53:15
+Start time   : 2023-08-14T18:53:35
+End time     : 2023-08-14T18:55:11
+Elapsed time : 00:01:36 (Timelimit=20:00:00)
+
+Job ID: 4542866
+Cluster: i5
+User/Group: jmom1n15/mm
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 00:00:51
+CPU Efficiency: 0.83% of 01:42:24 core-walltime
+Job Wall-clock time: 00:01:36
+Memory Utilized: 11.85 GB
+Memory Efficiency: 0.80% of 1.44 TB
+

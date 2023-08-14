@@ -95,7 +95,7 @@ class LoadData:
                 elif shift < 0:
                     unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
         
-        del self.body, self._body_data_cache
+        del self._body_data_cache
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         return unwarped
 
