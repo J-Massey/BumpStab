@@ -24,7 +24,7 @@ class LoadData:
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
         try:
-            print(f"----- Loading data from {self.path} -----")
+            print(f"\n----- Loading data from {self.path} -----")
             self.uvp = np.load(self.path, mmap_mode='r')
             print(f"Data of shape {self.uvp.shape} loaded.")
             _, self.nx, self.ny, self.nt = self.uvp.shape
@@ -97,6 +97,17 @@ class LoadData:
         
         del self._body_data_cache
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
+
+        print("\n----- Clipping in y -----")
+        t0 = time.time()
+        pys = np.linspace(*self.ylims, self.ny)
+        self.ylims = [-0.25, 0.25]
+        mask = ((pys > self.ylims[0]) & (pys < self.ylims[1]))
+        unwarped = unwarped[:, :, mask, :]
+        # replace NaN with 0
+        unwarped = np.nan_to_num(unwarped)
+        print(f"Clipped in y in {time.time() - t0:.2f} seconds, ny went from {self.ny} to {unwarped.shape[2]}.")
+        _, self.nx, self.ny, self.nt = unwarped.shape
         return unwarped
 
     def flat_subdomain(self, region):
@@ -123,6 +134,6 @@ def fwarp(t: float, pxs: np.ndarray):
 
 # Sample usage
 if __name__ == "__main__":
-    data_loader = LoadData("data/0/uvp/uvp.npy", T=4)
+    data_loader = LoadData("data/test/data/uvp.npy", T=4)
     data_loader.flat_subdomain('body').shape
 
