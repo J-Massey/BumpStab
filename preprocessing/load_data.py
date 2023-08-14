@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from tqdm import tqdm
 
 
 class LoadData:
@@ -79,7 +80,10 @@ class LoadData:
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
         unwarped = np.full(self.body.shape, np.nan)
 
-        for idt, t in enumerate(ts):
+        t0 = time.time()
+        print("\n----- Unwarping body data -----")
+
+        for idt, t in tqdm(enumerate(ts), total=len(ts)):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
             shifts = np.round(fw / dy).astype(int)
@@ -92,6 +96,7 @@ class LoadData:
                     unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
         
         del self.body, self._body_data_cache
+        print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         return unwarped
 
     def flat_subdomain(self, region):
