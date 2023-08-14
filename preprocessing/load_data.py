@@ -121,7 +121,8 @@ def fwarp(t: float, pxs: np.ndarray):
     return A * (B * pxs**2 - C * pxs + D) * np.sin(2 * np.pi * (t - (k * pxs)))
 
 
-# Sample usage
-data_loader = LoadData("data/0/uvp/uvp.npy", T=15)
-print(data_loader.flat_subdomain('body').shape)
+if __name__ == "__main__":
+    # Sample usage
+    data_loader = LoadData("data/0/uvp/uvp.npy", T=15)
+    print(data_loader.flat_subdomain('body').shape)
 
