@@ -113,8 +113,10 @@ class LoadData:
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
         if region=='wake':
+            np.save('data/test/data/nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             return self.wake.reshape(3 * self.nx * self.ny, self.nt)
         elif region=='body':
+            np.save('data/test/data/nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
         else:
             raise ValueError("Invalid region. Must be 'wake' or 'body'.")
