@@ -2,7 +2,7 @@ from scipy.linalg import svd, cholesky
 import numpy as np
 
 
-def fbDMD(flucs, Ub, Sigmab, VTb, Uf, Sigmaf, VTf, nx, ny, nt, r=None):
+def fbDMD(flucs, Ub, Sigmab, VTb, Uf, Sigmaf, VTf, nt, r=None):
     fluc1 = flucs[:,:-1]
     fluc2 = flucs[:, 1:]
     dt = 14/nt

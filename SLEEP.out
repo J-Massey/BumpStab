@@ -1,7 +1,7 @@
-Running SLURM prolog script on gold57.cluster.local
+Running SLURM prolog script on gold55.cluster.local
 ===============================================================================
-Job started on Tue Aug 15 00:27:35 BST 2023
-Job ID          : 4543469
+Job started on Tue Aug 15 08:14:37 BST 2023
+Job ID          : 4544177
 Job name        : save
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
@@ -9,8 +9,19 @@ Partition       : highmem
 Num hosts       : 1
 Num cores       : 64
 Num of tasks    : 64
-Hosts allocated : gold57
+Hosts allocated : gold55
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Tue Aug 15 00:27:35 BST 2023
+Starting calculation at Tue Aug 15 08:14:38 BST 2023
 ---------------------------------------------------------------
+Traceback (most recent call last):
+  File "data/bmask.py", line 62, in <module>
+    bmask(dp, sp)
+  File "data/bmask.py", line 16, in bmask
+    np.save(os.path.join(sp, f"u_{idx}"), u)
+  File "<__array_function__ internals>", line 6, in save
+  File "/home/jmom1n15/.local/lib/python3.7/site-packages/numpy/lib/npyio.py", line 530, in save
+    pickle_kwargs=dict(fix_imports=fix_imports))
+  File "/home/jmom1n15/.local/lib/python3.7/site-packages/numpy/lib/format.py", line 691, in write_array
+    array.tofile(fp)
+OSError: 6900869 requested and 0 written
