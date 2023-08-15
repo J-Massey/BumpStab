@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 # SBATCH --mem=243200
 #SBATCH --partition=highmem
-#SBATCH --job-name=save
+#SBATCH --job-name=save-SVD
 #SBATCH --time=20:00:00
 #SBATCH --output=SLEEP.out
 # SBATCH --exclusive
@@ -17,5 +17,5 @@ module purge
 module load conda
 source activate an
 
-python preprocessing/load_data.py
+python preprocessing/save_SVD.py
 # sleep 720000

@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=12
+    real, parameter    :: finish=8
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
