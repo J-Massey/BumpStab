@@ -1,9 +1,9 @@
 from scipy.linalg import svd, cholesky
 import numpy as np
-from plotting.plot_field import plot_field
+from plot_field import plot_field
 
 
-class ResolventGain:
+class SaveDMD:
     def __init__(self, path, dom) -> None:
         self.path = path
         self.dom = dom
@@ -47,21 +47,30 @@ class ResolventGain:
 
         return Lambda, V_r
     
-    def hermatian_adjoint(self, r=None):
-        _, V_r = self.fbDMD(r)
-        # Find the hermatian adjoint of the
-        V_r_star_Q = V_r.conj().T
-        V_r_star_Q_V_r = np.dot(V_r_star_Q, V_r)
-        # Cholesky factorization
-        F_tilde = cholesky(V_r_star_Q_V_r)
-        return F_tilde
+    def save_fbDMD(self, r=None):
+        Lambda, V_r = self.fbDMD(r)
+        np.save(f"{self.path}/{self.dom}_Lambda.npy", Lambda)
+        np.save(f"{self.path}/{self.dom}_V_r.npy", V_r)
+    
+def F_tilde(V_r):
+    # Find the hermatian adjoint of the eigenvecs
+    V_r_star_Q = V_r.conj().T
+    V_r_star_Q_V_r = np.dot(V_r_star_Q, V_r)
+    # Cholesky factorization
+    F_tilde = cholesky(V_r_star_Q_V_r)
+    return F_tilde
 
 
-case = "test"
-resolvent = ResolventGain(f"data/{case}/data", "body")
-resolvent.flucs.shape
-print(resolvent.nx, resolvent.ny, resolvent.nt)
-q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
-pxs = np.linspace(0, 1, resolvent.nx)
-pys = np.linspace(-0.25, 0.25, resolvent.ny)
-plot_field(q[1, :, :, 0].T, pxs, pys, "figures/testbod.pdf", lim=[-0.5, 0.5])
+# Sample usage
+if __name__ == "__main__":
+    case = "0.001/128"
+    doms = ["body", "wake"]
+    for dom in doms:
+        resolvent = SaveDMD(f"data/{case}/data", dom)
+        resolvent.save_fbDMD()
+        resolvent.flucs.shape
+        print(resolvent.nx, resolvent.ny, resolvent.nt)
+        q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
+        pxs = np.linspace(0, 1, resolvent.nx)
+        pys = np.linspace(-0.25, 0.25, resolvent.ny)
+        plot_field(q[1, :, :, 0].T, pxs, pys, "figures/testbod.pdf", lim=[-0.5, 0.5])

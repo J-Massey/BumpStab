@@ -18,7 +18,4 @@ module load conda
 source activate an
 
 python run-rough.py
-cd ../../..
-python data/watch_simdir.py
-python data/bmask.py
-python data/collect_save.py
+

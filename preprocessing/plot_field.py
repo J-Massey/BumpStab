@@ -37,9 +37,10 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels[::11])
 
     clevels = np.mean(lim)-lim[0]*np.array([-3/4, -1/2, -1/4, 1/4, 1/2, 3/4])
-    # Now find which clevel corresponds to the closest level
+    
+    # Find which clevel corresponds to the closest level
     # clevel = np.argmin(np.abs(levels[:, None]-clevels[None, :]), axis=0)
-    # print(levels[clevel])
+
     co = ax.contour(
         pxs,
         pys,
