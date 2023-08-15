@@ -24,8 +24,8 @@ class LoadData:
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
         try:
-            print(f"\n----- Loading data from {self.path} -----")
-            self.uvp = np.load(self.path, mmap_mode='r')
+            print(f"\n----- Loading data from {self.path}/uvp.npy -----")
+            self.uvp = np.load(f"{self.path}/uvp.npy", mmap_mode='r')
             print(f"Data of shape {self.uvp.shape} loaded.")
             _, self.nx, self.ny, self.nt = self.uvp.shape
         except Exception as e:
@@ -56,6 +56,7 @@ class LoadData:
             mask = pxs > 1
             self.xlims[0] = 1
             self._filter_data(mask)
+            np.save(f'{self.path}/wake_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             self._subtract_mean()
             self._wake_data_cache = self.uvp
         return self._wake_data_cache
@@ -108,15 +109,15 @@ class LoadData:
         unwarped = np.nan_to_num(unwarped)
         print(f"Clipped in y in {time.time() - t0:.2f} seconds, ny went from {self.ny} to {unwarped.shape[2]}.")
         _, self.nx, self.ny, self.nt = unwarped.shape
+        np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
         return unwarped
 
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
         if region=='wake':
-            np.save('data/test/data/nxyt.npy', np.array([self.nx, self.ny, self.nt]))
+            np.save(f'{self.path}/wake_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             return self.wake.reshape(3 * self.nx * self.ny, self.nt)
         elif region=='body':
-            np.save('data/test/data/nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
         else:
             raise ValueError("Invalid region. Must be 'wake' or 'body'.")
@@ -136,6 +137,9 @@ def fwarp(t: float, pxs: np.ndarray):
 
 # Sample usage
 if __name__ == "__main__":
-    data_loader = LoadData("data/test/data/uvp.npy", T=4)
-    data_loader.flat_subdomain('body').shape
+    path = "data/0/data"
+    data_loader = LoadData(path, T=14)
+    data_loader.flat_subdomain('wake').shape
+    # data_loader = LoadData(path, T=4)
+    # data_loader.flat_subdomain('wake').shape
 

@@ -1,16 +1,22 @@
+import numpy as np
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scienceplots
-import matplotlib.animation as animation
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
-plt.rcParams["image.cmap"] = "gist_earth"
 
 
-def plot_flows(qi, fn, _cmap, lim):
+def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     # Test plot
+    if lim is None:
+        lim = [np.min(qi), np.max(qi)]
+    else:
+        pass
+
     fig, ax = plt.subplots(figsize=(5, 3))
-    levels = np.linspace(lim[0], lim[1], 44)
+    levels = np.linspace(lim[0], lim[1], 45)
     _cmap = sns.color_palette(_cmap, as_cmap=True)
     cs = ax.contourf(
         pxs,
@@ -24,8 +30,30 @@ def plot_flows(qi, fn, _cmap, lim):
         extend="both",
         # alpha=0.7,
     )
+    # cbar on top of the plot
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("top", size="7%", pad=0.2)
+    fig.add_axes(cax)
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels[::11])
+
+    clevels = np.mean(lim)-lim[0]*np.array([-2/3, -1/3, 0, 1/3, 2/3])
+    print(np.mean(lim))
+    # Now find which clevel corresponds to the closest level
+    clevel = np.argmin(np.abs(levels[:, None]-clevels[None, :]), axis=0)
+    print(levels[clevel])
+    co = ax.contour(
+        pxs,
+        pys,
+        qi,
+        levels=levels[clevel],
+        vmin=lim[0],
+        vmax=lim[1],
+        colors='black',
+        linewidths=0.5,
+        # alpha=0.85,
+    )
+    ax.clabel(co, inline=True, fontsize=7, fmt='%.2f')
+
     ax.set_aspect(1)
-    # ax.set_title(f"$\omega={frequencies_bsort[oms]:.2f},St={frequencies_bsort[oms]/(2*np.pi):.2f}$")
-    # ax.plot(pxs, fwarp(pxs), c='k')
-    plt.savefig(f"./swimming/figures/{fn}.png", dpi=700)
+    plt.savefig(path, dpi=700)
     plt.close()

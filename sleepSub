@@ -17,5 +17,5 @@ module purge
 module load conda
 source activate an
 
-python data/bmask.py 
-sleep 720000
+python preprocessing/load_data.py
+# sleep 720000
