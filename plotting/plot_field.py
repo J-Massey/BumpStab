@@ -36,23 +36,22 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     fig.add_axes(cax)
     cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels[::11])
 
-    clevels = np.mean(lim)-lim[0]*np.array([-2/3, -1/3, 0, 1/3, 2/3])
-    print(np.mean(lim))
+    clevels = np.mean(lim)-lim[0]*np.array([-3/4, -1/2, -1/4, 1/4, 1/2, 3/4])
     # Now find which clevel corresponds to the closest level
-    clevel = np.argmin(np.abs(levels[:, None]-clevels[None, :]), axis=0)
-    print(levels[clevel])
+    # clevel = np.argmin(np.abs(levels[:, None]-clevels[None, :]), axis=0)
+    # print(levels[clevel])
     co = ax.contour(
         pxs,
         pys,
         qi,
-        levels=levels[clevel],
+        levels=clevels,
         vmin=lim[0],
         vmax=lim[1],
         colors='black',
-        linewidths=0.5,
+        linewidths=0.25,
         # alpha=0.85,
     )
-    ax.clabel(co, inline=True, fontsize=7, fmt='%.2f')
+    ax.clabel(co, inline=True, fontsize=6, fmt='%.2f')
 
     ax.set_aspect(1)
     plt.savefig(path, dpi=700)
