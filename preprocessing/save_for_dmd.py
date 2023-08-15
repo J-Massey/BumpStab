@@ -50,7 +50,7 @@ if __name__ == "__main__":
     case = "0"
     doms = ["body", "wake"]
     for dom in doms:
-        svd_save = SVDSave(f"data/{case}/data/uvp.npy", dom)
+        svd_save = SVDSave(f"data/{case}/data", dom)
         svd_save.save_flucs()
         svd_save.save_svd()
     
