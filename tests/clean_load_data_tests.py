@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from preprocessing.load_data import LoadData
+from resolvent.load_data import LoadData
 
 class TestLoadData(unittest.TestCase):
     def setUp(self):

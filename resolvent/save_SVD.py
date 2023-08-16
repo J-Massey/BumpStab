@@ -15,10 +15,9 @@ class SaveSVD:
         """Calculate the SVD of the velocity field."""
         print("\n----- Calculating SVD -----")
         t0 = time.time()
-        print((self.uvp.shape))
         Ub, Sigmab, VTb = svd(self.uvp[:, 1:], full_matrices=False)
         Uf, Sigmaf, VTf = svd(self.uvp[:, :-1], full_matrices=False)
-        print(f"SVD calculated in {time.time() - t0:.2f} seconds")
+        print(f"SVD calculated in {time.time() - t0:.2f} seconds.")
         return Ub, Sigmab, VTb, Uf, Sigmaf, VTf
     
     def save_flucs(self):
@@ -42,13 +41,13 @@ class SaveSVD:
             Sigmaf=Sigmaf,
             VTf=VTf,
         )
-        print(f"SVD saved to {fnsave}")
+        print(f"SVD saved to {fnsave}.")
 
 
 # Sample usage
 if __name__ == "__main__":
     case = "0"
-    doms = ["body"]
+    doms = ["wake"]
     for dom in doms:
         svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
         svd_save.save_flucs()
