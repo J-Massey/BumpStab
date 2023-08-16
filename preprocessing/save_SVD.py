@@ -47,10 +47,10 @@ class SaveSVD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0.001/128"
-    doms = ["body", "wake"]
+    case = "0"
+    doms = ["body"]
     for dom in doms:
-        svd_save = SaveSVD(f"data/{case}/data", dom)
+        svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
         svd_save.save_flucs()
         svd_save.save_svd()
     
