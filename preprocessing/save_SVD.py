@@ -24,7 +24,7 @@ class SaveSVD:
     def save_flucs(self):
         """Save the fluctuating part of the velocity field."""
         print(f"\n----- Saving fluctuations -----")
-        fnsave = os.path.join(os.path.abspath(self.path + '/..'), f"{self.subdomain}_flucs.npy")
+        fnsave = os.path.join(self.path, f"{self.subdomain}_flucs.npy")
         np.save(fnsave, self.uvp)
         print(f"Fluctuations saved to {fnsave}")
 
@@ -32,7 +32,7 @@ class SaveSVD:
         """Save the SVD of the velocity field."""
         Ub, Sigmab, VTb, Uf, Sigmaf, VTf = self._calc_svd()
         print(f"\n----- Saving SVD -----")
-        fnsave = os.path.join(os.path.abspath(self.path + '/..'), f"{self.subdomain}_svd.npz")
+        fnsave = os.path.join(self.path, f"{self.subdomain}_svd.npz")
         np.savez(
             fnsave,
             Ub=Ub,

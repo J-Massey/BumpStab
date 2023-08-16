@@ -64,7 +64,7 @@ def F_tilde(V_r):
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0"
+    case = "0.001/128"
     doms = ["body", "wake"]
     for dom in doms:
         resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
@@ -74,4 +74,4 @@ if __name__ == "__main__":
         q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
         pxs = np.linspace(0, 1, resolvent.nx)
         pys = np.linspace(-0.25, 0.25, resolvent.ny)
-        plot_field(q[1, :, :, 0].T, pxs, pys, "figures/testbod.pdf", lim=[-0.5, 0.5])
+        plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5])
