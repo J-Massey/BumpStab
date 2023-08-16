@@ -62,14 +62,6 @@ class SaveDMD:
         Lambda, V_r = self.fbDMD(r)
         np.save(f"{self.path}/{self.dom}_Lambda.npy", Lambda)
         np.save(f"{self.path}/{self.dom}_V_r.npy", V_r)
-    
-def F_tilde(V_r):
-    # Find the hermatian adjoint of the eigenvectors
-    V_r_star_Q = V_r.conj().T
-    V_r_star_Q_V_r = np.dot(V_r_star_Q, V_r)
-    # Cholesky factorization
-    F_tilde = cholesky(V_r_star_Q_V_r)
-    return F_tilde
 
 
 # Sample usage
