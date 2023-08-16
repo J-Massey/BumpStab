@@ -1,6 +1,7 @@
 from scipy.linalg import svd, cholesky
 import numpy as np
 from plot_field import plot_field
+import os
 
 
 class SaveDMD:
@@ -63,10 +64,10 @@ def F_tilde(V_r):
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0.001/128"
+    case = "0"
     doms = ["body", "wake"]
     for dom in doms:
-        resolvent = SaveDMD(f"data/{case}/data", dom)
+        resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
         resolvent.save_fbDMD()
         resolvent.flucs.shape
         print(resolvent.nx, resolvent.ny, resolvent.nt)

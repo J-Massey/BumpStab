@@ -17,5 +17,5 @@ module purge
 module load conda
 source activate an
 
-python preprocessing/save_SVD.py
-# sleep 720000
+# python preprocessing/save_SVD.py
+sleep 720000
