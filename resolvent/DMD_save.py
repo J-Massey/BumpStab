@@ -57,7 +57,7 @@ class SaveDMD:
         print(f"fbDMD calculated in {time.time() - t0:.2f} seconds.")
 
         return Lambda, V_r
-    
+
     def save_fbDMD(self, r=None):
         Lambda, V_r = self.fbDMD(r)
         np.save(f"{self.path}/{self.dom}_Lambda.npy", Lambda)
@@ -74,4 +74,6 @@ if __name__ == "__main__":
         q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
         pxs = np.linspace(1, 2, resolvent.nx)
         pys = np.linspace(-0.35, 0.35, resolvent.ny)
-        plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5])
+        plot_field(
+            q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5]
+        )
