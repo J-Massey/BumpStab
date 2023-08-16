@@ -1,13 +1,16 @@
 import numpy as np
 import tqdm
 from scipy.linalg import cholesky
+from scipy.signal import find_peaks
 
 
 class ResolventAnalysis:
-    def __init__(self, path, dom) -> None:
+    def __init__(self, path, dom, omega_span=np.linspace(0, 1000, 2000)) -> None:
         self.path = path
         self.dom = dom
         self._load(dom)
+        self.omega_span = omega_span
+        self.gain_cache = None
 
     def _load(self, dom):
         self.Lambda = np.load(f"{self.path}/{dom}_Lambda.npy")
@@ -22,16 +25,35 @@ class ResolventAnalysis:
         F_tilde = cholesky(V_r_star_Q_V_r)
         return F_tilde
 
-    def calc_gain(self, omega_span=np.linspace(0, 1000, 2000)):
-        gain = np.empty((omega_span.size, self.Lambda.size))
-        for idx, omega in tqdm(enumerate(omega_span)):
-            R = np.linalg.svd(
-                self.F_tilde
-                @ np.linalg.inv(
-                    (-1j * omega) * np.eye(self.Lambda.shape[0]) - np.diag(self.Lambda)
+    def gain(self):
+        if self.gain_cache is None:
+            self.gain_cache = np.empty((self.omega_span.size, self.Lambda.size))
+            for idx, omega in tqdm(enumerate(self.omega_span)):
+                R = np.linalg.svd(
+                    self.F_tilde
+                    @ np.linalg.inv(
+                        (-1j * omega) * np.eye(self.Lambda.shape[0]) - np.diag(self.Lambda)
+                    )
+                    @ np.linalg.inv(self.F_tilde),
+                    compute_uv=False,
                 )
-                @ np.linalg.inv(self.F_tilde),
-                compute_uv=False,
-            )
-            gain[idx] = R**2
-        return gain
+                self.gain_cache[idx] = R**2
+        return self.gain_cache
+    
+    def omega_peaks(self):
+        # Find peaks in the gain data
+        peak_indices, _ = find_peaks(self.calc_gain[:,0])
+        # Extract the omega values corresponding to these peaks
+        peak_omegas = self.omega_span[peak_indices]
+        return peak_omegas
+    
+    def save_omega_peaks(self):
+        peak_omegas = self.omega_peaks()
+        np.save(f"{self.path}/{self.dom}_peak_omegas.npy", peak_omegas)
+
+
+if __name__ == "__main__":
+    path = "resolvent"
+    dom = "cylinder"
+    ra = ResolventAnalysis(path, dom)
+    ra.save_omega_peaks()
