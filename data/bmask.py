@@ -1,4 +1,4 @@
-
+import sys
 import os
 from tkinter import Tcl
 import numpy as np
@@ -34,30 +34,32 @@ def fns(dp):
     fnsu = [
         fn
         for fn in os.listdir(dp)
-        if fn.startswith("fluAv_u") and fn.endswith(f".npy")
+        if fn.startswith(f"{fln}_u") and fn.endswith(f".npy")
     ]
     fnsu = Tcl().call("lsort", "-dict", fnsu)
     fnsv = [
         fn
         for fn in os.listdir(dp)
-        if fn.startswith("fluAv_v") and fn.endswith(f".npy")
+        if fn.startswith(f"{fln}_v") and fn.endswith(f".npy")
     ]
     fnsv = Tcl().call("lsort", "-dict", fnsv)
     fnsp = [
         fn
         for fn in os.listdir(dp)
-        if fn.startswith("fluAv_p") and fn.endswith(f".npy")
+        if fn.startswith(f"{fln}_p") and fn.endswith(f".npy")
     ]
     fnsp = Tcl().call("lsort", "-dict", fnsp)
     fnsb = [
         fn
         for fn in os.listdir(dp)
-        if fn.startswith('bodAv') and fn.endswith(f".npy")
+        if fn.startswith(bln) and fn.endswith(f".npy")
     ]
     fnsb = Tcl().call("lsort", "-dict", fnsb)
     return fnsu, fnsv, fnsp, fnsb
 
 if __name__ == "__main__":
-    dp = f"{os.getcwd()}/data/0.001/128/uvp"
-    sp = f"{os.getcwd()}/data/0.001/128/data"
+    fln = "fluid"; bln = "bodyF"
+    case = sys.argv[1]
+    dp = f"{os.getcwd()}/{case}/uvp"
+    sp = f"{os.getcwd()}/{case}/data"
     bmask(dp, sp)

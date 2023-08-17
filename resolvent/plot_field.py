@@ -1,9 +1,14 @@
 import numpy as np
 
+import os
+from tkinter import Tcl
+
+import imageio
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scienceplots
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from tqdm import tqdm
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 
@@ -57,3 +62,33 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     ax.set_aspect(1)
     plt.savefig(path, dpi=700)
     plt.close()
+
+
+
+def fns(dirn):
+    fns = [fn for fn in os.listdir(dirn) if fn.endswith(f".png")]
+    fns = Tcl().call("lsort", "-dict", fns)
+    return fns
+
+
+def gif_gen(path, nom, duration):
+    images = []
+    for filename in tqdm(fns(path)):
+        images.append(imageio.v3.imread(os.path.join(path, filename), plugin="pillow", mode="RGBA"))
+
+    imageio.v3.imwrite(
+        nom,
+        images,
+        plugin="pillow",
+        mode="RGBA",
+        duration=duration,
+        loop=0,
+        # transparency=100,
+        disposal=2,
+    )
+
+
+# Sample usage
+if __name__ == "__main__":
+    gif_gen("figures/rough-unwarp", "figures/rough-unwarp.gif", 1/200)
+

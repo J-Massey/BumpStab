@@ -6,8 +6,8 @@ import time
 
 
 class SaveSVD:
-    def __init__(self, path, subdomain):
-        self.uvp = LoadData(path, T=14).flat_subdomain(subdomain)
+    def __init__(self, path, subdomain, T):
+        self.uvp = LoadData(path, T).flat_subdomain(subdomain)
         self.path = path
         self.subdomain = subdomain
 
@@ -46,10 +46,10 @@ class SaveSVD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0"
-    doms = ["wake"]
+    case = "0.001/128"
+    doms = ["body", "wake"]
     for dom in doms:
-        svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
+        svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom, 4)
         svd_save.save_flucs()
         svd_save.save_svd()
     
