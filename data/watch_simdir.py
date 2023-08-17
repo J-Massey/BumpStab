@@ -2,24 +2,27 @@ import os
 import time
 from tkinter import Tcl
 from tqdm import tqdm
+import sys
 
 from lotusvis.flow_field import ReadIn
 
 
 def fluid_snap(sim_dir, fn, count):
-    fsim = ReadIn(sim_dir, 'fluAv', 4096, ext="vti")
+    fsim = ReadIn(sim_dir, fln, 512, ext="vti")
     fsim.u_low_memory_saver(fn, count, f"{fnroot}/uvp")
     fsim.v_low_memory_saver(fn, count, f"{fnroot}/uvp")
     fsim.p_low_memory_saver(fn, count, f"{fnroot}/uvp")
 
 def body_snap(sim_dir, fn, count):
-    bsim = ReadIn(sim_dir, 'bodAv', 4096, ext="vti")
+    bsim = ReadIn(sim_dir, bln, 512, ext="vti")
     bsim.save_sdf_low_memory(fn, count, f"{fnroot}/uvp")
 
 
 # Specify the directory to monitor
-fnroot = f"{os.getcwd()}/data/0.001/128"
-directory_to_watch = f"{fnroot}/128-save"
+case = sys.argv[1]
+fln = "fluid"; bln = "bodyF"
+fnroot = f"{os.getcwd()}/{case}"
+directory_to_watch = f"{fnroot}/lotus-data"
 print("Reading from:", directory_to_watch)
 
 bcount=0
@@ -30,19 +33,19 @@ datpdir = os.path.join(directory_to_watch, "datp")
 dpdfs = [fp for fp in os.listdir(datpdir)]
 dpdfs = Tcl().call("lsort", "-dict", dpdfs)
 for fn in tqdm(dpdfs, total=len(dpdfs)):
-    if fn.startswith("bodAv"):
+    if fn.startswith(bln):
         path = os.path.join(datpdir, fn)
         body_snap(directory_to_watch, path, bcount)
         os.remove(path)
         bcount += 1
-    elif fn.startswith("fluAv"):
+    elif fn.startswith(fln):
         path = os.path.join(datpdir, fn)
         fluid_snap(directory_to_watch, path, fcount)
         os.remove(path)
         fcount += 1
 for root, _, files in os.walk(directory_to_watch):
     for file in files:
-        if (file.startswith("fluAv") or file.startswith("bodAv")) and \
+        if (file.startswith(fln) or file.startswith(bln)) and \
         (not file.endswith(".pvtr") and not file.endswith(".vtr") and not file.endswith("vtr.pvd")):
             file_path = os.path.join(root, file)
             os.remove(file_path)
