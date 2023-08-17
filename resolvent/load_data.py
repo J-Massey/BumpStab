@@ -132,16 +132,22 @@ def fwarp(t: float, pxs: np.ndarray):
 
 
 # Sample usage
-# if __name__ == "__main__":
-import os
-case = "0"
-# data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=14)
-q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
-flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-pxs = np.linspace(0, 1, nx)
-pys = np.linspace(-0.25, 0.25, ny)
-plot_field(flucs[0, :, :, 0].T, pxs, pys, f"figures/smooth-unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
-for n in range(0, 4*nt//14, 10):
-    plot_field(q[1, :, :, n].T, pxs, pys, f"figures/smooth-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-gif_gen("figures/smooth-unwarp", "figures/smooth_unwarp.gif", 4)
+if __name__ == "__main__":
+    import os
+    case = "test"
+    data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=2)
+    q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
+    _, nx, ny, nt = q.shape
+    pxs = np.linspace(-0.35, 2, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/smooth_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+
+    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    flucs.resize(3, nx, ny, nt)
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    plot_field(flucs[1, :, :, 0].T, pxs, pys, f"figures/smooth_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+    # for n in range(0, 4*nt//14, 10):
+    #     plot_field(q[1, :, :, n].T, pxs, pys, f"figures/smooth-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+    # gif_gen("figures/smooth-unwarp", "figures/smooth_unwarped.gif", 4)
