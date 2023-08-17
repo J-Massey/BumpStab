@@ -1,4 +1,3 @@
-from scipy.linalg import cholesky
 import numpy as np
 from plot_field import plot_field
 import os
@@ -57,29 +56,23 @@ class SaveDMD:
         print(f"fbDMD calculated in {time.time() - t0:.2f} seconds.")
 
         return Lambda, V_r
-    
+
     def save_fbDMD(self, r=None):
         Lambda, V_r = self.fbDMD(r)
         np.save(f"{self.path}/{self.dom}_Lambda.npy", Lambda)
         np.save(f"{self.path}/{self.dom}_V_r.npy", V_r)
-    
-def F_tilde(V_r):
-    # Find the hermatian adjoint of the eigenvectors
-    V_r_star_Q = V_r.conj().T
-    V_r_star_Q_V_r = np.dot(V_r_star_Q, V_r)
-    # Cholesky factorization
-    F_tilde = cholesky(V_r_star_Q_V_r)
-    return F_tilde
 
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0.001/128"
-    doms = ["wake"]
+    case = "0"
+    doms = ["body", "wake"]
     for dom in doms:
         resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
         resolvent.save_fbDMD()
         q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
         pxs = np.linspace(1, 2, resolvent.nx)
         pys = np.linspace(-0.35, 0.35, resolvent.ny)
-        plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5])
+        plot_field(
+            q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5]
+        )

@@ -1,6 +1,7 @@
 import numpy as np
 import time
 from tqdm import tqdm
+from plot_field import plot_field
 
 
 class LoadData:
@@ -36,7 +37,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Subtracting mean -----")
         uvp_mean = self.uvp.mean(axis=3, keepdims=True)
-        self.uvp = self.uvp - uvp_mean
+        self.uvp =  self.uvp - uvp_mean
         print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
         del uvp_mean
 
@@ -69,7 +70,6 @@ class LoadData:
             mask = (pxs > 0) & (pxs < 1)
             self.xlims = [0, 1]
             self._filter_data(mask)
-            self._subtract_mean()
             self._body_data_cache = self.uvp
         return self._body_data_cache
 
@@ -108,6 +108,12 @@ class LoadData:
         # replace NaN with 0
         unwarped = np.nan_to_num(unwarped)
         print(f"Clipped in y in {time.time() - t0:.2f} seconds, ny went from {self.ny} to {unwarped.shape[2]}.")
+        t0 = time.time()
+        print("\n----- Subtracting mean -----")
+        unwarped_mean = unwarped.mean(axis=3, keepdims=True)
+        unwarped =  unwarped - unwarped_mean
+        print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
+        del unwarped_mean
         _, self.nx, self.ny, self.nt = unwarped.shape
         np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
         return unwarped
@@ -137,9 +143,14 @@ def fwarp(t: float, pxs: np.ndarray):
 
 # Sample usage
 if __name__ == "__main__":
-    path = "data/0/data"
-    data_loader = LoadData(path, T=14)
-    data_loader.flat_subdomain('wake').shape
-    # data_loader = LoadData(path, T=4)
-    # data_loader.flat_subdomain('wake').shape
+    import os
+    case = "0.001/128"
+    data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=4)
+    q = data_loader.unwarped_body
+    pxs = np.linspace(0, 1, data_loader.nx)
+    pys = np.linspace(-0.25, 0.25, data_loader.ny)
+    plot_field(
+        q[0, :, :, 50].T, pxs, pys, f"figures/test_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic"
+    )
+
 
