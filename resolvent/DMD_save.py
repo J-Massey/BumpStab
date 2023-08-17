@@ -1,4 +1,3 @@
-from scipy.linalg import cholesky
 import numpy as np
 from plot_field import plot_field
 import os
@@ -66,8 +65,8 @@ class SaveDMD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0.001/128"
-    doms = ["wake"]
+    case = "0"
+    doms = ["body", "wake"]
     for dom in doms:
         resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
         resolvent.save_fbDMD()
