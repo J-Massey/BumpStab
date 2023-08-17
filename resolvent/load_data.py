@@ -1,11 +1,11 @@
 import numpy as np
 import time
 from tqdm import tqdm
-from plot_field import plot_field
+from plot_field import plot_field, gif_gen
 
 
 class LoadData:
-    def __init__(self, path, T=1, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
+    def __init__(self, path, T=4, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
         """
         Initialize the LoadData class.
 
@@ -76,10 +76,10 @@ class LoadData:
     @property
     def unwarped_body(self):
         """Unwarp the velocity field in the body region."""
+        unwarped = np.full(self.body.shape, np.nan)
         pxs = np.linspace(*self.xlims, self.nx)
         ts = np.linspace(0, self.T, self.nt)
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
-        unwarped = np.full(self.body.shape, np.nan)
 
         t0 = time.time()
         print("\n----- Unwarping body data -----")
@@ -111,7 +111,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Subtracting mean -----")
         unwarped_mean = unwarped.mean(axis=3, keepdims=True)
-        unwarped =  unwarped - unwarped_mean
+        unwarped =  unwarped #- unwarped_mean
         print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
         del unwarped_mean
         _, self.nx, self.ny, self.nt = unwarped.shape
@@ -130,15 +130,8 @@ class LoadData:
 
 
 def fwarp(t: float, pxs: np.ndarray):
-    """Warping function based on time and position."""
-    # Define constants
-    A = -0.5
-    B = 0.28
-    C = 0.13
-    D = 0.05
-    k = 1.42
+    return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
-    return A * (B * pxs**2 - C * pxs + D) * np.sin(2 * np.pi * (t - (k * pxs)))
 
 
 # Sample usage
@@ -147,10 +140,9 @@ if __name__ == "__main__":
     case = "0.001/128"
     data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=4)
     q = data_loader.unwarped_body
-    pxs = np.linspace(0, 1, data_loader.nx)
-    pys = np.linspace(-0.25, 0.25, data_loader.ny)
-    plot_field(
-        q[0, :, :, 50].T, pxs, pys, f"figures/test_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic"
-    )
-
-
+    pxs = np.linspace(*data_loader.xlims, data_loader.nx)
+    pys = np.linspace(*data_loader.ylims, data_loader.ny)
+    print(data_loader.ylims)
+    for n in range(data_loader.nt):
+        plot_field(q[1, :, :, n].T, pxs, pys, f"figures/rough-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+    gif_gen("figures/rough-unwarp", "figures/rough-unwarp.gif", 1/200)
