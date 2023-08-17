@@ -1,6 +1,6 @@
 import os
+import sys
 from tkinter import Tcl
-
 import numpy as np
 from tqdm import tqdm
 
@@ -28,7 +28,8 @@ def collect_data(fns, data_dir="./data"):
 
 
 if __name__ == "__main__":
-    data_dir = sp = f"{os.getcwd()}/data/0.001/128/data"
+    case = sys.argv[1]
+    data_dir = sp = f"{os.getcwd()}/{case}/data"
     root = "u"
     fn = fns(data_dir, root)
     u = collect_data(fn, data_dir)
