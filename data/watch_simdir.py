@@ -18,38 +18,41 @@ def body_snap(sim_dir, fn, count):
     bsim.save_sdf_low_memory(fn, count, f"{fnroot}/uvp")
 
 
-# Specify the directory to monitor
-case = sys.argv[1]
-fln = "fluid"; bln = "bodyF"
-fnroot = f"{os.getcwd()}/{case}"
-directory_to_watch = f"{fnroot}/lotus-data"
-print("Reading from:", directory_to_watch)
+def main():
+    bcount=0
+    fcount = 0
+    delete_count = 0
 
-bcount=0
-fcount = 0
-delete_count = 0
-
-datpdir = os.path.join(directory_to_watch, "datp")
-dpdfs = [fp for fp in os.listdir(datpdir)]
-dpdfs = Tcl().call("lsort", "-dict", dpdfs)
-for fn in tqdm(dpdfs, total=len(dpdfs)):
-    if fn.startswith(bln):
-        path = os.path.join(datpdir, fn)
-        body_snap(directory_to_watch, path, bcount)
-        os.remove(path)
-        bcount += 1
-    elif fn.startswith(fln):
-        path = os.path.join(datpdir, fn)
-        fluid_snap(directory_to_watch, path, fcount)
-        os.remove(path)
-        fcount += 1
-for root, _, files in os.walk(directory_to_watch):
-    for file in files:
-        if (file.startswith(fln) or file.startswith(bln)) and \
-        (not file.endswith(".pvtr") and not file.endswith(".vtr") and not file.endswith("vtr.pvd")):
-            file_path = os.path.join(root, file)
-            os.remove(file_path)
-            delete_count += 1
+    datpdir = os.path.join(directory_to_watch, "datp")
+    dpdfs = [fp for fp in os.listdir(datpdir)]
+    dpdfs = Tcl().call("lsort", "-dict", dpdfs)
+    for fn in tqdm(dpdfs, total=len(dpdfs)):
+        if fn.startswith(bln):
+            path = os.path.join(datpdir, fn)
+            body_snap(directory_to_watch, path, bcount)
+            os.remove(path)
+            bcount += 1
+        elif fn.startswith(fln):
+            path = os.path.join(datpdir, fn)
+            fluid_snap(directory_to_watch, path, fcount)
+            os.remove(path)
+            fcount += 1
+    for root, _, files in os.walk(directory_to_watch):
+        for file in files:
+            if (file.startswith(fln) or file.startswith(bln)) and \
+            (not file.endswith(".pvtr") and not file.endswith(".vtr") and not file.endswith("vtr.pvd")):
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
+                delete_count += 1
 
 
-print(f"Total files deleted: {delete_count}")
+    print(f"Total files deleted: {delete_count}")
+
+
+if __name__ == "__main__":
+    case = sys.argv[1]
+    fln = "fluid"; bln = "bodyF"
+    fnroot = f"{os.getcwd()}/{case}"
+    directory_to_watch = f"{fnroot}/lotus-data"
+    print("Reading from:", directory_to_watch)
+
