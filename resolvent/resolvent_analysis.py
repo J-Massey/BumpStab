@@ -29,7 +29,7 @@ class ResolventAnalysis:
     def gain(self):
         if self.gain_cache is None:
             self.gain_cache = np.empty((self.omega_span.size, self.Lambda.size))
-            for idx, omega in tqdm(enumerate(self.omega_span)):
+            for idx, omega in tqdm(enumerate(self.omega_span), total=len(self.omega_span)):
                 R = np.linalg.svd(
                     self.F_tilde
                     @ np.linalg.inv(
@@ -53,7 +53,7 @@ class ResolventAnalysis:
         return peak_omegas
     
     def save_omega_peaks(self):
-        peak_omegas = self.omega_peaks()
+        peak_omegas = self.omega_peaks
         np.save(f"{self.path}/{self.dom}_peak_omegas.npy", peak_omegas)
 
 
