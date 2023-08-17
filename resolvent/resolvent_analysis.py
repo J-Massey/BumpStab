@@ -1,5 +1,5 @@
 import numpy as np
-import tqdm
+from tqdm import tqdm
 from scipy.linalg import cholesky
 from scipy.signal import find_peaks
 
@@ -25,6 +25,7 @@ class ResolventAnalysis:
         F_tilde = cholesky(V_r_star_Q_V_r)
         return F_tilde
 
+    @property
     def gain(self):
         if self.gain_cache is None:
             self.gain_cache = np.empty((self.omega_span.size, self.Lambda.size))
@@ -40,9 +41,13 @@ class ResolventAnalysis:
                 self.gain_cache[idx] = R**2
         return self.gain_cache
     
+    def save_gain(self):
+        np.save(f"{self.path}/{self.dom}_gain.npy", self.gain)
+    
+    @property
     def omega_peaks(self):
         # Find peaks in the gain data
-        peak_indices, _ = find_peaks(self.calc_gain[:,0])
+        peak_indices, _ = find_peaks(self.gain[:,0])
         # Extract the omega values corresponding to these peaks
         peak_omegas = self.omega_span[peak_indices]
         return peak_omegas
@@ -52,8 +57,12 @@ class ResolventAnalysis:
         np.save(f"{self.path}/{self.dom}_peak_omegas.npy", peak_omegas)
 
 
+# Sample usage
 if __name__ == "__main__":
-    path = "resolvent"
-    dom = "cylinder"
-    ra = ResolventAnalysis(path, dom)
-    ra.save_omega_peaks()
+    import os
+    case = "0.001/128"
+    doms = ["body", "wake"]
+    for dom in doms:
+        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0, 100*2*np.pi, 2000))
+        ra.save_gain()
+        ra.save_omega_peaks()
