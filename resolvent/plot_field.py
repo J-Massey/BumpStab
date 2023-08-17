@@ -19,7 +19,8 @@ plt.rcParams["font.size"] = "10.5"
 def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     # Test plot
     if lim is None:
-        lim = [np.min(qi), np.max(qi)]
+        limb = round(np.max(qi), 2)
+        lim = [-limb, limb]
     else:
         pass
     fig, ax = plt.subplots(figsize=(5, 3))
@@ -89,8 +90,21 @@ def gif_gen(path, nom, gif_length):
         loop=0,
         disposal=2,
     )
-
-
 # Sample usage
 if __name__ == "__main__":
-    gif_gen("figures/rough-unwarp", "figures/rough_unwarp.gif", 4)
+    import os
+    case = "test"
+    q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
+    _, nx, ny, nt = q.shape
+    pxs = np.linspace(-0.35, 2, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/{case}_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+
+    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    flucs.resize(3, nx, ny, nt)
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    for n in range(0, nt, 10):
+        plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/smooth-unwarp/n.png", lim=[-0.5, 0.5], _cmap="seismic")
+    gif_gen("figures/smooth-unwarp", "figures/smooth_unwarp.gif", 4)
