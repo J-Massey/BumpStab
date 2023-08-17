@@ -71,9 +71,3 @@ if __name__ == "__main__":
     for dom in doms:
         resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom, 4)
         resolvent.save_fbDMD()
-        # q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
-        # pxs = np.linspace(1, 2, resolvent.nx)
-        # pys = np.linspace(-0.35, 0.35, resolvent.ny)
-        # plot_field(
-        #     q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5]
-        # )
