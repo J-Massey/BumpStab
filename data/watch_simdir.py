@@ -8,13 +8,13 @@ from lotusvis.flow_field import ReadIn
 
 
 def fluid_snap(sim_dir, fn, count):
-    fsim = ReadIn(sim_dir, fln, 512, ext="vti")
+    fsim = ReadIn(sim_dir, fln, L, ext="vti")
     fsim.u_low_memory_saver(fn, count, f"{fnroot}/uvp")
     fsim.v_low_memory_saver(fn, count, f"{fnroot}/uvp")
     fsim.p_low_memory_saver(fn, count, f"{fnroot}/uvp")
 
 def body_snap(sim_dir, fn, count):
-    bsim = ReadIn(sim_dir, bln, 512, ext="vti")
+    bsim = ReadIn(sim_dir, bln, L, ext="vti")
     bsim.save_sdf_low_memory(fn, count, f"{fnroot}/uvp")
 
 
@@ -52,7 +52,9 @@ def main():
 if __name__ == "__main__":
     case = sys.argv[1]
     fln = "fluid"; bln = "bodyF"
+    L = 1024 
     fnroot = f"{os.getcwd()}/{case}"
     directory_to_watch = f"{fnroot}/lotus-data"
     print("Reading from:", directory_to_watch)
+    main()
 
