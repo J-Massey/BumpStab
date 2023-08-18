@@ -51,8 +51,8 @@ def main():
 
 if __name__ == "__main__":
     case = sys.argv[1]
-    fln = "fluid"; bln = "bodyF"
-    L = 2048 
+    fln = "fluAv"; bln = "bodAv"
+    L = 4096 
     fnroot = f"{os.getcwd()}/{case}"
     directory_to_watch = f"{fnroot}/lotus-data"
     print("Reading from:", directory_to_watch)

@@ -18,7 +18,7 @@ def run_bumps(lam):
 
 def run_cont(lam):
     new_f90(lam)
-    run(1024, f'{cwd}/{1/lam:.0f}-save', f'/scratch/jmom1n15/BumpStab/data/0.001/128/128/')
+    run(1024, f'{cwd}/lotus-data', f'/scratch/jmom1n15/BumpStab/data/0.001/128/128/')
 
 if __name__ == "__main__":
     cwd = Path.cwd()

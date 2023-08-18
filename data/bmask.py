@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 def bmask(dp, sp):
     fnsu, fnsv, fnsp, fnsb = fns(dp)
-    for idx, (fnu, fnv, fnp, fnb) in tqdm(enumerate(zip(fnsu, fnsv, fnsp, fnsb))):
+    for idx, (fnu, fnv, fnp, fnb) in tqdm(enumerate(zip(fnsu, fnsv, fnsp, fnsb)), total=len(fnsp)):
         u = np.load(os.path.join(dp, fnu))
         v = np.load(os.path.join(dp, fnv))
         p = np.load(os.path.join(dp, fnp))
@@ -20,7 +20,7 @@ def bmask(dp, sp):
         p = np.where(bmask, p, 0)
         np.save(os.path.join(sp, f"p_{idx}"), p)
         # Now remove the files
-        print(f"Removing {fnu}, {fnv}, {fnb}")
+        # print(f"Removing {fnu}, {fnv}, {fnb}")
         try:
             os.remove(os.path.join("./data", fnu))
             os.remove(os.path.join("./data", fnv))
@@ -58,7 +58,7 @@ def fns(dp):
     return fnsu, fnsv, fnsp, fnsb
 
 if __name__ == "__main__":
-    fln = "fluid"; bln = "bodyF"
+    fln = "fluAv"; bln = "bodAv"
     case = sys.argv[1]
     dp = f"{os.getcwd()}/{case}/uvp"
     sp = f"{os.getcwd()}/{case}/data"

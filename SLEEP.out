@@ -14,3 +14,23 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Fri Aug 18 06:55:21 BST 2023
 ---------------------------------------------------------------
+==============================================================================
+Running epilogue script on gold66.
+
+Submit time  : 2023-08-18T06:54:30
+Start time   : 2023-08-18T06:55:20
+End time     : 2023-08-18T21:32:22
+Elapsed time : 14:37:02 (Timelimit=20:00:00)
+
+Job ID: 4622882
+Cluster: i5
+User/Group: jmom1n15/mm
+State: CANCELLED (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 19:46:36
+CPU Efficiency: 2.11% of 38-23:30:08 core-walltime
+Job Wall-clock time: 14:37:02
+Memory Utilized: 185.75 GB
+Memory Efficiency: 12.58% of 1.44 TB
+

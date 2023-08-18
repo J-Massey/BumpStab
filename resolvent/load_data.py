@@ -77,7 +77,8 @@ class LoadData:
         """Unwarp the velocity field in the body region."""
         unwarped = np.full(self.body.shape, np.nan)
         pxs = np.linspace(*self.xlims, self.nx)
-        ts = np.linspace(0, self.T, self.nt)
+        dt = self.T / self.nt
+        ts = np.linspace(dt, self.T, self.nt)
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
 
         t0 = time.time()
@@ -95,6 +96,7 @@ class LoadData:
                 elif shift < 0:
                     unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
         del self._body_data_cache
+
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         print("\n----- Clipping in y -----")
         t0 = time.time()

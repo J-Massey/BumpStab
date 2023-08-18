@@ -47,7 +47,7 @@ class SaveSVD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "test"
+    case = "0.001/128"
     doms = ["body", "wake"]
     for dom in doms:
         svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom, 4)
