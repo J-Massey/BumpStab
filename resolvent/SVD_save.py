@@ -3,6 +3,7 @@ import numpy as np
 from scipy.linalg import svd
 import os
 import time
+from plot_field import plot_field
 
 
 class SaveSVD:
@@ -46,7 +47,7 @@ class SaveSVD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0.001/128"
+    case = "test"
     doms = ["body", "wake"]
     for dom in doms:
         svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom, 4)

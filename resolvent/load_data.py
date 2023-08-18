@@ -8,7 +8,6 @@ class LoadData:
     def __init__(self, path, T=4, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
         """
         Initialize the LoadData class.
-
         Args:
         - path (str): Path to the data directory.
         - filename (str, optional): Name of the HDF5 file. Defaults to "uvp.hdf5".
@@ -95,10 +94,8 @@ class LoadData:
                     unwarped[:, i, shift:, idt] = self.body[:, i, :-shift, idt]
                 elif shift < 0:
                     unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
-        
         del self._body_data_cache
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
-
         print("\n----- Clipping in y -----")
         t0 = time.time()
         pys = np.linspace(*self.ylims, self.ny)
@@ -137,12 +134,20 @@ def fwarp(t: float, pxs: np.ndarray):
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "0.001/128"
-    data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=4)
-    q = data_loader.unwarped_body
-    pxs = np.linspace(*data_loader.xlims, data_loader.nx)
-    pys = np.linspace(*data_loader.ylims, data_loader.ny)
-    print(data_loader.ylims)
-    for n in range(data_loader.nt):
-        plot_field(q[1, :, :, n].T, pxs, pys, f"figures/rough-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    gif_gen("figures/rough-unwarp", "figures/rough-unwarp.gif", 1/200)
+    case = "test"
+    data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=2)
+    q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
+    _, nx, ny, nt = q.shape
+    pxs = np.linspace(-0.35, 2, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/smooth_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+
+    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    flucs.resize(3, nx, ny, nt)
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    plot_field(flucs[1, :, :, 0].T, pxs, pys, f"figures/smooth_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+    # for n in range(0, 4*nt//14, 10):
+    #     plot_field(q[1, :, :, n].T, pxs, pys, f"figures/smooth-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+    # gif_gen("figures/smooth-unwarp", "figures/smooth_unwarped.gif", 4)

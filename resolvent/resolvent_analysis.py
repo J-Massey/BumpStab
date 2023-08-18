@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from scipy.linalg import cholesky
+from scipy.linalg import cholesky, svd, inv
 from scipy.signal import find_peaks
 
 
@@ -29,13 +29,13 @@ class ResolventAnalysis:
     def gain(self):
         if self.gain_cache is None:
             self.gain_cache = np.empty((self.omega_span.size, self.Lambda.size))
-            for idx, omega in tqdm(enumerate(self.omega_span)):
-                R = np.linalg.svd(
+            for idx, omega in tqdm(enumerate(self.omega_span), total=len(self.omega_span)):
+                R = svd(
                     self.F_tilde
-                    @ np.linalg.inv(
+                    @ inv(
                         (-1j * omega) * np.eye(self.Lambda.shape[0]) - np.diag(self.Lambda)
                     )
-                    @ np.linalg.inv(self.F_tilde),
+                    @ inv(self.F_tilde),
                     compute_uv=False,
                 )
                 self.gain_cache[idx] = R**2
@@ -53,16 +53,16 @@ class ResolventAnalysis:
         return peak_omegas
     
     def save_omega_peaks(self):
-        peak_omegas = self.omega_peaks()
+        peak_omegas = self.omega_peaks
         np.save(f"{self.path}/{self.dom}_peak_omegas.npy", peak_omegas)
 
 
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "0.001/128"
+    case = "test"
     doms = ["body", "wake"]
     for dom in doms:
-        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0, 100*2*np.pi, 2000))
+        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))
         ra.save_gain()
         ra.save_omega_peaks()

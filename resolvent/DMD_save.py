@@ -5,9 +5,10 @@ import time
 
 
 class SaveDMD:
-    def __init__(self, path, dom) -> None:
+    def __init__(self, path, dom, T) -> None:
         self.path = path
         self.dom = dom
+        self.T = T
         self._load_modes(dom)
         self.fluc1 = self.flucs[:, :-1]
         self.fluc2 = self.flucs[:, 1:]
@@ -24,9 +25,9 @@ class SaveDMD:
         self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
 
     def fbDMD(self, r=None):
-        dt = 14 / self.nt
+        dt = self.T / self.nt
         if r is None:
-            r = self.nt - 1
+            r = self.nt // self.T
 
         print(f"\n----- Calculating fbDMD with r={r} -----")
         t0 = time.time()
@@ -68,11 +69,5 @@ if __name__ == "__main__":
     case = "0"
     doms = ["body", "wake"]
     for dom in doms:
-        resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
+        resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom, 4)
         resolvent.save_fbDMD()
-        q = resolvent.flucs.reshape(3, resolvent.nx, resolvent.ny, resolvent.nt)
-        pxs = np.linspace(1, 2, resolvent.nx)
-        pys = np.linspace(-0.35, 0.35, resolvent.ny)
-        plot_field(
-            q[1, :, :, 0].T, pxs, pys, f"figures/test_{dom}.pdf", lim=[-0.5, 0.5]
-        )
