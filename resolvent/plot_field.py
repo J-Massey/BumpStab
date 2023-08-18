@@ -48,18 +48,18 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     )
     # Find which clevel corresponds to the closest level
     # clevel = np.argmin(np.abs(levels[:, None]-clevels[None, :]), axis=0)
-    co = ax.contour(
-        pxs,
-        pys,
-        qi,
-        levels=clevels,
-        vmin=lim[0],
-        vmax=lim[1],
-        colors="black",
-        linewidths=0.25,
-        # alpha=0.85,
-    )
-    ax.clabel(co, inline=True, fontsize=6, fmt="%.2f")
+    # co = ax.contour(
+    #     pxs,
+    #     pys,
+    #     qi,
+    #     levels=clevels,
+    #     vmin=lim[0],
+    #     vmax=lim[1],
+    #     colors="black",
+    #     linewidths=0.25,
+    #     # alpha=0.85,
+    # )
+    # ax.clabel(co, inline=True, fontsize=6, fmt="%.2f")
     ax.set_aspect(1)
     plt.savefig(path, dpi=700)
     plt.close()
