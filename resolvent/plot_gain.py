@@ -22,8 +22,8 @@ def plot_gain(path, save_path, omega_span):
 
 # Sample usage
 if __name__ == "__main__":
-    case = "test"
-    doms = ["body", "wake"]
+    case = "0.001/128"
+    doms = ["body"]
     for dom in doms:
         path = f"data/{case}/data/{dom}_gain.npy"
         save_path = f"figures/{case}_gain_{dom}.png"

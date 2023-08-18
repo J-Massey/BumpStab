@@ -27,7 +27,7 @@ class PlotPeaks:
             F_tilde = cholesky(V_r_star_Q_V_r)
             return F_tilde
 
-    def plot_forcing(self):
+    def plot_forcing(self, case):
 
         for omega in self.peak_omegas:
             Psi, Sigma, Phi = svd(self.F_tilde@inv((-1j*omega)*np.eye(self.Lambda.shape[0])-np.diag(self.Lambda))@inv(self.F_tilde))
@@ -41,9 +41,9 @@ class PlotPeaks:
             field = forcing[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
             
-    def plot_response(self):
+    def plot_response(self, case):
         for omega in self.peak_omegas:
             Psi, Sigma, Phi = svd(self.F_tilde@inv((-1j*omega)*np.eye(self.Lambda.shape[0])-np.diag(self.Lambda))@inv(self.F_tilde))
             for i in range(len(Sigma)):
@@ -56,15 +56,15 @@ class PlotPeaks:
             field = response[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
 
 
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "test"
-    doms = ["body", "wake"]
+    case = "0.001/128"
+    doms = ["body"]
     for dom in doms:
         pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
-        pp.plot_forcing()
-        pp.plot_response()
+        pp.plot_forcing(case)
+        pp.plot_response(case)
