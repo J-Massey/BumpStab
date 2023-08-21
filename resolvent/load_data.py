@@ -78,7 +78,7 @@ class LoadData:
         unwarped = np.full(self.body.shape, np.nan)
         pxs = np.linspace(*self.xlims, self.nx)
         dt = self.T / self.nt
-        ts = np.linspace(dt, self.T, self.nt)
+        ts = np.arange(0, self.T, dt)
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
 
         t0 = time.time()
@@ -91,10 +91,11 @@ class LoadData:
 
             for i in range(self.body.shape[1]):
                 shift = shifts[i]
-                if shift > 0:
-                    unwarped[:, i, shift:, idt] = self.body[:, i, :-shift, idt]
-                elif shift < 0:
-                    unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
+                if shift >= 0:
+                    unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[1]-shift, idt]
+                else:
+                    shift = -shift
+                    unwarped[:, i, :-shift, idt] = self.body[:, i, shift:, idt]
         del self._body_data_cache
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
@@ -132,24 +133,25 @@ def fwarp(t: float, pxs: np.ndarray):
     return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
-
 # Sample usage
-if __name__ == "__main__":
-    import os
-    case = "test"
-    data_loader = LoadData(f"{os.getcwd()}/data/{case}/data", T=2)
-    q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
-    _, nx, ny, nt = q.shape
-    pxs = np.linspace(-0.35, 2, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
-    plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/smooth_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+import os
+case = "0.001/128"
+os.system(f"mkdir -p figures/{case}-unwarp")
+dl = LoadData(f"{os.getcwd()}/data/{case}/data", T=3.995)
+body = dl.body
+uw = dl.unwarped_body
+# q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
+_, nx, ny, nt = uw.shape
+pxs = np.linspace(0, 1, nx)
+pys = np.linspace(-0.25, 0.25, ny)
+plot_field(uw[1, :, :, -2].T, pxs, pys, f"figures/{case}_bod3.png", lim=[-0.5, 0.5], _cmap="seismic")
 
-    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-    flucs.resize(3, nx, ny, nt)
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
-    plot_field(flucs[1, :, :, 0].T, pxs, pys, f"figures/smooth_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
-    # for n in range(0, 4*nt//14, 10):
-    #     plot_field(q[1, :, :, n].T, pxs, pys, f"figures/smooth-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    # gif_gen("figures/smooth-unwarp", "figures/smooth_unwarped.gif", 4)
+# flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+# nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+# flucs.resize(3, nx, ny, nt)
+# pxs = np.linspace(0, 1, nx)
+# pys = np.linspace(-0.25, 0.25, ny)
+# plot_field(flucs[1, :, :, 0].T, pxs, pys, f"figures/smooth_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+# for n in range(0, 199):
+#     plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 4)

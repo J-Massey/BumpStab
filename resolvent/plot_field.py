@@ -95,18 +95,18 @@ def gif_gen(path, nom, gif_length):
 if __name__ == "__main__":
     import os
     case = "0.001/128"
-    os.system(f"mkdir -p {case}-unwarp")
+    os.system(f"mkdir -p figures/{case}-warp")
     q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
     _, nx, ny, nt = q.shape
     pxs = np.linspace(-0.35, 2, nx)
     pys = np.linspace(-0.35, 0.35, ny)
     # plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/{case}_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
 
-    # flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-    # nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-    # flucs.resize(3, nx, ny, nt)
-    # pxs = np.linspace(0, 1, nx)
-    # pys = np.linspace(-0.25, 0.25, ny)
+    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    flucs.resize(3, nx, ny, nt)
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
     for n in range(0, nt):
-        plot_field(q[1, :, :, n].T, pxs, pys, f"{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+        plot_field(q[1, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
     gif_gen(f"{case}-unwarp", f"figures/{case}_warp.gif", 12)

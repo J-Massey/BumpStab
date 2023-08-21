@@ -2,6 +2,7 @@ import numpy as np
 from plot_field import plot_field
 import os
 import time
+import sys
 
 
 class SaveDMD:
@@ -66,7 +67,7 @@ class SaveDMD:
 
 # Sample usage
 if __name__ == "__main__":
-    case = "0"
+    case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
         resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom, 4)

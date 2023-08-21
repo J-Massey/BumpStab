@@ -14,5 +14,5 @@ def run_cont(lam):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    run_cont(1/sys.argv[1])
+    run_cont(1/int(sys.argv[1]))
     

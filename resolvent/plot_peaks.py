@@ -4,6 +4,7 @@ from scipy.linalg import cholesky, svd, inv
 from plot_field import plot_field
 import matplotlib.pyplot as plt
 import scienceplots
+import sys
 
 
 class PlotPeaks:
@@ -62,7 +63,7 @@ class PlotPeaks:
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "0.001/128"
+    case = sys.argv[1]
     doms = ["body"]
     for dom in doms:
         pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)

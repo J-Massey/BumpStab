@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 from scipy.linalg import cholesky, svd, inv
 from scipy.signal import find_peaks
+import sys
 
 
 class ResolventAnalysis:
@@ -60,7 +61,7 @@ class ResolventAnalysis:
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "test"
+    case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
         ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))
