@@ -58,7 +58,7 @@ def fns(dp):
     return fnsu, fnsv, fnsp, fnsb
 
 if __name__ == "__main__":
-    fln = "fluAv"; bln = "bodAv"
+    fln = "fluid"; bln = "bodyF"
     case = sys.argv[1]
     dp = f"{os.getcwd()}/{case}/uvp"
     sp = f"{os.getcwd()}/{case}/data"

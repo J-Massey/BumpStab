@@ -6,10 +6,9 @@ import sys
 
 
 class SaveDMD:
-    def __init__(self, path, dom, T) -> None:
+    def __init__(self, path, dom) -> None:
         self.path = path
         self.dom = dom
-        self.T = T
         self._load_modes(dom)
         self.fluc1 = self.flucs[:, :-1]
         self.fluc2 = self.flucs[:, 1:]
@@ -26,9 +25,9 @@ class SaveDMD:
         self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
 
     def fbDMD(self, r=None):
-        dt = self.T / self.nt
+        dt = 0.005
         if r is None:
-            r = self.nt // self.T
+            r = self.nt * dt
 
         print(f"\n----- Calculating fbDMD with r={r} -----")
         t0 = time.time()
@@ -70,5 +69,5 @@ if __name__ == "__main__":
     case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
-        resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom, 4)
+        resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
         resolvent.save_fbDMD()

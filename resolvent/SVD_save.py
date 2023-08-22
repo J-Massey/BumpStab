@@ -8,8 +8,8 @@ import sys
 
 
 class SaveSVD:
-    def __init__(self, path, subdomain, T):
-        self.uvp = LoadData(path, T).flat_subdomain(subdomain)
+    def __init__(self, path, subdomain):
+        self.uvp = LoadData(path).flat_subdomain(subdomain)
         self.path = path
         self.subdomain = subdomain
 

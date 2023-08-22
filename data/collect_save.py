@@ -60,11 +60,11 @@ def collect_data(data_dir):
         [data_p[0]],
     )
     for idx, diff in enumerate(diffs):
-        if diff < 0.6 * avg_diff:
+        if diff < 0.4 * avg_diff:
             # Too similar, drop the next data point
             print(f"Diff : {diff}, dropped idx {idx}")
             continue
-        elif diff > 1.3 * avg_diff:
+        elif diff > 1.5 * avg_diff:
             # Too different, interpolate between data[idx] and data[idx+1]
             print(f"Diff : {diff}, interped idx {idx}")
             interpolated = 0.5 * (data_u[idx] + data_u[idx + 1])

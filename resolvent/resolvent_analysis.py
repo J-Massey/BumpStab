@@ -6,7 +6,7 @@ import sys
 
 
 class ResolventAnalysis:
-    def __init__(self, path, dom, omega_span=np.linspace(0, 1000, 2000)) -> None:
+    def __init__(self, path, dom, omega_span=np.linspace(0.1, 1000, 2000)) -> None:
         self.path = path
         self.dom = dom
         self._load(dom)

@@ -5,18 +5,18 @@ from plot_field import plot_field, gif_gen
 
 
 class LoadData:
-    def __init__(self, path, T=4, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
+    def __init__(self, path, dt=0.005, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
         """
         Initialize the LoadData class.
         Args:
         - path (str): Path to the data directory.
         - filename (str, optional): Name of the HDF5 file. Defaults to "uvp.hdf5".
-        - T (int, optional): Time parameter. Defaults to 1.
+        - dt (float, optional): Time step parameter. Defaults to 0.005.
         """
         self.path = path
         self.xlims = xlims  # Default values
         self.ylims = ylims  # Default values
-        self.T = T
+        self.dt =dt
         self._load_data()
         self._wake_data_cache = None # Cache for wake data
         self._body_data_cache = None # Cache for body data
@@ -77,8 +77,9 @@ class LoadData:
         """Unwarp the velocity field in the body region."""
         unwarped = np.full(self.body.shape, np.nan)
         pxs = np.linspace(*self.xlims, self.nx)
-        dt = self.T / self.nt
-        ts = np.arange(0, self.T, dt)
+
+        ts = np.arange(0, self.dt*self.nt, self.dt)
+        print(ts)
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
 
         t0 = time.time()
@@ -92,7 +93,7 @@ class LoadData:
             for i in range(self.body.shape[1]):
                 shift = shifts[i]
                 if shift >= 0:
-                    unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[1]-shift, idt]
+                    unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
                 else:
                     shift = -shift
                     unwarped[:, i, :-shift, idt] = self.body[:, i, shift:, idt]
@@ -137,21 +138,14 @@ def fwarp(t: float, pxs: np.ndarray):
 import os
 case = "0.001/128"
 os.system(f"mkdir -p figures/{case}-unwarp")
-dl = LoadData(f"{os.getcwd()}/data/{case}/data", T=3.995)
+dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
 body = dl.body
 uw = dl.unwarped_body
-# q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
 _, nx, ny, nt = uw.shape
 pxs = np.linspace(0, 1, nx)
 pys = np.linspace(-0.25, 0.25, ny)
-plot_field(uw[1, :, :, -2].T, pxs, pys, f"figures/{case}_bod3.png", lim=[-0.5, 0.5], _cmap="seismic")
+plot_field(uw[1, :, :, -1].T, pxs, pys, f"figures/{case}_bod3.pdf", lim=[-0.5, 0.5], _cmap="seismic")
 
-# flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-# nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-# flucs.resize(3, nx, ny, nt)
-# pxs = np.linspace(0, 1, nx)
-# pys = np.linspace(-0.25, 0.25, ny)
-# plot_field(flucs[1, :, :, 0].T, pxs, pys, f"figures/smooth_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
-# for n in range(0, 199):
-#     plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+for n in range(0, nt, 10):
+    plot_field(uw[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
 gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 4)
