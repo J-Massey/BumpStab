@@ -42,7 +42,7 @@ class PlotPeaks:
             field = forcing[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic", lim=[-0.02, 0.02])
+            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
             
     def plot_response(self, case):
         for omega in self.peak_omegas:
@@ -57,7 +57,7 @@ class PlotPeaks:
             field = response[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic", lim=[-0.005, 0.005])
+            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
 
 
 # Sample usage

@@ -19,4 +19,4 @@ module load texlive
 module load conda
 source activate an
 
-python resolvent/run_resolvent.py "128/0.001"
+python resolvent/run_resolvent.py "0.001/128"
