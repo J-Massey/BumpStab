@@ -28,4 +28,4 @@ if __name__ == "__main__":
     for dom in doms:
         path = f"data/{case}/data/{dom}_gain.npy"
         save_path = f"figures/{case}_gain_{dom}.png"
-        plot_gain(path, save_path, omega_span=np.linspace(0.1, 100*2*np.pi, 500))
+        plot_gain(path, save_path, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))

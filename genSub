@@ -14,20 +14,9 @@
 echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
 
-python --version
-
-# module purge
-# python --version
-# # module load texlive
-# # python --version
-
-# module load conda
-# conda --version
-
-# python --version
-
-# source activate an
-
-# python --version
+module purge
+module load texlive
+module load conda
+source activate an
 
 python resolvent/run_resolvent.py "128/0.001"

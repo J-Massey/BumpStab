@@ -67,5 +67,5 @@ if __name__ == "__main__":
     doms = ["body"]
     for dom in doms:
         pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
-        pp.plot_forcing(case)  +
+        pp.plot_forcing(case)
         pp.plot_response(case)
