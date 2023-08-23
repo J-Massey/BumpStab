@@ -47,9 +47,9 @@ def collect_data(data_dir):
         data_v.append(v)
         data_p.append(p)
 
-        # os.remove(f"{data_dir}/{fnu}")
-        # os.remove(f"{data_dir}/{fnv}")
-        # os.remove(f"{data_dir}/{fnp}")
+        os.remove(f"{data_dir}/{fnu}")
+        os.remove(f"{data_dir}/{fnv}")
+        os.remove(f"{data_dir}/{fnp}")
 
     # Calculate average difference
     avg_diff = np.mean(diffs)

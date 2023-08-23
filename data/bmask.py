@@ -20,12 +20,11 @@ def bmask(dp, sp):
         p = np.where(bmask, p, 0)
         np.save(os.path.join(sp, f"p_{idx}"), p)
         # Now remove the files
-        # print(f"Removing {fnu}, {fnv}, {fnb}")
         try:
-            os.remove(os.path.join("./data", fnu))
-            os.remove(os.path.join("./data", fnv))
-            os.remove(os.path.join("./data", fnp))
-            os.remove(os.path.join("./data", fnb))
+            os.remove(os.path.join("./uvp", fnu))
+            os.remove(os.path.join("./uvp", fnv))
+            os.remove(os.path.join("./uvp", fnp))
+            os.remove(os.path.join("./uvp", fnb))
         except FileNotFoundError:
             pass
 
@@ -58,7 +57,7 @@ def fns(dp):
     return fnsu, fnsv, fnsp, fnsb
 
 if __name__ == "__main__":
-    fln = "fluid"; bln = "bodyF"
+    fln = "fluAv"; bln = "bodAv"
     case = sys.argv[1]
     dp = f"{os.getcwd()}/{case}/uvp"
     sp = f"{os.getcwd()}/{case}/data"

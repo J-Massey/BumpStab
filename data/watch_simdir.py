@@ -18,7 +18,7 @@ def body_snap(sim_dir, fn, count):
     bsim.save_sdf_low_memory(fn, count, f"{fnroot}/uvp")
 
 
-def main():
+def main(directory_to_watch):
     bcount=0
     fcount = 0
     delete_count = 0
@@ -56,5 +56,5 @@ if __name__ == "__main__":
     fnroot = f"{os.getcwd()}/{case}"
     directory_to_watch = f"{fnroot}/lotus-data"
     print("Reading from:", directory_to_watch)
-    main()
+    main(directory_to_watch)
 

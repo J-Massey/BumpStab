@@ -1,5 +1,4 @@
 import numpy as np
-from plot_field import plot_field
 import os
 import time
 import sys
@@ -24,10 +23,8 @@ class SaveDMD:
             self.VTf = data["VTf"]
         self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
 
-    def fbDMD(self, r=None):
+    def fbDMD(self, r=400):
         dt = 0.005
-        if r is None:
-            r = self.nt * dt
 
         print(f"\n----- Calculating fbDMD with r={r} -----")
         t0 = time.time()
@@ -58,7 +55,7 @@ class SaveDMD:
 
         return Lambda, V_r
 
-    def save_fbDMD(self, r=None):
+    def save_fbDMD(self, r=400):
         Lambda, V_r = self.fbDMD(r)
         np.save(f"{self.path}/{self.dom}_Lambda.npy", Lambda)
         np.save(f"{self.path}/{self.dom}_V_r.npy", V_r)

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scienceplots
 from tqdm import tqdm
+import sys
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -22,9 +23,9 @@ def plot_gain(path, save_path, omega_span):
 
 # Sample usage
 if __name__ == "__main__":
-    case = SystemError.argv[1]
+    case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
         path = f"data/{case}/data/{dom}_gain.npy"
         save_path = f"figures/{case}_gain_{dom}.png"
-        plot_gain(path, save_path, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))
+        plot_gain(path, save_path, omega_span=np.linspace(0.1, 100*2*np.pi, 500))

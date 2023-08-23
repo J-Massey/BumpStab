@@ -1,10 +1,11 @@
 #!/bin/bash
+
 #SBATCH --ntasks=64
 #SBATCH --nodes=1
 # SBATCH --mem=243200
-#SBATCH --partition=amd
-#SBATCH --job-name=rough-RA
-#SBATCH --time=20:00:00
+#SBATCH --partition=highmem
+#SBATCH --job-name=ResolventAnalysis
+#SBATCH --time=60:00:00
 #SBATCH --output=RA.out
 # SBATCH --exclusive
 # SBATCH --exclude=ruby035,ruby036,ruby037
@@ -13,8 +14,20 @@
 echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
 
-module purge
-module load conda
-source activate an
+python --version
 
-python resolvent/resolvent_analysis.py
+# module purge
+# python --version
+# # module load texlive
+# # python --version
+
+# module load conda
+# conda --version
+
+# python --version
+
+# source activate an
+
+# python --version
+
+python resolvent/run_resolvent.py "128/0.001"
