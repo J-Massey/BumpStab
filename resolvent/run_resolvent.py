@@ -5,16 +5,16 @@ import sys
 import numpy as np
 from plot_field import plot_field, gif_gen
 
-# def vis_unwarp(case):
-#     os.system(f"mkdir -p figures/{case}-unwarp")
-#     flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-#     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-#     flucs.resize(3, nx, ny, nt)
-#     pxs = np.linspace(0, 1, nx)
-#     pys = np.linspace(-0.25, 0.25, ny)
-#     for n in range(0, nt, 5):
-#         plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-#     gif_gen(f"{case}-unwarp", f"figures/{case}_warp.gif", 4)
+def vis_unwarp(case):
+    os.system(f"mkdir -p figures/{case}-unwarp")
+    flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    flucs.resize(3, nx, ny, nt)
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    for n in range(0, nt, 5):
+        plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+    gif_gen(f"{case}-unwarp", f"figures/{case}_warp.gif", 4)
 
 
 def main(case, dom):
@@ -22,8 +22,8 @@ def main(case, dom):
     svd_save.save_flucs()
     svd_save.save_svd()
     resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
-    resolvent.save_fbDMD(r=400)
-    ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))
+    resolvent.save_fbDMD(r=100)
+    ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000))
     ra.save_gain()
     ra.save_omega_peaks()
 
@@ -32,7 +32,7 @@ def main(case, dom):
 if __name__ == "__main__":
     import os
     case = sys.argv[1]
-    doms = ["body", "wake"]
+    doms = ["wake", "body"]
     for dom in doms:
         main(case, dom)
     # vis_unwarp(case)

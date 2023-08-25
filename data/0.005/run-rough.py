@@ -18,9 +18,9 @@ def run_bumps(lam):
 
 def run_cont(lam):
     new_f90(lam)
-    run(1024, f'{cwd}/{1/lam:.0f}', './')
+    run(1024, f'{cwd}/{1/lam:.0f}', '/ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/256/')
 
 if __name__ == "__main__":
     cwd = Path.cwd()
-    run_cont(1/16)
+    run_bumps(1/256)
     

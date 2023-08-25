@@ -79,7 +79,6 @@ class LoadData:
         pxs = np.linspace(*self.xlims, self.nx)
 
         ts = np.arange(0, self.dt*self.nt, self.dt)
-        print(ts)
         dy = (-self.ylims[0] + self.ylims[1]) / self.ny
 
         t0 = time.time()
@@ -112,7 +111,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Subtracting mean -----")
         unwarped_mean = unwarped.mean(axis=3, keepdims=True)
-        unwarped =  unwarped #- unwarped_mean
+        unwarped =  unwarped - unwarped_mean
         print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
         del unwarped_mean
         _, self.nx, self.ny, self.nt = unwarped.shape

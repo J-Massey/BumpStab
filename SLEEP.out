@@ -1,16 +1,37 @@
-Running SLURM prolog script on gold64.cluster.local
+Running SLURM prolog script on gold66.cluster.local
 ===============================================================================
-Job started on Wed Aug 23 09:54:30 BST 2023
-Job ID          : 4643076
-Job name        : save-SVD
+Job started on Fri Aug 25 09:12:38 BST 2023
+Job ID          : 4654388
+Job name        : interactive
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
 Partition       : highmem
 Num hosts       : 1
 Num cores       : 64
 Num of tasks    : 64
-Hosts allocated : gold64
+Hosts allocated : gold66
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Wed Aug 23 09:54:30 BST 2023
+Starting calculation at Fri Aug 25 09:12:38 BST 2023
 ---------------------------------------------------------------
+slurmstepd-gold66: error: *** JOB 4654388 ON gold66 CANCELLED AT 2023-08-25T12:46:07 ***
+==============================================================================
+Running epilogue script on gold66.
+
+Submit time  : 2023-08-25T09:12:21
+Start time   : 2023-08-25T09:12:38
+End time     : 2023-08-25T12:46:07
+Elapsed time : 03:33:29 (Timelimit=16:00:00)
+
+Job ID: 4654388
+Cluster: i5
+User/Group: jmom1n15/mm
+State: CANCELLED (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 00:47:35
+CPU Efficiency: 0.35% of 9-11:42:56 core-walltime
+Job Wall-clock time: 03:33:29
+Memory Utilized: 29.83 GB
+Memory Efficiency: 2.02% of 1.44 TB
+

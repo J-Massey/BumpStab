@@ -17,7 +17,9 @@ class PlotPeaks:
         self.Lambda = np.load(f"{self.path}/{self.dom}_Lambda.npy")
         self.V_r = np.load(f"{self.path}/{self.dom}_V_r.npy")
         self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
+        print("----- Plotting modes -----")
         self.peak_omegas = np.load(f"{self.path}/{self.dom}_peak_omegas.npy")
+        print(f"Peak omegas: {self.peak_omegas/(2*np.pi)}")
     
     @property
     def F_tilde(self):
@@ -64,7 +66,7 @@ class PlotPeaks:
 if __name__ == "__main__":
     import os
     case = sys.argv[1]
-    doms = ["body"]
+    doms = ["body", "wake"]
     for dom in doms:
         pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
         pp.plot_forcing(case)

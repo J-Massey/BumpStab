@@ -64,6 +64,6 @@ if __name__ == "__main__":
     case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
-        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.linspace(0.1, 100*2*np.pi, 2000))
+        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(0.1, 150*2*np.pi, 1000))
         ra.save_gain()
         ra.save_omega_peaks()

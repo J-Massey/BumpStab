@@ -11,29 +11,56 @@ plt.rcParams["font.size"] = "10.5"
 
 
 def plot_ax():
-    fig, ax = plt.subplots(figsize = (3,3))
+    fig, ax = plt.subplots(figsize=(3, 3))
     ax.set_xlabel(r"$f^*$")
     ax.set_ylabel(r"$\sigma_i$")
-    ax.set_ylim(0, 10)
+    # ax.set_ylim(0, 10)
     return ax
+
 
 def save_fig(save_path):
     plt.savefig(save_path, dpi=700)
     plt.close()
 
-def load_plot(path, ax, omega_span, colour):
+
+def load_plot(path, ax, omega_span, colour, label):
     gain = np.load(path)
-    ax.loglog(omega_span/(2*np.pi), np.sqrt(gain[:, 0]), color=colour)
+    ax.loglog(
+        omega_span / (2 * np.pi),
+        np.sqrt(gain[:, 0]),
+        color=colour,
+        label=label,
+        alpha=0.8,
+        linewidth=0.7,
+    )
 
 
 # Sample usage
 if __name__ == "__main__":
-    colours = sns.color_palette("colorblind")
-    cases = ["test", "0.001/128"]
-    dom = "body"
-    for idx, case in enumerate(cases):
-        path = f"data/{case}/data/{dom}_gain.npy"
-        save_path = f"figures/{case}_gain_{dom}.png"
-        ax = plot_ax()
-        load_plot(path, ax, np.linspace(0.1, 100*2*np.pi, 2000), colour=colours[idx])
-        save_fig(save_path)
+    omega_span = np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000)
+    lams = [128, 16]
+    cases = [f"0.001/{lam}" for lam in lams]
+    cases.append("test/up")
+    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
+    labels.append("Smooth")
+    colours = sns.color_palette("colorblind", 7)
+    linestyles = ["-", "-."]
+    doms = ["body"]
+    ax = plot_ax()
+    for idd, dom in enumerate(doms):
+        for idx, case in enumerate(cases):
+            path = f"data/{case}/data/{dom}_gain.npy"
+            gain = np.load(path)
+            ax.loglog(
+                omega_span / (2 * np.pi),
+                np.sqrt(gain[:, 0]),
+                color=colours[idx],
+                label=labels[idx],
+                alpha=0.8,
+                linewidth=0.7,
+                linestyle=linestyles[idd],
+            )
+
+    save_path = f"figures/body_gain.png"
+    ax.legend(loc="upper left")
+    save_fig(save_path)
