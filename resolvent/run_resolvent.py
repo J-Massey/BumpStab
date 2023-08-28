@@ -32,7 +32,7 @@ def main(case, dom):
 if __name__ == "__main__":
     import os
     case = sys.argv[1]
-    doms = ["wake", "body"]
+    doms = ["body"]
     for dom in doms:
         main(case, dom)
-    # vis_unwarp(case)
+    vis_unwarp(case)

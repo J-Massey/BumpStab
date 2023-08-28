@@ -1,0 +1,74 @@
+Running SLURM prolog script on gold56.cluster.local
+===============================================================================
+Job started on Mon Aug 28 10:36:54 BST 2023
+Job ID          : 4669726
+Job name        : ResolventAnalysis
+WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
+Command         : /mainfs/scratch/jmom1n15/BumpStab/genSub
+Partition       : highmem
+Num hosts       : 1
+Num cores       : 16
+Num of tasks    : 16
+Hosts allocated : gold56
+Job Output Follows ...
+===============================================================================
+Starting calculation at Mon Aug 28 10:36:54 BST 2023
+---------------------------------------------------------------
+----- Plotting modes -----
+Peak omegas: [ 0.99997433  2.00602251  3.00177942  4.02422964  5.0598657   6.36202284
+  7.23253785 10.82265185 21.71104065 34.01064435 43.55395451 51.3613088
+ 70.77417412 83.46094522 95.75402524]
+Traceback (most recent call last):
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 72, in <module>
+    pp.plot_forcing(case)
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 47, in plot_forcing
+    plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_field.py", line 29, in plot_field
+    cs = ax.contourf(
+         ^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/__init__.py", line 1433, in inner
+    return func(ax, *map(sanitize_sequence, args), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/axes/_axes.py", line 6420, in contourf
+    contours = mcontour.QuadContourSet(self, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 794, in __init__
+    kwargs = self._process_args(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1436, in _process_args
+    x, y, z = self._contour_args(args, kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1486, in _contour_args
+    self._process_contour_level_args(args)
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1173, in _process_contour_level_args
+    raise ValueError("Contour levels must be increasing")
+ValueError: Contour levels must be increasing
+----- Plotting modes -----
+Peak omegas: [ 0.99997433  2.00602251  3.00177942  4.02422964  5.0598657   6.36202284
+  7.23253785 10.82265185 21.71104065 34.01064435 43.55395451 51.3613088
+ 70.77417412 83.46094522 95.75402524]
+Traceback (most recent call last):
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 72, in <module>
+    pp.plot_forcing(case)
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 47, in plot_forcing
+    plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_field.py", line 29, in plot_field
+    cs = ax.contourf(
+         ^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/__init__.py", line 1433, in inner
+    return func(ax, *map(sanitize_sequence, args), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/axes/_axes.py", line 6420, in contourf
+    contours = mcontour.QuadContourSet(self, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 794, in __init__
+    kwargs = self._process_args(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1436, in _process_args
+    x, y, z = self._contour_args(args, kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1486, in _contour_args
+    self._process_contour_level_args(args)
+  File "/home/jmom1n15/.conda/envs/an/lib/python3.11/site-packages/matplotlib/contour.py", line 1173, in _process_contour_level_args
+    raise ValueError("Contour levels must be increasing")
+ValueError: Contour levels must be increasing

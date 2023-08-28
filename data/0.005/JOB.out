@@ -1,18 +1,18 @@
 Running SLURM prolog script on ruby003.cluster.local
 ===============================================================================
-Job started on Wed May 17 02:16:02 BST 2023
-Job ID          : 3258474
-Job name        : fbb
-WorkDir         : /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps
-Command         : /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/subOpt
+Job started on Fri Aug 25 19:30:41 BST 2023
+Job ID          : 4654254
+Job name        : restart_runs
+WorkDir         : /mainfs/scratch/jmom1n15/BumpStab/data/0.001/64
+Command         : /mainfs/scratch/jmom1n15/BumpStab/data/0.001/64/subOpt
 Partition       : amd
 Num hosts       : 16
 Num cores       : 1024
 Num of tasks    : 1024
-Hosts allocated : ruby[003-005,010-011,016,026,037-044,047]
+Hosts allocated : ruby[003,006,010-011,018,020,026-027,030-032,034-037,039]
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Wed May 17 02:16:02 BST 2023
+Starting calculation at Fri Aug 25 19:30:41 BST 2023
 ---------------------------------------------------------------
 make: Entering directory `/mainfs/home/jmom1n15/Lotus/solver/src/geom'
 make: `libgeom.a' is up to date.
@@ -28,8 +28,8 @@ composite(4096.0)=4096
   products :1*2**12
 composite(4096.0)=4096
   products :1*2**12
-composite(128.0)=128
-  products :1*2**7
+composite(64.0)=64
+  products :1*2**6
  Stretched grid sections:
   negative: r= 0.4%, h_max=21.5
   positive: r= 0.4%, h_max=16.3
@@ -38,66 +38,9 @@ composite(128.0)=128
   negative: r= 0.5%, h_max=25.9
   positive: r= 0.5%, h_max=25.9
  grid symmetry:  T
- folder name=./                                                                              
- Attempting open from: ./fluid.vtr.pvd
- Reading from time=   10923.2832     , file=          20
+ folder name=/scratch/jmom1n15/BumpStab/data/0.001/64/64/                                    
+ Attempting open from: /scratch/jmom1n15/BumpStab/data/0.001/64/64/fluid.vtr.pvd
+ Reading from time=   21845.8379     , file=         200
  Starting time update loop
  -----------------------------------
-Time:          4.000
-Time:          5.000
-Time:          6.000
- Loop complete: writing restart files and exiting
- -----------------------------------
-Number of proccessors :1024
-Run folder            :/ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/16
-Read folder           :./
-Folder /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/16 exists!
-Resuming in place
-Setting up in /ssdfs/users/jmom1n15/thicc-swimmer/full-body-bumps/16
-No postprocessing set up
-No stopping criteria, the simulation will run its course
-Making executable 
-Finished executable 
-Running executable 
-Run all python files for postprocessing
-Popping back up
-==============================================================================
-Running epilogue script on ruby003.
-
-Submit time  : 2023-05-16T20:26:19
-Start time   : 2023-05-17T02:16:02
-End time     : 2023-05-17T15:22:14
-Elapsed time : 13:06:12 (Timelimit=2-12:00:00)
-
-Job ID: 3258474
-Cluster: i5
-User/Group: jmom1n15/mm
-State: COMPLETED (exit code 0)
-Nodes: 16
-Cores per node: 64
-CPU Utilized: 555-09:21:38
-CPU Efficiency: 99.34% of 559-01:48:48 core-walltime
-Job Wall-clock time: 13:06:12
-Memory Utilized: 794.90 GB (estimated maximum)
-Memory Efficiency: 22.08% of 3.52 TB (3.52 GB/core)
-
-==============================================================================
-Running epilogue script on ruby049.
-
-Submit time  : 2023-06-12T10:22:47
-Start time   : 2023-06-12T10:23:31
-End time     : 2023-06-12T10:25:20
-Elapsed time : 00:01:49 (Timelimit=2-12:00:00)
-
-Job ID: 3748464
-Cluster: i5
-User/Group: jmom1n15/mm
-State: CANCELLED (exit code 0)
-Nodes: 16
-Cores per node: 64
-CPU Utilized: 00:00:00
-CPU Efficiency: 0.00% of 1-07:00:16 core-walltime
-Job Wall-clock time: 00:01:49
-Memory Utilized: 0.00 MB (estimated maximum)
-Memory Efficiency: 0.00% of 3.52 TB (3.52 GB/core)
-
+Time:          8.000
