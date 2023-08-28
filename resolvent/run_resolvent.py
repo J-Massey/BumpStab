@@ -14,7 +14,7 @@ def vis_unwarp(case):
     pys = np.linspace(-0.25, 0.25, ny)
     for n in range(0, nt, 5):
         plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    gif_gen(f"{case}-unwarp", f"figures/{case}_warp.gif", 4)
+    gif_gen(f"figures/{case}-unwarp", f"figures/{case}_warp.gif", 8)
 
 
 def main(case, dom):
@@ -33,6 +33,6 @@ if __name__ == "__main__":
     import os
     case = sys.argv[1]
     doms = ["body"]
-    for dom in doms:
-        main(case, dom)
+    # for dom in doms:
+    #     main(case, dom)
     vis_unwarp(case)

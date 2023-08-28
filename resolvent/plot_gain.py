@@ -38,14 +38,14 @@ def load_plot(path, ax, omega_span, colour, label):
 # Sample usage
 if __name__ == "__main__":
     omega_span = np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000)
-    lams = [128, 16]
+    lams = [128, 16, 64]
     cases = [f"0.001/{lam}" for lam in lams]
     cases.append("test/up")
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
     linestyles = ["-", "-."]
-    doms = ["body"]
+    doms = ["wake"]
     ax = plot_ax()
     for idd, dom in enumerate(doms):
         for idx, case in enumerate(cases):
@@ -61,6 +61,6 @@ if __name__ == "__main__":
                 linestyle=linestyles[idd],
             )
 
-    save_path = f"figures/body_gain.png"
-    ax.legend(loc="upper left")
-    save_fig(save_path)
+        save_path = f"figures/{dom}_gain.png"
+        ax.legend(loc="upper left")
+        save_fig(save_path)

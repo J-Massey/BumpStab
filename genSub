@@ -20,10 +20,15 @@ module load conda
 source activate an
 
 # cd data
-# ./lotus-npy.sh "0.001/128"
+# # ./lotus-npy.sh "0.001/128"
 # python resolvent/run_resolvent.py "0.001/64"
+# python resolvent/run_resolvent.py "0.001/128"
+# python resolvent/run_resolvent.py "0.001/16"
+# python resolvent/run_resolvent.py "test/up"
+
+
 python resolvent/plot_peaks.py "0.001/16"
-python resolvent/plot_peaks.py "0.001/16"
+python resolvent/plot_peaks.py "0.001/64"
 python resolvent/plot_peaks.py "0.001/128"
 python resolvent/plot_peaks.py "test/up"
 

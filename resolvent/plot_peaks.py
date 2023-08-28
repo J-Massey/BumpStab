@@ -44,7 +44,10 @@ class PlotPeaks:
             field = forcing[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            try:
+                plot_field(field.T, pxs, pys, f"figures/{case}-modes/{self.dom}_forcing_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            except ValueError:
+                print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
             
     def plot_response(self, case):
         for omega in self.peak_omegas:
@@ -59,13 +62,17 @@ class PlotPeaks:
             field = response[1, :, :, 0].real
             pxs = np.linspace(0, 1, self.nx)
             pys = np.linspace(-0.25, 0.25, self.ny)
-            plot_field(field.T, pxs, pys, f"figures/{case}_{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            try:
+                plot_field(field.T, pxs, pys, f"figures/{case}-modes/{self.dom}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+            except ValueError:
+                print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
 
 
 # Sample usage
 if __name__ == "__main__":
     import os
     case = sys.argv[1]
+    os.system(f"mkdir -p figures/{case}-modes")
     doms = ["body", "wake"]
     for dom in doms:
         pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
