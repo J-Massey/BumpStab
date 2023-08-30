@@ -5,9 +5,11 @@ import scienceplots
 from tqdm import tqdm
 import sys
 import seaborn as sns
+from scipy.interpolate import interp1d
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
+
 
 def read_forces(force_file, interest="p", direction="x"):
     names = [
@@ -54,98 +56,238 @@ def load_plot(path, ax, omega_span, colour, label):
 
 
 def plot_thrust():
-    lams = [128, 16, 64]
+    lams = [16, 32, 64, 128]
     cases = [f"0.001/{lam}" for lam in lams]
-    # cases.append("test/up")
+
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
-    linestyles = ["-", "-."]
+
+    t_sample = np.linspace(0.001, 0.999, 400)
 
     fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_xlabel(r"$f^*$")
-    ax.set_ylabel(r"$\sigma_i$")
+    ax.set_ylabel(r"$\langle C_T \rangle $")
+    ax.set_xlabel(r"$t/T$")
+
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="p", direction="x")
-        print(force.mean())
+        t_new = t % 1
+        f = interp1d(t_new, force, fill_value="extrapolate")
+        force_av = f(t_sample)
+
+
+        wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
+        wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
+        wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
+
+
+        force_bins = [force[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+
+
+        # Calculate the standard deviation of each bin
+        force_diff = np.empty((4, t_sample.size))
+        for id in range(len(force_bins)):
+            f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
+            force_bins[id] = f_bins(t_sample)
+            force_diff[id] = force_bins[id] - force_av
 
         ax.plot(
-            t,
-            force,
+            t_sample,
+            force_av,
             color=colours[idx],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
-            # linestyle=linestyles[idd],
+        )
+
+        ax.fill_between(
+            t_sample,
+            force_av + np.min(force_diff, axis=0),
+            force_av + np.max(force_diff, axis=0),
+            color=colours[idx],
+            alpha=0.3,
+            edgecolor="none",
         )
 
     path = f"data/test/up/lotus-data/fort.9"
     t, force = read_forces(path, interest="p", direction="x")
-    t, force = t[((t>8)&(t<12))], force[((t>8)&(t<12))]
-    print(force.mean())
+    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    t = t % 1
+    f = interp1d(t, force, fill_value="extrapolate")
+    force = f(t_sample)
 
     ax.plot(
-        t,
+        t_sample,
         force,
-        color=colours[idx+1],
+        color=colours[idx + 1],
         label="Smooth",
         alpha=0.8,
         linewidth=0.7,
-        # linestyle=linestyles[idd],
     )
-    
-    save_path = f"figures/thrust.pdf"
+
+    save_path = f"figures/thrust.png"
     ax.legend(loc="upper left")
     plt.savefig(save_path, dpi=700)
     plt.close()
 
 
 def plot_power():
-    lams = [128, 16, 64]
+    lams = [16, 32, 64, 128]
     cases = [f"0.001/{lam}" for lam in lams]
-    # cases.append("test/up")
+
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
+    t_sample = np.linspace(0.001, 0.999, 400)
+
     fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_xlabel(r"$f^*$")
-    ax.set_ylabel(r"$\sigma_i$")
+    ax.set_ylabel(r"$\langle C_P \rangle $")
+    ax.set_xlabel(r"$t/T$")
+
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
-        print(force.mean())
+        t_new = t % 1
+        f = interp1d(t_new, force, fill_value="extrapolate")
+        force_av = f(t_sample)
+
+
+        wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
+        wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
+        wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
+
+
+        force_bins = [force[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+
+
+        # Calculate the standard deviation of each bin
+        force_diff = np.empty((4, t_sample.size))
+        for id in range(len(force_bins)):
+            f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
+            force_bins[id] = f_bins(t_sample)
+            force_diff[id] = force_bins[id] - force_av
 
         ax.plot(
-            t,
-            force,
+            t_sample,
+            force_av,
             color=colours[idx],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
-            # linestyle=linestyles[idd],
+        )
+
+        ax.fill_between(
+            t_sample,
+            force_av + np.min(force_diff, axis=0),
+            force_av + np.max(force_diff, axis=0),
+            color=colours[idx],
+            alpha=0.3,
+            edgecolor="none",
         )
 
     path = f"data/test/up/lotus-data/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t, force = t[((t>8)&(t<12))], force[((t>8)&(t<12))]
-    print(force.mean())
+    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    t = t % 1
+    f = interp1d(t, force, fill_value="extrapolate")
+    force = f(t_sample)
 
     ax.plot(
-        t,
+        t_sample,
         force,
-        color=colours[idx+1],
+        color=colours[idx + 1],
         label="Smooth",
         alpha=0.8,
         linewidth=0.7,
-        # linestyle=linestyles[idd],
     )
-    
-    save_path = f"figures/power.pdf"
+
+    save_path = f"figures/power.png"
     ax.legend(loc="upper left")
     plt.savefig(save_path, dpi=700)
     plt.close()
+
+
+def plot_E():
+    lams = [16, 32, 64, 128]
+    cases = [f"0.001/{lam}" for lam in lams]
+
+    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
+    labels.append("Smooth")
+    colours = sns.color_palette("colorblind", 7)
+
+    t_sample = np.linspace(0.001, 0.999, 400)
+
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"$\langle C_P \rangle $")
+    ax.set_xlabel(r"$t/T$")
+
+    for idx, case in enumerate(cases):
+        path = f"data/{case}/lotus-data/fort.9"
+        t, force = read_forces(path, interest="cp", direction="")
+        t_new = t % 1
+        f = interp1d(t_new, force, fill_value="extrapolate")
+        force_av = f(t_sample)
+
+
+        wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
+        wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
+        wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
+
+
+        force_bins = [force[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+
+
+        # Calculate the standard deviation of each bin
+        force_diff = np.empty((4, t_sample.size))
+        for id in range(len(force_bins)):
+            f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
+            force_bins[id] = f_bins(t_sample)
+            force_diff[id] = force_bins[id] - force_av
+
+        ax.plot(
+            t_sample,
+            force_av,
+            color=colours[idx],
+            label=labels[idx],
+            alpha=0.8,
+            linewidth=0.7,
+        )
+
+        ax.fill_between(
+            t_sample,
+            force_av + np.min(force_diff, axis=0),
+            force_av + np.max(force_diff, axis=0),
+            color=colours[idx],
+            alpha=0.3,
+            edgecolor="none",
+        )
+
+    path = f"data/test/up/lotus-data/fort.9"
+    t, force = read_forces(path, interest="cp", direction="")
+    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    t = t % 1
+    f = interp1d(t, force, fill_value="extrapolate")
+    force = f(t_sample)
+
+    ax.plot(
+        t_sample,
+        force,
+        color=colours[idx + 1],
+        label="Smooth",
+        alpha=0.8,
+        linewidth=0.7,
+    )
+
+    save_path = f"figures/E.png"
+    ax.legend(loc="upper left")
+    plt.savefig(save_path, dpi=700)
+    plt.close()
+
 
 if __name__ == "__main__":
     # plot_thrust()

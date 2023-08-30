@@ -1,7 +1,7 @@
 import numpy as np
 import time
 from tqdm import tqdm
-# from plot_field import plot_field, gif_gen
+from plot_field import plot_field, gif_gen
 
 
 class LoadData:
@@ -136,7 +136,7 @@ def fwarp(t: float, pxs: np.ndarray):
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "test"
+    case = "test/up"
     os.system(f"mkdir -p figures/{case}-unwarp")
     dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
     body = dl.body
@@ -144,8 +144,8 @@ if __name__ == "__main__":
     _, nx, ny, nt = uw.shape
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
-    plot_field(uw[1, :, :, -1].T, pxs, pys, f"figures/{case}_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
+    plot_field(uw[1, :, :, 0].T, pxs, pys, f"figures/{case}_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
 
     for n in range(0, nt, 10):
         plot_field(uw[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 4)
+    gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 8)

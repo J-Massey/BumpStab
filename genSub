@@ -6,7 +6,7 @@
 #SBATCH --partition=highmem
 #SBATCH --job-name=ResolventAnalysis
 #SBATCH --time=60:00:00
-#SBATCH --output=plot.out
+#SBATCH --output=RA-32.out
 # SBATCH --exclusive
 # SBATCH --exclude=ruby035,ruby036,ruby037
 # SBATCH --dependency=afterok:1908224
@@ -20,15 +20,19 @@ module load conda
 source activate an
 
 # cd data
-# # ./lotus-npy.sh "0.001/128"
+# ./lotus-npy.sh "0.001/32"
+# cd ..
+# python resolvent/run_resolvent.py "0.001/32"
 # python resolvent/run_resolvent.py "0.001/64"
 # python resolvent/run_resolvent.py "0.001/128"
 # python resolvent/run_resolvent.py "0.001/16"
 # python resolvent/run_resolvent.py "test/up"
 
+# python resolvent/plot_peaks.py "0.001/32"
+# python resolvent/plot_peaks.py "0.001/16"
+# python resolvent/plot_peaks.py "0.001/64"
+# python resolvent/plot_peaks.py "0.001/128"
+# python resolvent/plot_peaks.py "test/up"
 
-python resolvent/plot_peaks.py "0.001/16"
-python resolvent/plot_peaks.py "0.001/64"
-python resolvent/plot_peaks.py "0.001/128"
-python resolvent/plot_peaks.py "test/up"
-
+# python resolvent/load_data.py
+python resolvent/run_resolvent.py 

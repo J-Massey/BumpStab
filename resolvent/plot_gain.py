@@ -38,7 +38,7 @@ def load_plot(path, ax, omega_span, colour, label):
 # Sample usage
 if __name__ == "__main__":
     omega_span = np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000)
-    lams = [128, 16, 64]
+    lams = [16, 128]
     cases = [f"0.001/{lam}" for lam in lams]
     cases.append("test/up")
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]

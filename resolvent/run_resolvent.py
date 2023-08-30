@@ -6,15 +6,15 @@ import numpy as np
 from plot_field import plot_field, gif_gen
 
 def vis_unwarp(case):
-    os.system(f"mkdir -p figures/{case}-unwarp")
+    os.system(f"mkdir -p figures/{case}-warp")
     flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
     flucs.resize(3, nx, ny, nt)
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     for n in range(0, nt, 5):
-        plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    gif_gen(f"figures/{case}-unwarp", f"figures/{case}_warp.gif", 8)
+        plot_field(flucs[1, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
+    gif_gen(f"figures/{case}-warp", f"figures/{case}_warp.gif", 8)
 
 
 def main(case, dom):
@@ -31,8 +31,9 @@ def main(case, dom):
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = sys.argv[1]
-    doms = ["body"]
+    # case = sys.argv[1]
+    case = "test/up"
+    # doms = ["body", "wake"]
     # for dom in doms:
     #     main(case, dom)
     vis_unwarp(case)
