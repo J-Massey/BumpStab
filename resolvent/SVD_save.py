@@ -51,7 +51,7 @@ if __name__ == "__main__":
     case = sys.argv[1]
     doms = ["body", "wake"]
     for dom in doms:
-        svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom, 4)
+        svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
         svd_save.save_flucs()
         svd_save.save_svd()
     
