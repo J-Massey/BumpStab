@@ -31,9 +31,9 @@ def main(case, dom):
 # Sample usage
 if __name__ == "__main__":
     import os
-    # case = sys.argv[1]
-    case = "test/up"
-    # doms = ["body", "wake"]
-    # for dom in doms:
-    #     main(case, dom)
+    case = sys.argv[1]
+    # case = "test/up"
+    doms = ["body", "wake"]
+    for dom in doms:
+        main(case, dom)
     vis_unwarp(case)

@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 import os
@@ -42,7 +43,7 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("top", size="7%", pad=0.2)
     fig.add_axes(cax)
-    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels[::11])
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
     ax.set_aspect(1)
     plt.savefig(path, dpi=700)
     plt.close()
@@ -74,8 +75,8 @@ def plot_field_cont(qi, pxs, pys, path, _cmap="seismic", lim=None):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("top", size="7%", pad=0.2)
     fig.add_axes(cax)
-    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels[::11])
-    clevels = np.mean(lim) - lim[0] * np.array(
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    clevels = lim[0] * np.array(
         [-3 / 4, -1 / 2, -1 / 4, 1 / 4, 1 / 2, 3 / 4]
     )
     # Find which clevel corresponds to the closest level
@@ -123,22 +124,23 @@ def gif_gen(path, nom, gif_length):
         disposal=2,
     )
 
-# Sample usage to visualise and test a case
-if __name__ == "__main__":
-    import os
-    case = "0.001/128"
-    os.system(f"mkdir -p figures/{case}-warp")
-    q = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
-    _, nx, ny, nt = q.shape
-    pxs = np.linspace(-0.35, 2, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
-    # plot_field(q[1, :, :, 0].T, pxs, pys, f"figures/{case}_warped.pdf", lim=[-0.5, 0.5], _cmap="seismic")
-
+def vis_pressure(case):
+    dir = f"figures/{case}-pressure"
+    os.system(f"mkdir -p {dir}")
     flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
     flucs.resize(3, nx, ny, nt)
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
-    for n in range(0, nt):
-        plot_field(q[1, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    gif_gen(f"{case}-unwarp", f"figures/{case}_warp.gif", 12)
+
+    print(flucs[2, :, :, 0].max(), flucs[2, :, :, 0].min())
+    for n in range(0, nt, 5):
+        plot_field_cont(flucs[2, :, :, n].T, pxs, pys, f"{dir}/{n}.png", lim=[-0.1, 0.1], _cmap="seismic")
+    gif_gen(f"figures/{case}-pressure", f"figures/{case}_pressure.gif", 8)
+
+
+# Sample usage to visualise and test a case
+if __name__ == "__main__":
+    import os
+    case = sys.argv[1]
+    vis_pressure(case)
