@@ -69,12 +69,61 @@ class PlotPeaks:
 
 
 # Sample usage
-if __name__ == "__main__":
-    import os
-    case = sys.argv[1]
-    os.system(f"mkdir -p figures/{case}-modes")
-    doms = ["body", "wake"]
-    for dom in doms:
-        pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
-        pp.plot_forcing(case)
-        pp.plot_response(case)
+# if __name__ == "__main__":
+    # case = sys.argv[1]
+    # os.system(f"mkdir -p figures/{case}-modes")
+    # doms = ["body", "wake"]
+    # for dom in doms:
+    #     pp = PlotPeaks(f"{os.getcwd()}/data/{case}/data", dom)
+    #     pp.plot_forcing(case)
+    #     pp.plot_response(case)
+import os
+sixteen = PlotPeaks(f"{os.getcwd()}/data/0.001/16/data", "body")
+onetwentyeight = PlotPeaks(f"{os.getcwd()}/data/0.001/128/data", "body")
+smooth = PlotPeaks(f"{os.getcwd()}/data/test/up/data", "body")
+
+sixteen.peak_omegas/(2*np.pi)
+onetwentyeight.peak_omegas/(2*np.pi)
+cases = [sixteen, onetwentyeight, smooth]
+case_label = ["16", "128", "0"]
+omegas = np.array([5.0598657, 6.36202284, 7.23253785])*(2*np.pi)
+
+for idx, case in enumerate(cases):
+    for omega in omegas:
+        Psi, Sigma, Phi = svd(case.F_tilde@inv((-1j*omega)*np.eye(case.Lambda.shape[0])-np.diag(case.Lambda))@inv(case.F_tilde))
+        for i in range(len(Sigma)):
+            Psi[:, i] /= np.sqrt(np.dot(Psi[:, i].T, Psi[:, i]))
+            Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
+            Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
+
+        response = (case.V_r @ inv(case.F_tilde)@Phi).reshape(3, case.nx, case.ny, len(Sigma))
+
+        field = response[2, :, :, 0]
+        # angle = np.angle(field.astype(np.complex128))
+
+        pxs = np.linspace(0, 1, case.nx)
+        pys = np.linspace(-0.25, 0.25, case.ny)
+        # try:
+        #     plot_field(field.T, pxs, pys, f"figures/mode-comparison/imag_{case_label[idx]}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
+        # except ValueError:
+        #     print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
+        
+
+        # Perform 2D FFT to transform to frequency (wavenumber) domain
+
+        field_fft = np.fft.fft2(field)
+        # Shift zero frequency component to center
+        field_fft_shifted = np.fft.fftshift(field_fft)
+        # Compute amplitude spectrum
+        amplitude_spectrum = np.abs(field_fft_shifted)
+        # Find dominant wavenumbers
+        dominant_wavenumber_indices = np.unravel_index(np.argmax(amplitude_spectrum), amplitude_spectrum.shape)
+        dominant_wavenumbers = np.array(dominant_wavenumber_indices) - np.array([case.nx//2, case.ny//2])
+        # Plot amplitude spectrum for visualization
+        plt.imshow(np.log1p(amplitude_spectrum), extent=[-case.ny//2, case.ny//2, -case.nx//2, case.nx//2], cmap='gray')
+        plt.xlabel('kx')
+        plt.ylabel('ky')
+        plt.savefig(f"figures/mode-comparison/kx_{case_label[idx]}_response_{omega/(2*np.pi):.2f}.png", dpi=700)
+        plt.close()
+
+        dominant_wavenumbers

@@ -8,6 +8,9 @@ import seaborn as sns
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
+
 
 
 def plot_ax():
@@ -45,12 +48,13 @@ if __name__ == "__main__":
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
     linestyles = ["-", "-."]
-    doms = ["wake"]
-    ax = plot_ax()
+    doms = ["body", "wake"]
     for idd, dom in enumerate(doms):
+        ax = plot_ax()
         for idx, case in enumerate(cases):
             path = f"data/{case}/data/{dom}_gain.npy"
             gain = np.load(path)
+            ax.set_xlim(0.1, 75)
             ax.loglog(
                 omega_span / (2 * np.pi),
                 np.sqrt(gain[:, 0]),
@@ -64,3 +68,4 @@ if __name__ == "__main__":
         save_path = f"figures/{dom}_gain.png"
         ax.legend(loc="upper left")
         save_fig(save_path)
+        plt.close()

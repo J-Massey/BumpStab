@@ -6,6 +6,7 @@ from tqdm import tqdm
 import sys
 import seaborn as sns
 from scipy.interpolate import interp1d
+from scipy.signal import welch
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -211,6 +212,41 @@ def plot_power():
     plt.close()
 
 
+def plot_fft():
+    lams = [16, 128]
+    cases = [f"0.001/{lam}" for lam in lams]
+    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
+    labels.append("Smooth")
+    colours = sns.color_palette("colorblind", 7)
+
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.set_ylabel(r"Power")
+    ax.set_xlabel(r"$f^*$")
+
+    for idx, case in enumerate(cases):
+        path = f"data/{case}/lotus-data/fort.9"
+        t, force = read_forces(path, interest="cp", direction="")
+        dt = 4/len(t)
+
+        freq, Pxx = welch(force, 1/dt, nperseg=len(t//4))
+
+        ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
+
+    # Adding the 'Smooth' curve
+    path = f"data/test/up/lotus-data/fort.9"
+    t, force = read_forces(path, interest="cp", direction="")
+    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    dt = np.mean(np.diff(t))
+
+    freq, Pxx = welch(force, 1/dt, nperseg=len(t//4))
+    ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
+
+    save_path = f"figures/fft_power.pdf"
+    ax.legend(loc="upper left")
+    plt.savefig(save_path, dpi=700)
+    plt.close()
+
+
 def plot_E():
     lams = [16, 32, 64, 128]
     cases = [f"0.001/{lam}" for lam in lams]
@@ -289,6 +325,10 @@ def plot_E():
     plt.close()
 
 
+
+
+
 if __name__ == "__main__":
     # plot_thrust()
-    plot_power()
+    # plot_power()
+    plot_fft()

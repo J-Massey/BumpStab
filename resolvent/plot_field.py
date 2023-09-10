@@ -1,3 +1,4 @@
+import math
 import sys
 import numpy as np
 
@@ -15,12 +16,20 @@ from tqdm import tqdm
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
+
+
+def round_to_sig_figs(x, sig_figs=2):
+    if x == 0:
+        return 0
+    return round(x, sig_figs - int(math.floor(math.log10(abs(x)))) - 1)
 
 
 def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     # Test plot
     if lim is None:
-        limb = round(np.max(qi), 2)
+        limb = round_to_sig_figs((qi.max()+abs(qi.min()))/2, sig_figs=2)
         lim = [-limb, limb]
     else:
         pass
@@ -52,7 +61,7 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
 def plot_field_cont(qi, pxs, pys, path, _cmap="seismic", lim=None):
     # Test plot
     if lim is None:
-        limb = round(np.max(qi), 2)
+        limb = np.format_float_positional((qi.max()+abs(qi.min()))/2, precision=2, unique=False, fractional=False, trim='k')
         lim = [-limb, limb]
     else:
         pass
@@ -145,14 +154,16 @@ def vis_pressure(case):
 #     case = sys.argv[1]
 #     vis_pressure(case)
 case="0.001/16"
-dir = f"figures/{case}-pressure"
+dir = f"figures/{case}-tail"
 os.system(f"mkdir -p {dir}")
-flucs = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
-nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-flucs.resize(3, nx, ny, nt)
-pxs = np.linspace(0, 1, nx)
-pys = np.linspace(-0.25, 0.25, ny)
+flow = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
+_, nx, ny, nt = flow.shape
+pxs = np.linspace(-0.35, 2, nx)
+pys = np.linspace(-0.35, 0.35, ny)
+
+vorticity_fluc = -np.gradient(flow[0, :, :, :], axis=1)+np.gradient(flow[1, :, :, :], axis=0)
+
 
 for n in range(0, nt, 5):
-    plot_field(flucs[2, :, :, n].T, pxs, pys, f"{dir}/{n}.png", lim=[-0.1, 0.1], _cmap="seismic")
-gif_gen(f"figures/{case}-pressure", f"figures/{case}_pressure.gif", 8)
+    plot_field(vorticity_fluc[:, :, n].T, pxs, pys, f"{dir}/{n}.png", lim=[-0.1, 0.1], _cmap="seismic")
+gif_gen(f"figures/{case}-tail", f"figures/{case}_tail.gif", 8)

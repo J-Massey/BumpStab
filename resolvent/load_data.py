@@ -2,6 +2,7 @@ import numpy as np
 import time
 from tqdm import tqdm
 from plot_field import plot_field, gif_gen
+from scipy.ndimage import binary_dilation
 
 
 class LoadData:
@@ -83,6 +84,7 @@ class LoadData:
 
         t0 = time.time()
         print("\n----- Unwarping body data -----")
+        mask_extended = self._mask_data()
 
         for idt, t in tqdm(enumerate(ts), total=len(ts)):
             # Calculate the shifts for each x-coordinate
@@ -96,6 +98,11 @@ class LoadData:
                 else:
                     shift = -shift
                     unwarped[:, i, :-shift, idt] = self.body[:, i, shift:, idt]
+                
+                # Now mask the boundary to avoid artifacts
+                for d in range(3):
+                    unwarped = np.ma.masked_array((unwarped[d, :, :, idt].T), mask=mask_extended)
+
         del self._body_data_cache
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
@@ -117,7 +124,34 @@ class LoadData:
         _, self.nx, self.ny, self.nt = unwarped.shape
         np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
         return unwarped
+    
+    def _mask_data(self):
+        def naca_warp(x):
+            a = 0.6128808410319363
+            b = -0.48095987091980424
+            c = -28.092340603952525
+            d = 222.4879939829765
+            e = -846.4495017866838
+            f = 1883.671432625102
+            g = -2567.366504265927
+            h = 2111.011565214803
+            i = -962.2003374868311
+            j = 186.80721148226274
 
+            xp = min(max(x, 0.0), 1.0)
+            
+            return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
+                        f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+        
+        pxs = np.linspace(*self.xlims, self.nx)
+        pys = np.linspace(*self.ylims, self.ny)
+        X, Y = np.meshgrid(pxs, pys)
+        Z_warp_top = np.array([naca_warp(x) for x in pxs])
+        Z_warp_bottom = np.array([-naca_warp(x) for x in pxs])
+        mask = (Y <= Z_warp_top) & (Y >= Z_warp_bottom)
+        mask_extended = binary_dilation(mask, iterations=4)
+        return mask_extended
+    
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
         if region=='wake':
@@ -146,6 +180,6 @@ if __name__ == "__main__":
     pys = np.linspace(-0.25, 0.25, ny)
     plot_field(uw[1, :, :, 0].T, pxs, pys, f"figures/{case}_unwarp.pdf", lim=[-0.5, 0.5], _cmap="seismic")
 
-    for n in range(0, nt, 10):
+    for n in range(0, nt, 5):
         plot_field(uw[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
     gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 8)

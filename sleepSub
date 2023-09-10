@@ -4,7 +4,7 @@
 # SBATCH --mem=243200
 #SBATCH --partition=highmem
 #SBATCH --job-name=interactive
-#SBATCH --time=16:00:00
+#SBATCH --time=18:00:00
 #SBATCH --output=SLEEP.out
 # SBATCH --exclusive
 # SBATCH --exclude=ruby035,ruby036,ruby037
