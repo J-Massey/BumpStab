@@ -6,7 +6,6 @@ import time
 import sys
 # from plot_field import plot_field
 
-
 class SaveSVD:
     def __init__(self, path, subdomain):
         self.uvp = LoadData(path).flat_subdomain(subdomain)

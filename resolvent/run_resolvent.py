@@ -33,7 +33,7 @@ if __name__ == "__main__":
     import os
     case = sys.argv[1]
     # case = "test/up"
-    doms = ["body", "wake"]
+    doms = ["body"]
     for dom in doms:
         main(case, dom)
     # vis_unwarp(case)

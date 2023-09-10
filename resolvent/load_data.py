@@ -170,7 +170,8 @@ def fwarp(t: float, pxs: np.ndarray):
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = "test/up"
+    case = "test/down"
+    # case = "0.001/16"
     os.system(f"mkdir -p figures/{case}-unwarp")
     dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
     body = dl.body
