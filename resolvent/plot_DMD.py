@@ -41,39 +41,40 @@ def plot_sigma():
     plt.savefig("figures/sigma.pdf", dpi=500)
     plt.close()
 
+plot_sigma()
 
-case="0.001/16"
-for case in cases:
-    dir = f"figures/{case}-DMD"
-    os.system(f"mkdir -p {dir}")
-    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
-    vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
-    vr.resize(3, nx, ny, 100)
+case="test/up"
+dir = f"figures/{case}-DMD"
+os.system(f"mkdir -p {dir}")
+nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+pxs = np.linspace(0, 1, nx)
+pys = np.linspace(-0.25, 0.25, ny)
+vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
-    fig, ax = plt.subplots(figsize=(5, 3))
-    lim = [-0.001, 0.001]
-    levels = np.linspace(lim[0], lim[1], 44)
-    _cmap = sns.color_palette("seismic", as_cmap=True)
+vr.resize(3, nx, ny, 100)
 
-    cs = ax.contourf(
-        pxs,
-        pys,
-        vr[2, :, :, 0].real.T,
-        levels=levels,
-        vmin=lim[0],
-        vmax=lim[1],
-        # norm=norm,
-        cmap=_cmap,
-        extend="both",
-        # alpha=0.7,
-    )
-    ax.set_aspect(1)
-    plt.savefig(f"{dir}/{0}.pdf", dpi=500)
-    plt.close()
+fig, ax = plt.subplots(figsize=(5, 3))
+lim = [-0.001, 0.001]
+levels = np.linspace(lim[0], lim[1], 44)
+_cmap = sns.color_palette("seismic", as_cmap=True)
 
-    for n in range(20):
-        plot_field((vr[2, :, :, n].T).real, pxs, pys, f"{dir}/{n}.png", lim=[-0.01,0.01], _cmap="seismic")
+cs = ax.contourf(
+    pxs,
+    pys,
+    vr[2, :, :, 0].real.T,
+    levels=levels,
+    vmin=lim[0],
+    vmax=lim[1],
+    # norm=norm,
+    cmap=_cmap,
+    extend="both",
+    # alpha=0.7,
+)
+ax.set_aspect(1)
+plt.savefig(f"{dir}/{0}.pdf", dpi=500)
+plt.close()
+
+for n in range(20):
+    plot_field((vr[2, :, :, n].T).real, pxs, pys, f"{dir}/{n}.png", lim=[-0.01,0.01], _cmap="seismic")
 
