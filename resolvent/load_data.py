@@ -84,7 +84,7 @@ class LoadData:
 
         t0 = time.time()
         print("\n----- Unwarping body data -----")
-        mask_extended = self._mask_data()
+        mask_extended = self._mask_data().T
 
         for idt, t in tqdm(enumerate(ts), total=len(ts)):
             # Calculate the shifts for each x-coordinate
@@ -101,7 +101,7 @@ class LoadData:
                 
                 # Now mask the boundary to avoid artifacts
                 for d in range(3):
-                    unwarped = np.ma.masked_array((unwarped[d, :, :, idt].T), mask=mask_extended)
+                    unwarped[d, :, :, idt] = np.ma.masked_array((unwarped[d, :, :, idt]), mask=mask_extended)
 
         del self._body_data_cache
 
