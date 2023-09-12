@@ -68,7 +68,6 @@ class PlotPeaks:
                 print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
 
 
-~
     
 # sixteen = PlotPeaks(f"{os.getcwd()}/data/0.001/16/data", "body")
 # onetwentyeight = PlotPeaks(f"{os.getcwd()}/data/0.001/128/data", "body")

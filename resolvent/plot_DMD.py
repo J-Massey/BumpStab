@@ -1,6 +1,6 @@
 import numpy as np
 
-from plot_field import plot_field
+from plot_field import plot_field, mask_data
 import matplotlib.pyplot as plt
 import scienceplots
 from tqdm import tqdm
@@ -62,7 +62,7 @@ _cmap = sns.color_palette("seismic", as_cmap=True)
 cs = ax.contourf(
     pxs,
     pys,
-    vr[2, :, :, 0].real.T,
+    np.ma.masked_array(np.ones_like((vr[0, :, :, 0]).real.T), mask_data(nx,ny)),
     levels=levels,
     vmin=lim[0],
     vmax=lim[1],
@@ -72,8 +72,10 @@ cs = ax.contourf(
     # alpha=0.7,
 )
 ax.set_aspect(1)
-plt.savefig(f"{dir}/{0}.pdf", dpi=500)
+plt.savefig(f"{dir}/{1}.pdf", dpi=500)
 plt.close()
+
+mask_data(nx,ny)
 
 for n in range(20):
     plot_field((vr[2, :, :, n].T).real, pxs, pys, f"{dir}/{n}.png", lim=[-0.01,0.01], _cmap="seismic")
