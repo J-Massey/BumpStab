@@ -98,10 +98,9 @@ class LoadData:
                 ushift = shift_up[i]
                 dshift = shift_down[i]
                 alpha = shift-real_shift[i]
+                # print(shift, ushift, dshift, alpha)
 
                 if shift >= 0:
-                    # unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
-
                     up_shift = self.body[:, i, :self.body.shape[2]-ushift, idt]
                     down_shift = self.body[:, i, :self.body.shape[2]-dshift, idt]
                     up_shift, down_shift = clip_arrays(up_shift, down_shift)
@@ -114,25 +113,29 @@ class LoadData:
                         unwarped[:, i, ushift:, idt] = interped
                     else:
                         unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
+
+                    # unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
                 # Now deal with shifting in negative y
                 else:
-                    up_shift = self.body[:, i, :-ushift, idt]
-                    down_shift = self.body[:, i, :-dshift, idt]
-                    up_shift, down_shift = clip_arrays(up_shift, down_shift)
-                    if alpha<0:
-                        interped = up_shift * (1+alpha) + down_shift * (-alpha)
-                        unwarped[:, i, :ushift, idt] = interped
-                    elif alpha>0:
-                        interped = down_shift * (1-alpha) + up_shift * alpha
-                        unwarped[:, i, :ushift, idt] = interped
-                    else:
-                        unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
+                    # up_shift = self.body[:, i, -ushift:, idt]
+                    # down_shift = self.body[:, i, -dshift:, idt]
+                    # up_shift, down_shift = clip_arrays(up_shift, down_shift)
+                    # print(shift, ushift, dshift, alpha)
+                    # print(up_shift.shape, down_shift.shape)
+                    # if alpha<0:
+                    #     interped = up_shift * (1+alpha) + down_shift * (-alpha)
+                    #     unwarped[:, i, :dshift, idt] = interped
+                    # elif alpha>0:
+                    #     interped = down_shift * (1-alpha) + up_shift * alpha
+                    #     unwarped[:, i, :dshift, idt] = interped
+                    # else:
+                    #     unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
 
-                    # unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
+                    unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
 
         # del self._body_data_cache
         # Now smooth using a savgol filter
-        unwarped = gaussian_filter1d(unwarped, sigma=2, axis=2)
+        # unwarped = gaussian_filter1d(unwarped, sigma=2, axis=2)
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         print("\n----- Clipping in y -----")
@@ -176,6 +179,26 @@ class LoadData:
 def clip_arrays(arr1, arr2):
     min_shape = min(arr1.shape[1], arr2.shape[1])
     return arr1[:, :min_shape], arr2[:, :min_shape]
+
+
+def apply_shift_interpolation(ushift, dshift, alpha, src):
+    """
+    Applies a shift to an array using interpolation based on the rounding error (alpha).
+    
+    Parameters:
+    - shift: The rounded shift value
+    - ushift: The rounded shift value rounded up
+    - dshift: The rounded shift value rounded down
+    - alpha: The rounding error used for interpolation
+    - src: The source array to be shifted
+    
+    Returns:
+    - interped: The shifted array after interpolation
+    """
+    up_shift = np.roll(src, ushift)
+    down_shift = np.roll(src, dshift)
+    interped = up_shift * alpha + down_shift * (1 - alpha)
+    return interped
 
 
 def mask_data(nx, ny):
