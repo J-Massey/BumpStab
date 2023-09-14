@@ -107,7 +107,7 @@ class LoadData:
                     if alpha<0:
                         interped = up_shift * (1+alpha) + down_shift * (-alpha)
                         unwarped[:, i, ushift:, idt] = interped
-                    elif alpha:
+                    elif alpha>0:
                         interped = down_shift * (1-alpha) + up_shift * alpha
                         unwarped[:, i, ushift:, idt] = interped
                     else:
