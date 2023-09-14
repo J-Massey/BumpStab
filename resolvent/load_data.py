@@ -4,6 +4,7 @@ from tqdm import tqdm
 from plot_field import plot_field, gif_gen
 from scipy.ndimage import binary_dilation
 from scipy.ndimage import gaussian_filter1d
+from scipy.interpolate import UnivariateSpline
 
 class LoadData:
     def __init__(self, path, dt=0.005, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
@@ -98,40 +99,8 @@ class LoadData:
                 ushift = shift_up[i]
                 dshift = shift_down[i]
                 alpha = shift-real_shift[i]
-                # print(shift, ushift, dshift, alpha)
-
-                if shift >= 0:
-                    up_shift = self.body[:, i, :self.body.shape[2]-ushift, idt]
-                    down_shift = self.body[:, i, :self.body.shape[2]-dshift, idt]
-                    up_shift, down_shift = clip_arrays(up_shift, down_shift)
-
-                    if alpha<0:
-                        interped = up_shift * (1+alpha) + down_shift * (-alpha)
-                        unwarped[:, i, ushift:, idt] = interped
-                    elif alpha>0:
-                        interped = down_shift * (1-alpha) + up_shift * alpha
-                        unwarped[:, i, ushift:, idt] = interped
-                    else:
-                        unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
-
-                    # unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
-                # Now deal with shifting in negative y
-                else:
-                    # up_shift = self.body[:, i, -ushift:, idt]
-                    # down_shift = self.body[:, i, -dshift:, idt]
-                    # up_shift, down_shift = clip_arrays(up_shift, down_shift)
-                    # print(shift, ushift, dshift, alpha)
-                    # print(up_shift.shape, down_shift.shape)
-                    # if alpha<0:
-                    #     interped = up_shift * (1+alpha) + down_shift * (-alpha)
-                    #     unwarped[:, i, :dshift, idt] = interped
-                    # elif alpha>0:
-                    #     interped = down_shift * (1-alpha) + up_shift * alpha
-                    #     unwarped[:, i, :dshift, idt] = interped
-                    # else:
-                    #     unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
-
-                    unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
+                for d in range(3):
+                    unwarped[d, i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt])
 
         # del self._body_data_cache
         # Now smooth using a savgol filter
@@ -181,24 +150,35 @@ def clip_arrays(arr1, arr2):
     return arr1[:, :min_shape], arr2[:, :min_shape]
 
 
-def apply_shift_interpolation(ushift, dshift, alpha, src):
+def apply_shift_interpolation(ushift, dshift, alpha, src, s=0):
     """
-    Applies a shift to an array using interpolation based on the rounding error (alpha).
+    Applies a shift to an array using spline interpolation based on the rounding error (alpha).
     
     Parameters:
-    - shift: The rounded shift value
     - ushift: The rounded shift value rounded up
     - dshift: The rounded shift value rounded down
     - alpha: The rounding error used for interpolation
     - src: The source array to be shifted
+    - s: Smoothing factor for spline interpolation
     
     Returns:
-    - interped: The shifted array after interpolation
+    - interped: The shifted array after spline interpolation
     """
-    up_shift = np.roll(src, ushift)
-    down_shift = np.roll(src, dshift)
-    interped = up_shift * alpha + down_shift * (1 - alpha)
+    y_indices = np.arange(len(src))
+    
+    # Interpolate using spline for both up and down shifts
+    spline_up = UnivariateSpline(y_indices, np.roll(src, ushift), s=s)
+    spline_down = UnivariateSpline(y_indices, np.roll(src, dshift), s=s)
+    
+    interped_up = spline_up(y_indices)
+    interped_down = spline_down(y_indices)
+    
+    # Combine both interpolations using alpha
+    interped = interped_up * alpha + interped_down * (1 - alpha)
+    
     return interped
+
+
 
 
 def mask_data(nx, ny):
@@ -236,7 +216,7 @@ def fwarp(t: float, pxs: np.ndarray):
 if __name__ == "__main__":
     import os
     case = "test/down"
-    # case = "0.001/16"
+    case = "0.001/16"
     os.system(f"mkdir -p figures/{case}-unwarp")
     dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
     body = dl.unwarped_body
