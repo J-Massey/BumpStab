@@ -85,7 +85,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Unwarping body data -----")
 
-        for idt, t in tqdm(enumerate(ts), total=len(ts)):
+        for idt, t in tqdm(enumerate(ts[::400]), total=len(ts)):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
             real_shift = fw / dy
@@ -100,8 +100,10 @@ class LoadData:
                 alpha = shift-real_shift[i]
 
                 if shift >= 0:
-                    up_shift = self.body[:, i, :self.body.shape[2]-shift_up[i], idt]
-                    down_shift = self.body[:, i, :self.body.shape[2]-shift_down[i], idt]
+                    # unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
+
+                    up_shift = self.body[:, i, :self.body.shape[2]-ushift, idt]
+                    down_shift = self.body[:, i, :self.body.shape[2]-dshift, idt]
                     up_shift, down_shift = clip_arrays(up_shift, down_shift)
 
                     if alpha<0:
@@ -114,11 +116,19 @@ class LoadData:
                         unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
                 # Now deal with shifting in negative y
                 else:
-                    shift = -shift
-                    # up_shift = self.body[:, i, shift_up:, idt]
-                    # down_shift = self.body[:, i, shift_down:, idt]
-                    # unwarped[:, i, :-shift, idt] = up_shift * alpha + down_shift * (1-alpha)
-                    unwarped[:, i, :-shift, idt] = self.body[:, i, shift:, idt]
+                    up_shift = self.body[:, i, :-ushift, idt]
+                    down_shift = self.body[:, i, :-dshift, idt]
+                    up_shift, down_shift = clip_arrays(up_shift, down_shift)
+                    if alpha<0:
+                        interped = up_shift * (1+alpha) + down_shift * (-alpha)
+                        unwarped[:, i, :ushift, idt] = interped
+                    elif alpha>0:
+                        interped = down_shift * (1-alpha) + up_shift * alpha
+                        unwarped[:, i, :ushift, idt] = interped
+                    else:
+                        unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
+
+                    # unwarped[:, i, :shift, idt] = self.body[:, i, -shift:, idt]
 
         # del self._body_data_cache
         # Now smooth using a savgol filter
