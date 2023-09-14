@@ -54,9 +54,9 @@ if __name__ == "__main__":
         for idx, case in enumerate(cases):
             path = f"data/{case}/data/{dom}_gain.npy"
             gain = np.load(path)
-            ax.set_xlim(0.1, 75)
+            ax.set_xlim(0.1, 150)
             ax.loglog(
-                omega_span / (2 * np.pi),
+                omega_span / (np.pi),
                 np.sqrt(gain[:, 0]),
                 color=colours[idx],
                 label=labels[idx],
@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 linestyle=linestyles[idd],
             )
 
-        save_path = f"figures/{dom}_gain.png"
-        ax.legend(loc="upper left")
+        save_path = f"figures/{dom}_gain.pdf"
+        ax.legend(loc="upper right")
         save_fig(save_path)
         plt.close()

@@ -3,7 +3,7 @@ import time
 from tqdm import tqdm
 from plot_field import plot_field, gif_gen
 from scipy.ndimage import binary_dilation
-
+from scipy.ndimage import gaussian_filter1d
 
 class LoadData:
     def __init__(self, path, dt=0.005, xlims=[-0.35, 2], ylims=[-0.35, 0.35]):
@@ -19,8 +19,8 @@ class LoadData:
         self.ylims = ylims  # Default values
         self.dt =dt
         self._load_data()
-        self._wake_data_cache = None # Cache for wake data
         self._body_data_cache = None # Cache for body data
+        self._wake_data_cache = None # Cache for wake data
 
     def _load_data(self):
         """Load the data from the file and subtract the mean."""
@@ -88,17 +88,41 @@ class LoadData:
         for idt, t in tqdm(enumerate(ts), total=len(ts)):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
-            shifts = np.round(fw / dy).astype(int)
-
+            real_shift = fw / dy
+            shifts = np.round(real_shift).astype(int)
+            shift_up = np.ceil(fw / dy).astype(int)
+            shift_down = np.floor(fw / dy).astype(int)
+            
             for i in range(self.body.shape[1]):
                 shift = shifts[i]
+                ushift = shift_up[i]
+                dshift = shift_down[i]
+                alpha = shift-real_shift[i]
+
                 if shift >= 0:
-                    unwarped[:, i, shift:, idt] = self.body[:, i, :self.body.shape[2]-shift, idt]
+                    up_shift = self.body[:, i, :self.body.shape[2]-shift_up[i], idt]
+                    down_shift = self.body[:, i, :self.body.shape[2]-shift_down[i], idt]
+                    up_shift, down_shift = clip_arrays(up_shift, down_shift)
+
+                    if alpha<0:
+                        interped = up_shift * (1+alpha) + down_shift * (-alpha)
+                        unwarped[:, i, ushift:, idt] = interped
+                    elif alpha:
+                        interped = down_shift * (1-alpha) + up_shift * alpha
+                        unwarped[:, i, ushift:, idt] = interped
+                    else:
+                        unwarped[:, i, :, idt] = unwarped[:, i, :, idt]
+                # Now deal with shifting in negative y
                 else:
                     shift = -shift
+                    # up_shift = self.body[:, i, shift_up:, idt]
+                    # down_shift = self.body[:, i, shift_down:, idt]
+                    # unwarped[:, i, :-shift, idt] = up_shift * alpha + down_shift * (1-alpha)
                     unwarped[:, i, :-shift, idt] = self.body[:, i, shift:, idt]
 
-        del self._body_data_cache
+        # del self._body_data_cache
+        # Now smooth using a savgol filter
+        unwarped = gaussian_filter1d(unwarped, sigma=2, axis=2)
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         print("\n----- Clipping in y -----")
@@ -110,22 +134,23 @@ class LoadData:
         # replace NaN with 0
         unwarped = np.nan_to_num(unwarped)
         print(f"Clipped in y in {time.time() - t0:.2f} seconds, ny went from {self.ny} to {unwarped.shape[2]}.")
+        _, self.nx, self.ny, self.nt = unwarped.shape
+        np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
+
+        # print("\n----- Binary dilation -----")
+        # new_mask = mask_data(self.nx, self.ny).T
+        # for idt in tqdm(range(unwarped.shape[-1]), total=unwarped.shape[-1]):
+        #     # Now mask the boundary to avoid artifacts
+        #     for d in range(3):
+        #         unwarped[d, :, :, idt][new_mask] = 0.
         t0 = time.time()
         print("\n----- Subtracting mean -----")
         unwarped_mean = unwarped.mean(axis=3, keepdims=True)
         unwarped =  unwarped - unwarped_mean
         print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
         del unwarped_mean
-        _, self.nx, self.ny, self.nt = unwarped.shape
-        np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
-        print("\n----- Binary dilation -----")
-        mask_extended = mask_data(self.ny, self.nx)
-        for idt, t in tqdm(enumerate(ts), total=len(ts)):
-            # Now mask the boundary to avoid artifacts
-            for d in range(3):
-                unwarped[d, :, :, idt] = np.ma.masked_array(np.ones_like(unwarped[d, :, :, idt]), mask=mask_extended)
+
         return unwarped
-    
     
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
@@ -136,6 +161,12 @@ class LoadData:
             return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
         else:
             raise ValueError("Invalid region. Must be 'wake' or 'body'.")
+
+
+def clip_arrays(arr1, arr2):
+    min_shape = min(arr1.shape[1], arr2.shape[1])
+    return arr1[:, :min_shape], arr2[:, :min_shape]
+
 
 def mask_data(nx, ny):
     def naca_warp(x):
@@ -156,12 +187,12 @@ def mask_data(nx, ny):
                     f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
     
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
+    pys = np.linspace(-0.25, 0.25, ny)
     X, Y = np.meshgrid(pxs, pys)
     Z_warp_top = np.array([naca_warp(x) for x in pxs])
     Z_warp_bottom = np.array([-naca_warp(x) for x in pxs])
     mask = (Y <= Z_warp_top) & (Y >= Z_warp_bottom)
-    mask_extended = binary_dilation(mask, iterations=4)
+    mask_extended = binary_dilation(mask, iterations=4, border_value=0)
     return mask_extended
 
 def fwarp(t: float, pxs: np.ndarray):
@@ -175,12 +206,12 @@ if __name__ == "__main__":
     # case = "0.001/16"
     os.system(f"mkdir -p figures/{case}-unwarp")
     dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
-    body = dl.body
-    uw = dl.unwarped_body
-    _, nx, ny, nt = uw.shape
+    body = dl.unwarped_body
+    _, nx, ny, nt = body.shape
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
-    plot_field(uw[2, :, :, 0].T, pxs, pys, f"figures/masked.pdf", lim=[-0.1, 0.1], _cmap="seismic")
+
+    plot_field(body[2, :, :, 0].T, pxs, pys, f"figures/unwarped16.pdf", _cmap="seismic")
 
     # for n in range(0, nt, 5):
     #     plot_field(uw[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")

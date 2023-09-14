@@ -11,6 +11,8 @@ from scipy.signal import welch, savgol_filter
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
 
 
 def read_forces(force_file, interest="p", direction="x"):
@@ -220,17 +222,18 @@ def plot_fft():
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
-    fig, ax = plt.subplots(figsize=(6, 3))
+    fig, ax = plt.subplots(figsize=(3, 3))
     ax.set_ylabel(r"Power")
     ax.set_xlabel(r"$f^*$")
+    ax.set_xlim(0.1, 150)
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         dt = 4/len(t)
 
-        freq, Pxx = welch(force, 1/dt, nperseg=len(t//4))
-        Pxx = savgol_filter(Pxx, 4, 1)
+        freq, Pxx = welch(force, 1/dt, nperseg=len(t//8))
+        # Pxx = savgol_filter(Pxx, 4, 1)
 
 
         ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
@@ -243,7 +246,7 @@ def plot_fft():
 
     freq, Pxx = welch(force, 1/dt, nperseg=len(t//4))
     # Applay savgiol filter
-    Pxx = savgol_filter(Pxx, 4, 1)
+    # Pxx = savgol_filter(Pxx, 4, 1)
     ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"

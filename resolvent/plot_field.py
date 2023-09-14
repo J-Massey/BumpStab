@@ -41,7 +41,7 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     cs = ax.contourf(
         pxs,
         pys,
-        np.ma.masked_array(qi, mask=mask_data(*qi.shape)),
+        qi,
         levels=levels,
         vmin=lim[0],
         vmax=lim[1],

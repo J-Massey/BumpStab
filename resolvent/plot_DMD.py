@@ -1,6 +1,6 @@
 import numpy as np
 
-from plot_field import plot_field, mask_data
+from plot_field import plot_field
 import matplotlib.pyplot as plt
 import scienceplots
 from tqdm import tqdm
@@ -9,6 +9,7 @@ import seaborn as sns
 from scipy.interpolate import interp1d
 from scipy.signal import welch
 import os
+import cv2
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -28,13 +29,10 @@ def plot_sigma():
 
     for idx, case in enumerate(cases):
         with np.load(f"{os.getcwd()}/data/{case}/data/body_svd.npz") as data:
-            # Ub = data["Ub"]
-            # Sigmab = data["Sigmab"]
-            # VTb = data["VTb"]
-            # Uf = data["Uf"]
             Sigmaf = data["Sigmaf"]
-            # VTf = data["VTf"]
+
         ax.semilogx(np.arange(1, len(Sigmaf) + 1), np.cumsum(Sigmaf/Sigmaf.sum()), label=labels[idx], linewidth=0.6, color=colours[idx])
+
     ax.axhline(np.cumsum(Sigmaf/Sigmaf.sum())[99], color="k", linewidth=0.6, linestyle="-.", alpha=0.5, label=f"${np.cumsum(Sigmaf/Sigmaf.sum())[99]*100:.1f}\%$")
     ax.axvline(100, color="k", linewidth=0.6, linestyle="-.", alpha=0.5)
     ax.legend()
@@ -44,7 +42,11 @@ def plot_sigma():
 plot_sigma()
 
 
-case="test/up"
+case="0.001/64"
+
+with np.load(f"{os.getcwd()}/data/{case}/data/body_svd.npz") as data:
+    Sigmaf = data["Sigmaf"]
+
 dir = f"figures/{case}-DMD"
 os.system(f"mkdir -p {dir}")
 nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
@@ -54,29 +56,71 @@ vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
 vr.resize(3, nx, ny, 100)
 
+for n in range(100):
+    fig, ax = plt.subplots(figsize=(5, 3))
+    qi = vr[2, :, :, n].real.T
+    lim = np.std(qi)*2
+    levels = np.linspace(-lim, lim, 44)
+    _cmap = sns.color_palette("seismic", as_cmap=True)
+
+    cs = ax.contourf(
+        pxs,
+        pys,
+        qi,
+        levels=levels,
+        vmin=-lim,
+        vmax=lim,
+        # norm=norm,
+        cmap=_cmap,
+        extend="both",
+        # alpha=0.7,
+    )
+    ax.set_aspect(1)
+    plt.savefig(f"{dir}/{n}.png", dpi=300)
+    plt.close()
+
+
 fig, ax = plt.subplots(figsize=(5, 3))
-lim = [-0.001, 0.001]
-levels = np.linspace(lim[0], lim[1], 44)
+qi = vr[2, :, :, 0].real.T
+
+f_transform = np.fft.fft2(qi)
+f_transform_shifted = np.fft.fftshift(f_transform)
+
+# Create a mask for a low-pass filter with a radius of 30
+rows, cols = qi.shape
+cx, cy = rows // 2, cols // 2
+mask = np.zeros((rows, cols), np.uint8)
+cv2.circle(mask, (cx, cy), 100, 1, thickness=-1)
+
+# Apply the mask to the shifted Fourier Transform
+f_transform_shifted *= mask
+
+
+magnitude_spectrum = np.abs(f_transform_shifted)
+# magnitude_spectrum = np.log(magnitude_spectrum + 1)
+
+# Identify peaks
+threshold = np.max(magnitude_spectrum) * 0.1  # adjust as needed
+peaks = np.argwhere(magnitude_spectrum >= threshold)
+print(peaks)
+
+
+lim = np.std(qi)*2
+levels = np.linspace(-lim, lim, 44)
 _cmap = sns.color_palette("seismic", as_cmap=True)
 
 cs = ax.contourf(
     pxs,
     pys,
-    np.ma.masked_array(np.ones_like((vr[0, :, :, 0]).real.T), mask_data(nx,ny)),
+    qi,
     levels=levels,
-    vmin=lim[0],
-    vmax=lim[1],
+    vmin=-lim,
+    vmax=lim,
     # norm=norm,
     cmap=_cmap,
     extend="both",
     # alpha=0.7,
 )
 ax.set_aspect(1)
-plt.savefig(f"{dir}/{1}.pdf", dpi=500)
+plt.savefig(f"{dir}/0.pdf", dpi=300)
 plt.close()
-
-mask_data(nx,ny)
-
-for n in range(20):
-    plot_field((vr[2, :, :, n].T).real, pxs, pys, f"{dir}/{n}.png", lim=[-0.01,0.01], _cmap="seismic")
-
