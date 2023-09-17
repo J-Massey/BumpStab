@@ -132,7 +132,7 @@ def plot_thrust():
     )
 
     save_path = f"figures/thrust.png"
-    ax.legend(loc="upper left")
+    # ax.legend(loc="upper left")
     plt.savefig(save_path, dpi=700)
     plt.close()
 
@@ -184,6 +184,8 @@ def plot_power():
             linewidth=0.7,
         )
 
+        ax.axhline(np.mean(force_av), color=colours[idx], alpha=0.8, linewidth=0.7)
+
         ax.fill_between(
             t_sample,
             force_av + np.min(force_diff, axis=0),
@@ -198,18 +200,23 @@ def plot_power():
     t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
     t = t % 1
     f = interp1d(t, force, fill_value="extrapolate")
-    force = f(t_sample)
+    force_av_s = f(t_sample)
 
     ax.plot(
         t_sample,
-        force,
+        force_av_s,
         color=colours[idx + 1],
         label="Smooth",
         alpha=0.8,
         linewidth=0.7,
     )
 
-    save_path = f"figures/power.png"
+
+    ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
+    
+    print((np.mean(force_av)-np.mean(force_av_s))/np.mean(force_av_s) * 100)
+
+    save_path = f"figures/power.pdf"
     ax.legend(loc="upper left")
     plt.savefig(save_path, dpi=700)
     plt.close()
@@ -250,7 +257,7 @@ def plot_fft():
     ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
-    ax.legend(loc="upper left")
+    ax.legend(loc="lower left")
     plt.savefig(save_path, dpi=700)
     plt.close()
 
@@ -337,6 +344,6 @@ def plot_E():
 
 
 if __name__ == "__main__":
-    # plot_thrust()
-    # plot_power()
+    plot_thrust()
+    plot_power()
     plot_fft()

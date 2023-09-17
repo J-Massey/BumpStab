@@ -18,11 +18,11 @@ def vis_unwarp(case):
 
 
 def main(case, dom):
-    svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
-    svd_save.save_flucs()
-    svd_save.save_svd()
+    # svd_save = SaveSVD(f"{os.getcwd()}/data/{case}/data", dom)
+    # svd_save.save_flucs()
+    # svd_save.save_svd()
     resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
-    resolvent.save_fbDMD(r=100)
+    resolvent.save_fbDMD(r=10)
     ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000))
     ra.save_gain()
     ra.save_omega_peaks()
@@ -31,8 +31,8 @@ def main(case, dom):
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = sys.argv[1]
-    # case = "test/up"
+    # case = sys.argv[1]
+    case = "test/up"
     doms = ["body"]
     for dom in doms:
         main(case, dom)

@@ -5,6 +5,7 @@ from plot_field import plot_field
 import matplotlib.pyplot as plt
 import scienceplots
 import sys
+import os
 
 
 class PlotPeaks:
@@ -77,7 +78,7 @@ sixteen.peak_omegas/(2*np.pi)
 onetwentyeight.peak_omegas/(2*np.pi)
 cases = [sixteen, onetwentyeight, smooth]
 case_label = ["16", "128", "0"]
-omegas = np.array([5.0598657, 6.36202284, 7.23253785])*(2*np.pi)
+omegas = np.array([20])*(2*np.pi)
 
 for idx, case in enumerate(cases):
     for omega in omegas:
@@ -87,17 +88,19 @@ for idx, case in enumerate(cases):
             Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
             Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
 
-        response = (case.V_r @ inv(case.F_tilde)@Phi).reshape(3, case.nx, case.ny, len(Sigma))
+        forcing = (case.V_r @ inv(case.F_tilde)@Psi).reshape(3, case.nx, case.ny, len(Sigma))
 
-        field = response[2, :, :, 0]
+        field = forcing[2, :, :, 0].real
         # angle = np.angle(field.astype(np.complex128))
 
         pxs = np.linspace(0, 1, case.nx)
         pys = np.linspace(-0.25, 0.25, case.ny)
-        # try:
-        #     plot_field(field.T, pxs, pys, f"figures/mode-comparison/imag_{case_label[idx]}_response_{omega/(2*np.pi):.2f}.png", _cmap="seismic")
-        # except ValueError:
-        #     print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
+
+        lim = np.std(field)*4
+        try:
+            plot_field(field.T, pxs, pys, f"figures/ReC-r-modes/{case_label[idx]}_forcing_{omega/(2*np.pi):.2f}.png", lim=[-lim, lim], _cmap="seismic")
+        except ValueError:
+            print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
         
 
 #         # Perform 2D FFT to transform to frequency (wavenumber) domain

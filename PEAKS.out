@@ -1,0 +1,38 @@
+Running SLURM prolog script on gold55.cluster.local
+===============================================================================
+Job started on Fri Sep 15 08:12:24 BST 2023
+Job ID          : 4767976
+Job name        : ResolventAnalysis
+WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
+Command         : /mainfs/scratch/jmom1n15/BumpStab/genSub
+Partition       : highmem
+Num hosts       : 1
+Num cores       : 16
+Num of tasks    : 16
+Hosts allocated : gold55
+Job Output Follows ...
+===============================================================================
+  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 101
+    plot_field(field.T, pxs, pys, f"figures/ReC-r-modes/{case_label[idx]}_forcing_{omega/(2*np.pi):.2f}.png", lim=[-lim, lim] _cmap="seismic")
+                                                                                                                  ^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+==============================================================================
+Running epilogue script on gold55.
+
+Submit time  : 2023-09-15T08:11:25
+Start time   : 2023-09-15T08:12:24
+End time     : 2023-09-15T08:12:25
+Elapsed time : 00:00:01 (Timelimit=01:00:00)
+
+Job ID: 4767976
+Cluster: i5
+User/Group: jmom1n15/mm
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 16
+CPU Utilized: 00:00:01
+CPU Efficiency: 6.25% of 00:00:16 core-walltime
+Job Wall-clock time: 00:00:01
+Memory Utilized: 2.55 MB
+Memory Efficiency: 0.00% of 369.14 GB
+

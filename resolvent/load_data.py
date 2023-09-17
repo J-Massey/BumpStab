@@ -86,7 +86,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Unwarping body data -----")
 
-        for idt, t in tqdm(enumerate(ts[::400]), total=len(ts)):
+        for idt, t in tqdm(enumerate(ts), total=len(ts)):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
             real_shift = fw / dy
@@ -104,7 +104,7 @@ class LoadData:
 
         # del self._body_data_cache
         # Now smooth using a savgol filter
-        # unwarped = gaussian_filter1d(unwarped, sigma=2, axis=2)
+        unwarped = gaussian_filter1d(unwarped, sigma=1, axis=1)
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         print("\n----- Clipping in y -----")
@@ -119,12 +119,13 @@ class LoadData:
         _, self.nx, self.ny, self.nt = unwarped.shape
         np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
 
-        # print("\n----- Binary dilation -----")
-        # new_mask = mask_data(self.nx, self.ny).T
-        # for idt in tqdm(range(unwarped.shape[-1]), total=unwarped.shape[-1]):
-        #     # Now mask the boundary to avoid artifacts
-        #     for d in range(3):
-        #         unwarped[d, :, :, idt][new_mask] = 0.
+        print("\n----- Binary dilation -----")
+        new_mask = mask_data(self.nx, self.ny).T
+        for idt in tqdm(range(unwarped.shape[-1]), total=unwarped.shape[-1]):
+            # Now mask the boundary to avoid artifacts
+            for d in range(3):
+                unwarped[d, :, :, idt][new_mask] = 0.
+
         t0 = time.time()
         print("\n----- Subtracting mean -----")
         unwarped_mean = unwarped.mean(axis=3, keepdims=True)
@@ -179,8 +180,6 @@ def apply_shift_interpolation(ushift, dshift, alpha, src, s=0):
     return interped
 
 
-
-
 def mask_data(nx, ny):
     def naca_warp(x):
         a = 0.6128808410319363
@@ -217,15 +216,15 @@ if __name__ == "__main__":
     import os
     case = "test/down"
     case = "0.001/16"
-    os.system(f"mkdir -p figures/{case}-unwarp")
+    os.system(f"mkdir -p figures/{case}-warp")
     dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
-    body = dl.unwarped_body
+    body = dl.body
     _, nx, ny, nt = body.shape
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
+    pys = np.linspace(-0.35, 0.35, ny)
 
-    plot_field(body[2, :, :, 0].T, pxs, pys, f"figures/unwarped16.pdf", _cmap="seismic")
+    plot_field(body[2, :, :, 200].T, pxs, pys, f"figures/warped16.pdf", _cmap="seismic")
 
-    # for n in range(0, nt, 5):
-    #     plot_field(uw[1, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.5, 0.5], _cmap="seismic")
-    # gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 8)
+    for n in range(0, nt, 5):
+        plot_field(body[2, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
+    gif_gen(f"figures/{case}-warp/", f"figures/{case}_warped.gif", 10)
