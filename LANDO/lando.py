@@ -5,7 +5,7 @@ from tqdm import tqdm
 from kernel import DefKernel
 
 
-def evalKernel(X, Y):
+def eval_kernel(X, Y):
     if np.isscalar(X) and np.isscalar(Y):
         return np.exp(-(X - Y)**2 / (2 * 0.5 ** 2)) + 1 + 0 * (X * Y) + 3 * (X * Y) ** 2
     if len(X.shape) == 1:
@@ -16,30 +16,6 @@ def evalKernel(X, Y):
     gaussPart = np.exp(-pairwise_dists / (2 * 0.5 ** 2))
     polyPart = 1 + 0 * np.dot(X.T, Y) + 3 * (np.dot(X.T, Y) ** 2)
     return gaussPart + polyPart
-
-
-def composite_kernel(X, Y, alpha=1.0, beta=1.0, gamma=1.0, delta=1.0, sigma=0.5, c=1, d=2, f=1.0):
-    if len(X.shape) == 1:
-        X = X[:, np.newaxis]
-    if len(Y.shape) == 1:
-        Y = Y[:, np.newaxis]
-    
-    # Gaussian (RBF) Part
-    pairwise_dists = np.sum(X**2, axis=1)[:, np.newaxis] + np.sum(Y**2, axis=1) - 2 * np.dot(X, Y.T)
-    gaussPart = np.exp(-pairwise_dists / (2 * sigma ** 2))
-    
-    # Polynomial Part
-    polyPart = (np.dot(X, Y.T) + c) ** d
-    
-    # Linear Part
-    linearPart = np.dot(X, Y.T)
-    
-    # Sinusoidal Part
-    sinusoidalPart = np.cos(2 * np.pi * f * np.dot(X, Y.T))
-    
-    # Composite Kernel
-    return alpha * gaussPart + beta * polyPart + gamma * linearPart + delta * sinusoidalPart
-
 
 def trainLANDO(X, Y, nu, kernel, xScl=1, displ=0):
     start_time = time.time()
@@ -103,7 +79,8 @@ if __name__ == "__main__":
     kern = DefKernel('gaussian', [1, 0.5], 'polynomial', [1, 0, 3])
     k = [kern.evalKernel]
 
-    evalKernel(X[:, 0], X[:, 0])
+    randtest = np.random.rand(100,20)
+    eval_kernel(randtest, randtest)
     
     model, Xdic, Wtilde, recErr = trainLANDO(X[:, ::10], Y[:, ::10], 0.01, k, displ=True)
 
