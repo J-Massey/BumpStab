@@ -1,7 +1,7 @@
-Running SLURM prolog script on gold55.cluster.local
+Running SLURM prolog script on gold63.cluster.local
 ===============================================================================
-Job started on Fri Sep 15 08:12:24 BST 2023
-Job ID          : 4767976
+Job started on Mon Sep 18 16:09:44 BST 2023
+Job ID          : 4781992
 Job name        : ResolventAnalysis
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/genSub
@@ -9,30 +9,27 @@ Partition       : highmem
 Num hosts       : 1
 Num cores       : 16
 Num of tasks    : 16
-Hosts allocated : gold55
+Hosts allocated : gold63
 Job Output Follows ...
 ===============================================================================
-  File "/mainfs/scratch/jmom1n15/BumpStab/resolvent/plot_peaks.py", line 101
-    plot_field(field.T, pxs, pys, f"figures/ReC-r-modes/{case_label[idx]}_forcing_{omega/(2*np.pi):.2f}.png", lim=[-lim, lim] _cmap="seismic")
-                                                                                                                  ^^^^^^^^^^^^^^^^^
-SyntaxError: invalid syntax. Perhaps you forgot a comma?
+  0%|          | 0/40 [00:00<?, ?it/s]  2%|▎         | 1/40 [00:02<01:31,  2.35s/it]  5%|▌         | 2/40 [00:04<01:18,  2.06s/it]  8%|▊         | 3/40 [00:06<01:12,  1.96s/it] 10%|█         | 4/40 [00:07<01:08,  1.89s/it] 12%|█▎        | 5/40 [00:09<01:05,  1.88s/it] 15%|█▌        | 6/40 [00:11<01:04,  1.89s/it] 18%|█▊        | 7/40 [00:13<01:01,  1.87s/it] 20%|██        | 8/40 [00:15<00:59,  1.86s/it] 22%|██▎       | 9/40 [00:17<00:57,  1.85s/it] 25%|██▌       | 10/40 [00:18<00:55,  1.87s/it] 28%|██▊       | 11/40 [00:20<00:53,  1.86s/it] 30%|███       | 12/40 [00:22<00:51,  1.85s/it] 32%|███▎      | 13/40 [00:24<00:49,  1.83s/it] 35%|███▌      | 14/40 [00:26<00:47,  1.82s/it] 38%|███▊      | 15/40 [00:28<00:45,  1.81s/it] 40%|████      | 16/40 [00:29<00:43,  1.80s/it] 42%|████▎     | 17/40 [00:31<00:41,  1.82s/it] 45%|████▌     | 18/40 [00:33<00:39,  1.81s/it] 48%|████▊     | 19/40 [00:35<00:37,  1.80s/it] 50%|█████     | 20/40 [00:37<00:35,  1.79s/it] 52%|█████▎    | 21/40 [00:38<00:33,  1.78s/it] 55%|█████▌    | 22/40 [00:40<00:32,  1.78s/it] 57%|█████▊    | 23/40 [00:42<00:30,  1.77s/it] 60%|██████    | 24/40 [00:44<00:28,  1.80s/it] 62%|██████▎   | 25/40 [00:45<00:26,  1.78s/it] 65%|██████▌   | 26/40 [00:47<00:24,  1.77s/it] 68%|██████▊   | 27/40 [00:49<00:23,  1.78s/it] 70%|███████   | 28/40 [00:51<00:21,  1.78s/it] 72%|███████▎  | 29/40 [00:53<00:19,  1.78s/it] 75%|███████▌  | 30/40 [00:54<00:17,  1.78s/it] 78%|███████▊  | 31/40 [00:56<00:16,  1.80s/it] 80%|████████  | 32/40 [00:58<00:14,  1.80s/it] 82%|████████▎ | 33/40 [01:00<00:12,  1.81s/it] 85%|████████▌ | 34/40 [01:02<00:10,  1.82s/it] 88%|████████▊ | 35/40 [01:03<00:09,  1.84s/it] 90%|█████████ | 36/40 [01:05<00:07,  1.85s/it] 92%|█████████▎| 37/40 [01:07<00:05,  1.84s/it] 95%|█████████▌| 38/40 [01:09<00:03,  1.85s/it] 98%|█████████▊| 39/40 [01:11<00:01,  1.83s/it]100%|██████████| 40/40 [01:13<00:00,  1.81s/it]100%|██████████| 40/40 [01:13<00:00,  1.83s/it]
 ==============================================================================
-Running epilogue script on gold55.
+Running epilogue script on gold63.
 
-Submit time  : 2023-09-15T08:11:25
-Start time   : 2023-09-15T08:12:24
-End time     : 2023-09-15T08:12:25
-Elapsed time : 00:00:01 (Timelimit=01:00:00)
+Submit time  : 2023-09-18T16:09:05
+Start time   : 2023-09-18T16:09:44
+End time     : 2023-09-18T16:20:00
+Elapsed time : 00:10:16 (Timelimit=01:00:00)
 
-Job ID: 4767976
+Job ID: 4781992
 Cluster: i5
 User/Group: jmom1n15/mm
-State: FAILED (exit code 1)
+State: COMPLETED (exit code 0)
 Nodes: 1
 Cores per node: 16
-CPU Utilized: 00:00:01
-CPU Efficiency: 6.25% of 00:00:16 core-walltime
-Job Wall-clock time: 00:00:01
-Memory Utilized: 2.55 MB
-Memory Efficiency: 0.00% of 369.14 GB
+CPU Utilized: 00:35:55
+CPU Efficiency: 21.86% of 02:44:16 core-walltime
+Job Wall-clock time: 00:10:16
+Memory Utilized: 299.92 GB
+Memory Efficiency: 81.25% of 369.14 GB
 

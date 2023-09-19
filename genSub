@@ -19,5 +19,5 @@ source activate an
 # python resolvent/run_resolvent.py "test/up"
 # python resolvent/run_resolvent.py "0.001/64"
 
-python resolvent/plot_peaks.py
+python resolvent/DMD_save.py
 

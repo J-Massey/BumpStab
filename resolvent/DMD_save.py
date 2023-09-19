@@ -78,9 +78,8 @@ if __name__ == "__main__":
     case = "test/up"
     resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
 
-    r = 20
-    X = resolvent.fluc1[:, ::10]
-    Y = resolvent.fluc2[:, ::10]
+    X = resolvent.fluc1
+    Y = resolvent.fluc2
 
     def gaussian_kernel(X, Y, sigma=1.0):
         pairwise_dists = np.sum(X**2, axis=1)[:, np.newaxis] + np.sum(Y**2, axis=1) - 2 * np.dot(X, Y.T)
@@ -93,8 +92,8 @@ if __name__ == "__main__":
 
     # SVD of Kernel matrix
     U, S, Vh = svd(K_X)
-    U_r = U[:, :r]
-    S_r_inv = np.diag(1 / S[:r])
+    U_r = U
+    S_r_inv = np.diag(1 / S)
 
     # Reduced A matrix in feature space
     A_tilde = U_r.T.conj() @ K_Y @ U_r @ S_r_inv
@@ -105,16 +104,17 @@ if __name__ == "__main__":
     # Compute alpha (coefficients for modes in feature space)
     alpha = U_r @ W
 
-    vr = Y @ Vh[:r, :].T @ S_r_inv @ W
+    vr = Y @ Vh.T @ S_r_inv @ W
 
 
     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/{dom}_nxyt.npy")
+    nt = vr.shape[-1]
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
 
-    vr.resize(3, nx, ny, r)
+    vr.resize(3, nx, ny, nt)
 
-    for n in tqdm(range(r)):
+    for n in tqdm(range(40)):
         fig, ax = plt.subplots(figsize=(5, 3))
         qi = vr[2, :, :, n].real.T
         lim = np.std(qi)*4
