@@ -14,3 +14,24 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Tue Sep 19 07:43:50 BST 2023
 ---------------------------------------------------------------
+slurmstepd-gold65: error: *** JOB 4784500 ON gold65 CANCELLED AT 2023-09-20T01:43:51 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on gold65.
+
+Submit time  : 2023-09-19T07:43:19
+Start time   : 2023-09-19T07:43:49
+End time     : 2023-09-20T01:43:51
+Elapsed time : 18:00:02 (Timelimit=18:00:00)
+
+Job ID: 4784500
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 64
+CPU Utilized: 02:49:37
+CPU Efficiency: 0.25% of 48-00:02:08 core-walltime
+Job Wall-clock time: 18:00:02
+Memory Utilized: 76.25 GB
+Memory Efficiency: 5.16% of 1.44 TB
+

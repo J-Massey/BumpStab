@@ -8,19 +8,14 @@ class DefKernel:
     
     def eval_kernel(self, X, Y):
         if np.isscalar(X) and np.isscalar(Y):
-            return np.exp(-(X - Y)**2 / (2 * self.gaussParams[1] ** 2)) + sum(
-                self.polyParams[jj] * (X * Y) ** jj for jj in range(len(self.polyParams))
-            )
+            return np.exp(-(X - Y)**2 / (2 * 0.5 ** 2)) + 1 + 0 * (X * Y) + 3 * (X * Y) ** 2
         if len(X.shape) == 1:
             X = X[:, np.newaxis]
         if len(Y.shape) == 1:
             Y = Y[:, np.newaxis]
-        pairwise_dists = np.sum(X**2, axis=1)[:, np.newaxis] + np.sum(Y**2, axis=1) - 2 * np.dot(X, Y.T)
-        gaussPart = np.exp(-pairwise_dists / (2 * self.gaussParams[1] ** 2))
-        polyPart = sum(
-            self.polyParams[jj] * (np.dot(X.T, Y) ** jj)
-            for jj in range(len(self.polyParams))
-        )
+        pairwise_dists = np.sum(X**2, axis=0)[:, np.newaxis] + np.sum(Y**2, axis=0) - 2 * np.dot(X.T, Y)
+        gaussPart = np.exp(-pairwise_dists / (2 * 0.5 ** 2))
+        polyPart = self.polyParams[0] + self.polyParams[1] * np.dot(X.T, Y) + self.polyParams[2] * (np.dot(X.T, Y) ** 2)
         return gaussPart + polyPart
     
     def evalKernelDeriv(self, X, Y):

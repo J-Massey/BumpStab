@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     vr.resize(3, nx, ny, nt)
 
-    for n in tqdm(range(40)):
+    for n in tqdm(range(nt)):
         fig, ax = plt.subplots(figsize=(5, 3))
         qi = vr[2, :, :, n].real.T
         lim = np.std(qi)*4
