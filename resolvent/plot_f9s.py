@@ -340,9 +340,6 @@ def plot_E():
     plt.close()
 
 
-
-
-
 if __name__ == "__main__":
     plot_thrust()
     plot_power()
