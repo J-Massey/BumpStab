@@ -262,8 +262,30 @@ def plot_fft():
     plt.close()
 
 
+def test_E_scaling():
+    path = "/research/sharkdata/research_filesystem/thicc-swimmer/128_z_res_test/128/128/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst_short = t[t > 5], enst[t > 5]/(64*2)
+    ts = t % 1
+    path = "data/0.001/128/lotus-data/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst_long = t[t > 5], enst[t > 5]/(64*4)
+    tl = t % 1
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"$\langle E \rangle $")
+    ax.set_xlabel(r"$t/T$")
+    ax.plot(ts, enst_short, label="Short", ls="none", marker="o", markersize=0.1)
+    ax.plot(tl, enst_long, label="Long", ls="none", marker="o", markersize=.1)
+    ax.legend()
+    plt.savefig(f"figures/E_test.pdf", dpi=300)
+    plt.close()
+    print((enst_short.max()-enst_long.max())/enst_long.max())
+
+
 def plot_E():
-    lams = [16, 32, 64, 128]
+    lams = [16, 32, 64, 128]#
+    order = [0, 3, 4, 1]
+
     cases = [f"0.001/{lam}" for lam in lams]
 
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
@@ -273,15 +295,15 @@ def plot_E():
     t_sample = np.linspace(0.001, 0.999, 400)
 
     fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_ylabel(r"$\langle C_P \rangle $")
+    ax.set_ylabel(r"$\langle E \rangle $")
     ax.set_xlabel(r"$t/T$")
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
-        t, force = read_forces(path, interest="cp", direction="")
+        t, enst = read_forces(path, interest="E", direction="")
         t_new = t % 1
-        f = interp1d(t_new, force, fill_value="extrapolate")
-        force_av = f(t_sample)
+        f = interp1d(t_new, enst, fill_value="extrapolate")
+        enst_av = f(t_sample)
 
 
         wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
@@ -289,58 +311,120 @@ def plot_E():
         wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
 
 
-        force_bins = [force[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        enst_bins = [enst[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
         t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
 
 
         # Calculate the standard deviation of each bin
-        force_diff = np.empty((4, t_sample.size))
-        for id in range(len(force_bins)):
-            f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
-            force_bins[id] = f_bins(t_sample)
-            force_diff[id] = force_bins[id] - force_av
+        enst_diff = np.empty((4, t_sample.size))
+        for id in range(len(enst_bins)):
+            f_bins = interp1d(t_bins[id], enst_bins[id], fill_value="extrapolate")
+            enst_bins[id] = f_bins(t_sample)
+            enst_diff[id] = enst_bins[id] - enst_av
+        
+        enst_av = enst_av/(4096/span(1/lams[idx])) 
 
         ax.plot(
             t_sample,
-            force_av,
-            color=colours[idx],
+            enst_av,
+            color=colours[order[idx]],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
         )
 
-        ax.fill_between(
-            t_sample,
-            force_av + np.min(force_diff, axis=0),
-            force_av + np.max(force_diff, axis=0),
-            color=colours[idx],
-            alpha=0.3,
-            edgecolor="none",
-        )
-
     path = f"data/test/up/lotus-data/fort.9"
-    t, force = read_forces(path, interest="cp", direction="")
-    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
     t = t % 1
-    f = interp1d(t, force, fill_value="extrapolate")
-    force = f(t_sample)
+    f = interp1d(t, enst, fill_value="extrapolate")
+    enst = f(t_sample)
 
     ax.plot(
         t_sample,
-        force,
-        color=colours[idx + 1],
+        enst,
+        color=colours[2],
         label="Smooth",
         alpha=0.8,
         linewidth=0.7,
     )
 
-    save_path = f"figures/E.png"
+    # ax.set_yscale("log")
+
+    save_path = f"figures/E.pdf"
     ax.legend(loc="upper left")
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+
+def plot_E_fft():
+    lams = [16, 128]
+    cases = [f"0.001/{lam}" for lam in lams]
+    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
+    labels.append("Smooth")
+    colours = sns.color_palette("colorblind", 7)
+
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"PSD(E)")
+    ax.set_xlabel(r"$f^*$")
+    ax.set_xlim(0.1, 150)
+
+    for idx, case in enumerate(cases):
+        path = f"data/{case}/lotus-data/fort.9"
+        t, enst = read_forces(path, interest="tke", direction="")
+        dt = 4/len(t)
+
+        enst = enst/span(1/lams[idx])
+        # enst = enst - np.mean(enst)
+
+        freq, Pxx = welch(enst, 1/dt, nperseg=len(t//1))
+        print(len(t//4))
+        # Pxx = savgol_filter(Pxx, 4, 1)
+
+
+        ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
+
+    # Adding the 'Smooth' curve
+    path = f"data/test/up/lotus-data/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
+    dt = np.mean(np.diff(t))
+
+    # enst = enst - np.mean(enst)
+    print(len(t//4))
+
+    freq, Pxx = welch(enst*4096/4, 1/dt, nperseg=len(t//1))
+    # Applay savgiol filter
+    # Pxx = savgol_filter(Pxx, 4, 1)
+    ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
+
+    save_path = f"figures/fft_E.pdf"
+    ax.legend(loc="lower left")
     plt.savefig(save_path, dpi=700)
     plt.close()
 
 
+def SA_enstrophy_scaling(span):
+        return (
+            1 / 0.1             # A
+            / (1)     # L
+            / (span * 4096)  # span
+        )
+
+def span(lam):
+    if lam == 1/16:
+        span = 256
+    elif lam == 1/32:
+        span = 192
+    else:
+        span = 64
+    
+    return span*4
+
+
 if __name__ == "__main__":
-    plot_thrust()
-    plot_power()
-    plot_fft()
+    # test_E_scaling()
+    
+    plot_E()
+    plot_E_fft()
+
