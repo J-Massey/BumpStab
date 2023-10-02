@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --ntasks=64
+#SBATCH --ntasks=16
 #SBATCH --nodes=1
 # SBATCH --mem=243200
 #SBATCH --partition=highmem

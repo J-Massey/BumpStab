@@ -1,3 +1,6 @@
+import os
+from matplotlib import colors
+from matplotlib.lines import Line2D
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -156,7 +159,7 @@ def plot_power():
         t, force = read_forces(path, interest="cp", direction="")
         t_new = t % 1
         f = interp1d(t_new, force, fill_value="extrapolate")
-        force_av = f(t_sample)
+        force = f(t_sample)
 
 
         wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
@@ -173,23 +176,23 @@ def plot_power():
         for id in range(len(force_bins)):
             f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
             force_bins[id] = f_bins(t_sample)
-            force_diff[id] = force_bins[id] - force_av
+            force_diff[id] = force_bins[id] - force
 
         ax.plot(
             t_sample,
-            force_av,
+            force,
             color=colours[idx],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
         )
 
-        ax.axhline(np.mean(force_av), color=colours[idx], alpha=0.8, linewidth=0.7)
+        ax.axhline(np.mean(force), color=colours[idx], alpha=0.8, linewidth=0.7)
 
         ax.fill_between(
             t_sample,
-            force_av + np.min(force_diff, axis=0),
-            force_av + np.max(force_diff, axis=0),
+            force + np.min(force_diff, axis=0),
+            force + np.max(force_diff, axis=0),
             color=colours[idx],
             alpha=0.3,
             edgecolor="none",
@@ -214,7 +217,7 @@ def plot_power():
 
     ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
     
-    print((np.mean(force_av)-np.mean(force_av_s))/np.mean(force_av_s) * 100)
+    print((np.mean(force)-np.mean(force_av_s))/np.mean(force_av_s) * 100)
 
     save_path = f"figures/power.pdf"
     ax.legend(loc="upper left")
@@ -282,6 +285,57 @@ def test_E_scaling():
     print((enst_short.max()-enst_long.max())/enst_long.max())
 
 
+def plot_E_body_ts_3d():
+    cmap = sns.color_palette("Reds", as_cmap=True)
+    Ls = np.array([4096, 8192])
+
+    fig, ax = plt.subplots(figsize=(4, 2.5))
+    ax.set_xlabel(f"$ t $")
+    ax.set_ylabel(r"$ E $")
+
+    t_sample = np.linspace(2.01, 6.99, 300)
+
+    norm = colors.LogNorm(vmin=min(4 / (Ls*2)), vmax=max(4 / (Ls/2)))
+    for L in (Ls):
+        try:
+            f=field_eval_helper(L, 'grid-3-medium', 'E','b')
+            ax.plot(
+                t_sample,
+                f(t_sample),
+                color=cmap(norm(4 / L)),
+                ls=':',
+            )
+            f=field_eval_helper(L, '3d-check', 'E','b')
+            ax.plot(
+                t_sample,
+                f(t_sample)/(L/8),
+                color=cmap(norm(4 / L)),
+                ls='-',
+            )
+        except FileNotFoundError or ValueError:
+            pass
+
+    cb = plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap))
+    cb.set_label(r"$\Delta x$", rotation=0)
+
+    legend_elements = [Line2D([0], [0], ls='-', label='3-D', c='k'),
+                       Line2D([0], [0], ls=':', label='2-D', c='k')]
+    ax.legend(handles=legend_elements)
+    plt.savefig(f"{os.getcwd()}/figures/E.pdf", bbox_inches="tight", dpi=200)
+
+
+def field_eval_helper(L, crit_str='3d-check', interest='v', direction='x'):
+    t, ux, *_ = read_forces(
+            f"/ssdfs/users/jmom1n15/thicc-swimmer/two-dim-convergenence-test/{crit_str}/{L}/fort.9",
+            interest=interest,
+            direction=direction,
+        )
+    t, ux = t[t > 2], ux[t > 2]
+    f = interp1d(t, ux, fill_value="extrapolate")
+
+    return f
+
+
 def plot_E():
     lams = [16, 32, 64, 128]#
     order = [0, 3, 4, 1]
@@ -301,32 +355,34 @@ def plot_E():
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, enst = read_forces(path, interest="E", direction="")
-        t_new = t % 1
-        f = interp1d(t_new, enst, fill_value="extrapolate")
-        enst_av = f(t_sample)
+        t, enst = t[((t > 8.1) & (t < 12))], enst[((t > 8) & (t < 12))]
+
+        # t_new = t % 1
+        # f = interp1d(t_new, enst, fill_value="extrapolate")
+        # enst = f(t_sample)
 
 
-        wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
-        wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
-        wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
+        # wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
+        # wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
+        # wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
 
 
-        enst_bins = [enst[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-        t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        # enst_bins = [enst[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        # t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
 
 
-        # Calculate the standard deviation of each bin
-        enst_diff = np.empty((4, t_sample.size))
-        for id in range(len(enst_bins)):
-            f_bins = interp1d(t_bins[id], enst_bins[id], fill_value="extrapolate")
-            enst_bins[id] = f_bins(t_sample)
-            enst_diff[id] = enst_bins[id] - enst_av
+        # # Calculate the standard deviation of each bin
+        # enst_diff = np.empty((4, t_sample.size))
+        # for id in range(len(enst_bins)):
+        #     f_bins = interp1d(t_bins[id], enst_bins[id], fill_value="extrapolate")
+        #     enst_bins[id] = f_bins(t_sample)
+        #     enst_diff[id] = enst_bins[id] - enst
         
-        enst_av = enst_av/(4096/span(1/lams[idx])) 
+        enst = enst/span(1/lams[idx])
 
         ax.plot(
-            t_sample,
-            enst_av,
+            t,
+            enst,
             color=colours[order[idx]],
             label=labels[idx],
             alpha=0.8,
@@ -336,12 +392,12 @@ def plot_E():
     path = f"data/test/up/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
     t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
-    t = t % 1
-    f = interp1d(t, enst, fill_value="extrapolate")
-    enst = f(t_sample)
+    # t = t % 1
+    # f = interp1d(t, enst, fill_value="extrapolate")
+    # enst = f(t_sample)
 
     ax.plot(
-        t_sample,
+        t,
         enst,
         color=colours[2],
         label="Smooth",
@@ -378,7 +434,6 @@ def plot_E_fft():
         # enst = enst - np.mean(enst)
 
         freq, Pxx = welch(enst, 1/dt, nperseg=len(t//1))
-        print(len(t//4))
         # Pxx = savgol_filter(Pxx, 4, 1)
 
 
@@ -391,9 +446,8 @@ def plot_E_fft():
     dt = np.mean(np.diff(t))
 
     # enst = enst - np.mean(enst)
-    print(len(t//4))
 
-    freq, Pxx = welch(enst*4096/4, 1/dt, nperseg=len(t//1))
+    freq, Pxx = welch(enst/4, 1/dt, nperseg=len(t//1))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
     ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
@@ -426,5 +480,6 @@ if __name__ == "__main__":
     # test_E_scaling()
     
     plot_E()
-    plot_E_fft()
+    # plot_E_fft()
 
+    # plot_E_body_ts_3d()
