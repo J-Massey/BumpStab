@@ -61,43 +61,45 @@ plot_Lambda()
 
 
 
-# case="0.001/64"
-# for case in cases:
+cases=["test/up", "0.001/16", "0.001/128"]
+for case in cases:
 
-#     with np.load(f"{os.getcwd()}/data/{case}/data/body_svd.npz") as data:
-#         Sigmaf = data["Sigmaf"]
+    with np.load(f"{os.getcwd()}/data/{case}/data/body_svd.npz") as data:
+        Sigmaf = data["Sigmaf"]
 
-#     dir = f"figures/{case}-DMD"
-#     os.system(f"mkdir -p {dir}")
-#     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
-#     pxs = np.linspace(0, 1, nx)
-#     pys = np.linspace(-0.25, 0.25, ny)
-#     vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
-#     vr.resize(3, nx, ny, 100)
+    dir = f"figures/{case}-DMD"
+    os.system(f"mkdir -p {dir}")
+    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
-#     for n in range(100):
-#         fig, ax = plt.subplots(figsize=(5, 3))
-#         qi = vr[2, :, :, n].real.T
-#         lim = np.std(qi)*4
-#         levels = np.linspace(-lim, lim, 44)
-#         _cmap = sns.color_palette("seismic", as_cmap=True)
+    r=6
+    vr.resize(3, nx, ny, r)
 
-#         cs = ax.contourf(
-#             pxs,
-#             pys,
-#             qi,
-#             levels=levels,
-#             vmin=-lim,
-#             vmax=lim,
-#             # norm=norm,
-#             cmap=_cmap,
-#             extend="both",
-#             # alpha=0.7,
-#         )
-#         ax.set_aspect(1)
-#         plt.savefig(f"{dir}/{n}.png", dpi=300)
-#         plt.close()
+    for n in range(r):
+        fig, ax = plt.subplots(figsize=(5, 3))
+        qi = vr[2, :, :, n].real.T
+        lim = np.std(qi)*4
+        levels = np.linspace(-lim, lim, 44)
+        _cmap = sns.color_palette("seismic", as_cmap=True)
+
+        cs = ax.contourf(
+            pxs,
+            pys,
+            qi,
+            levels=levels,
+            vmin=-lim,
+            vmax=lim,
+            # norm=norm,
+            cmap=_cmap,
+            extend="both",
+            # alpha=0.7,
+        )
+        ax.set_aspect(1)
+        plt.savefig(f"{dir}/{n}.png", dpi=300)
+        plt.close()
 
 
 # fig, ax = plt.subplots(figsize=(5, 3))
@@ -130,16 +132,16 @@ plot_Lambda()
 # _cmap = sns.color_palette("seismic", as_cmap=True)
 
 # cs = ax.contourf(
-#     pxs,
-#     pys,
-#     qi,
-#     levels=levels,
-#     vmin=-lim,
-#     vmax=lim,
-#     # norm=norm,
-#     cmap=_cmap,
-#     extend="both",
-#     # alpha=0.7,
+# pxs,
+# pys,
+# qi,
+# levels=levels,
+# vmin=-lim,
+# vmax=lim,
+# # norm=norm,
+# cmap=_cmap,
+# extend="both",
+# # alpha=0.7,
 # )
 # ax.set_aspect(1)
 # plt.savefig(f"{dir}/0.pdf", dpi=300)

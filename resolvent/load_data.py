@@ -214,17 +214,68 @@ def fwarp(t: float, pxs: np.ndarray):
 # Sample usage
 if __name__ == "__main__":
     import os
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import scienceplots
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
+    plt.style.use(["science"])
+    plt.rcParams["font.size"] = "10.5"
+    plt.rc('text', usetex=True)
+    plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+    
     case = "test/down"
-    case = "0.001/16"
-    os.system(f"mkdir -p figures/{case}-warp")
-    dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
-    body = dl.body
-    _, nx, ny, nt = body.shape
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
+    # case = "0.001/16
+    cases = ["test/up", "0.001/64", "0.001/128"]
+    idxs = (np.arange(0.15, 0.45, 0.05)*200).astype(int)
 
-    plot_field(body[2, :, :, 200].T, pxs, pys, f"figures/warped16.pdf", _cmap="seismic")
+    fig, axs = plt.subplots(idxs.size, 3, figsize=(10, 12))
+    levels = np.linspace(-0.25, 0.25, 44)
+    _cmap = sns.color_palette("seismic", as_cmap=True)
 
-    for n in range(0, nt, 5):
-        plot_field(body[2, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
-    gif_gen(f"figures/{case}-warp/", f"figures/{case}_warped.gif", 10)
+    for idxc, case in enumerate(cases):
+        dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
+        body = dl.body
+        _, nx, ny, nt = body.shape
+        pxs = np.linspace(0, 1, nx)
+        pys = np.linspace(-0.35, 0.35, ny)
+
+        for idx, n in enumerate(idxs):
+            cs = axs[idx, idxc].contourf(
+                pxs,
+                pys,
+                body[2, :, :, n].T,
+                levels=levels,
+                vmin=-0.25,
+                vmax=0.25,
+                # norm=norm,
+                cmap=_cmap,
+                extend="both",
+                # alpha=0.7,
+            )
+            print(n)
+
+            axs[idx, idxc].set_aspect(1)
+
+    # cbar on top of the plot spanning the whole width
+    cax = fig.add_axes([0.1, 0.95, 0.8, 0.03])
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels)
+    cb.set_label(r"$p$", labelpad=-35, rotation=0)
+
+    # divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("top", size="7%", pad=0.2)
+    # fig.add_axes(cax)
+    # cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+
+    plt.savefig(f"figures/power-recovery/smooth/pressure.pdf", dpi=700)
+    plt.close()
+    
+    vort = -np.gradient(body[0, :, :, :], axis=1) + np.gradient(body[1, :, :, :], axis=0)
+
+    for n in idxs:
+        plot_field(vort[:, :, n].T, pxs, pys, f"figures/power-recovery/smooth/vort/{n}.pdf", lim=[-0.05, 0.05], _cmap="seismic")
+
+    # for n in range(0, nt, 5):
+    #     plot_field(body[2, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
+    # gif_gen(f"figures/{case}-warp/", f"figures/{case}_warped.gif", 10)

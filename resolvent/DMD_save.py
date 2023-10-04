@@ -61,6 +61,38 @@ class SaveDMD:
         np.save(f"{self.path}/{self.dom}_V_r.npy", V_r)
 
 
+    def kDMD(self):
+
+        X = self.fluc1
+        Y = self.fluc2
+
+        def gaussian_kernel(X, Y, sigma=1.0):
+            pairwise_dists = np.sum(X**2, axis=1)[:, np.newaxis] + np.sum(Y**2, axis=1) - 2 * np.dot(X, Y.T)
+            return np.exp(-pairwise_dists / (2 * sigma ** 2))
+
+        
+        K_X = gaussian_kernel(X.T, X.T)
+        K_Y = gaussian_kernel(Y.T, X.T)
+
+
+        # SVD of Kernel matrix
+        U, S, Vh = svd(K_X)
+        U_r = U
+        S_r_inv = np.diag(1 / S)
+
+        # Reduced A matrix in feature space
+        A_tilde = U_r.T.conj() @ K_Y @ U_r @ S_r_inv
+
+        # Eigen decomposition of A_tilde
+        lambda_vec, W = np.linalg.eig(A_tilde)
+
+        # Compute alpha (coefficients for modes in feature space)
+        alpha = U_r @ W
+
+        vr = Y @ Vh.T @ S_r_inv @ W
+
+        return lambda_vec, vr
+
 # Sample usage
 if __name__ == "__main__":
     from matplotlib import pyplot as plt
@@ -77,62 +109,5 @@ if __name__ == "__main__":
     dom="body"
     case = "test/up"
     resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
+    resolvent.save_fbDMD(r=6)
 
-    X = resolvent.fluc1
-    Y = resolvent.fluc2
-
-    def gaussian_kernel(X, Y, sigma=1.0):
-        pairwise_dists = np.sum(X**2, axis=1)[:, np.newaxis] + np.sum(Y**2, axis=1) - 2 * np.dot(X, Y.T)
-        return np.exp(-pairwise_dists / (2 * sigma ** 2))
-
-    
-    K_X = gaussian_kernel(X.T, X.T)
-    K_Y = gaussian_kernel(Y.T, X.T)
-
-
-    # SVD of Kernel matrix
-    U, S, Vh = svd(K_X)
-    U_r = U
-    S_r_inv = np.diag(1 / S)
-
-    # Reduced A matrix in feature space
-    A_tilde = U_r.T.conj() @ K_Y @ U_r @ S_r_inv
-
-    # Eigen decomposition of A_tilde
-    lambda_vec, W = np.linalg.eig(A_tilde)
-
-    # Compute alpha (coefficients for modes in feature space)
-    alpha = U_r @ W
-
-    vr = Y @ Vh.T @ S_r_inv @ W
-
-
-    nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/{dom}_nxyt.npy")
-    nt = vr.shape[-1]
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
-
-    vr.resize(3, nx, ny, nt)
-
-    for n in tqdm(range(nt)):
-        fig, ax = plt.subplots(figsize=(5, 3))
-        qi = vr[2, :, :, n].real.T
-        lim = np.std(qi)*4
-        levels = np.linspace(-lim, lim, 44)
-        _cmap = sns.color_palette("seismic", as_cmap=True)
-
-        cs = ax.contourf(
-            pxs,
-            pys,
-            qi,
-            levels=levels,
-            vmin=-lim,
-            vmax=lim,
-            # norm=norm,
-            cmap=_cmap,
-            extend="both",
-            # alpha=0.7,
-        )
-        ax.set_aspect(1)
-        plt.savefig(f"low-mode/dmd-comparison/lando/{n}.png", dpi=300)
-        plt.close()

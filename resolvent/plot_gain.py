@@ -41,6 +41,7 @@ def load_plot(path, ax, omega_span, colour, label):
 
 # Sample usage
 if __name__ == "__main__":
+    lss = ["-", "-.", "--"]
     omega_span = np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000)
     lams = [16, 128]
     cases = [f"0.001/{lam}" for lam in lams]
@@ -60,11 +61,41 @@ if __name__ == "__main__":
         ax.loglog(
             omega_span / (np.pi),
             np.sqrt(gain[:, 0]),
-            color=colours[idx+2],
+            color=colours[idx],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
             linestyle="-",
+        )
+
+        ax.loglog(
+            omega_span / (np.pi),
+            np.sqrt(gain[:, 1]),
+            color=colours[idx],
+            # label=labels[idx],
+            alpha=0.8,
+            linewidth=0.7,
+            linestyle="--",
+        )
+
+        ax.loglog(
+            omega_span / (np.pi),
+            np.sqrt(gain[:, 3]),
+            color=colours[idx],
+            # label=labels[idx],
+            alpha=0.8,
+            linewidth=0.7,
+            linestyle="-.",
+        )
+
+        ax.loglog(
+            omega_span / (np.pi),
+            np.sqrt(gain[:, 4]),
+            color=colours[idx],
+            # label=labels[idx],
+            alpha=0.8,
+            linewidth=0.7,
+            linestyle=":",
         )
         # plot max value cross at each peak
         maxs = find_peaks(np.sqrt(gain[:, 0]), prominence=0.1)[0]
@@ -81,7 +112,7 @@ if __name__ == "__main__":
         #         linewidth=0.7,
         #     )
 
-    save_path = f"figures/{dom}_gain.png"
+    save_path = f"figures/{dom}_gain.pdf"
     ax.legend(loc="upper right")
     save_fig(save_path)
     plt.close()

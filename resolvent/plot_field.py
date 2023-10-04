@@ -181,24 +181,26 @@ def vis_pressure(case):
 
 # # Sample usage to visualise and test a case
 if __name__ == "__main__":        
-#     import os
-#     case = sys.argv[1]
-#     vis_pressure(case)
+    import os
     case="test/up"
-    case="0.001/16"
-    flow = np.load(f"{os.getcwd()}/data/{case}/data/body_flucs.npy")
+    # case="0.001/16"
+
+    f_dir = f"figures/{case}-unwarp-pressure"
+    os.system(f"mkdir -p {f_dir}")
+
+    flow = np.load(f"{os.getcwd()}/data/{case}/data/uvp.npy")
     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
     flow.resize(3, nx, ny, nt)
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
+    pys = np.linspace(-0.35, 0.35, ny)
+    vorticity_fluc = -np.gradient(flow[0, :, :, :], axis=1)+np.gradient(flow[1, :, :, :], axis=0)
 
-    for n in range(0, nt, 5):
-        plot_field(flow[2, :, :, n].T, pxs, pys, f"figures/{case}-unwarp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
+    for n in []:
+        plot_field(flow[2, :, :, n].T, pxs, pys, f"{f_dir}/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
     
     gif_gen(f"figures/{case}-unwarp/", f"figures/{case}_unwarped.gif", 10)
 
 
-    # vorticity_fluc = -np.gradient(flow[0, :, :, :], axis=1)+np.gradient(flow[1, :, :, :], axis=0)
 
 
     # # ReCoVor plot

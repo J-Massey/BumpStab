@@ -15,7 +15,7 @@ from scipy.signal import welch, savgol_filter
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 plt.rc('text', usetex=True)
-plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
+plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
 
 
 def read_forces(force_file, interest="p", direction="x"):
@@ -140,8 +140,10 @@ def plot_thrust():
     plt.close()
 
 
-def plot_power():
+def plot_power(ax=None):
     lams = [16, 32, 64, 128]
+    order = [0, 3, 4, 1]
+
     cases = [f"0.001/{lam}" for lam in lams]
 
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
@@ -150,16 +152,20 @@ def plot_power():
 
     t_sample = np.linspace(0.001, 0.999, 400)
 
-    fig, ax = plt.subplots(figsize=(3, 3))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(3, 3))
+
+    ax.set_xlim(0, 1)
     ax.set_ylabel(r"$\langle C_P \rangle $")
-    ax.set_xlabel(r"$t/T$")
+    ax.set_xlabel(r"$\phi/2\pi$")
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         t_new = t % 1
         f = interp1d(t_new, force, fill_value="extrapolate")
-        force = f(t_sample)
+        force_av = f(t_sample)
+        print(f"{force_av.mean():.4f} &")
 
 
         wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
@@ -167,36 +173,36 @@ def plot_power():
         wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
 
 
-        force_bins = [force[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-        t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        # force_bins = [force_av[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
+        # t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
 
 
-        # Calculate the standard deviation of each bin
-        force_diff = np.empty((4, t_sample.size))
-        for id in range(len(force_bins)):
-            f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
-            force_bins[id] = f_bins(t_sample)
-            force_diff[id] = force_bins[id] - force
+        # # Calculate the standard deviation of each bin
+        # force_diff = np.empty((4, t_sample.size))
+        # for id in range(len(force_bins)):
+        #     f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
+        #     force_bins[id] = f_bins(t_sample)
+        #     force_diff[id] = force_bins[id] - force_av
 
         ax.plot(
             t_sample,
-            force,
-            color=colours[idx],
+            force_av,
+            color=colours[order[idx]],
             label=labels[idx],
             alpha=0.8,
             linewidth=0.7,
         )
 
-        ax.axhline(np.mean(force), color=colours[idx], alpha=0.8, linewidth=0.7)
+        # ax.axhline(np.mean(force), color=colours[idx], alpha=0.8, linewidth=0.7)
 
-        ax.fill_between(
-            t_sample,
-            force + np.min(force_diff, axis=0),
-            force + np.max(force_diff, axis=0),
-            color=colours[idx],
-            alpha=0.3,
-            edgecolor="none",
-        )
+        # ax.fill_between(
+        #     t_sample,
+        #     force + np.min(force_diff, axis=0),
+        #     force + np.max(force_diff, axis=0),
+        #     color=colours[idx],
+        #     alpha=0.3,
+        #     edgecolor="none",
+        # )
 
     path = f"data/test/up/lotus-data/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
@@ -204,46 +210,51 @@ def plot_power():
     t = t % 1
     f = interp1d(t, force, fill_value="extrapolate")
     force_av_s = f(t_sample)
+    print(f"{force_av_s.mean():.4f}")
 
     ax.plot(
         t_sample,
         force_av_s,
-        color=colours[idx + 1],
+        color=colours[2],
         label="Smooth",
         alpha=0.8,
         linewidth=0.7,
     )
 
 
-    ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
-    
-    print((np.mean(force)-np.mean(force_av_s))/np.mean(force_av_s) * 100)
+    # ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/power.pdf"
-    ax.legend(loc="upper left")
+
+    # leg = ax.legend(loc="lower left")
+    # save_legend(leg)
+
     plt.savefig(save_path, dpi=700)
-    plt.close()
+    # plt.close()
+    return ax
 
 
-def plot_fft():
+def plot_power_fft(ax=None):
     lams = [16, 128]
     cases = [f"0.001/{lam}" for lam in lams]
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
-    fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_ylabel(r"Power")
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"PSD($C_P$)")
     ax.set_xlabel(r"$f^*$")
-    ax.set_xlim(0.1, 150)
+    ax.set_xlim(0.1, 200)
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         dt = 4/len(t)
 
-        freq, Pxx = welch(force, 1/dt, nperseg=len(t//8))
+        freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
         # Pxx = savgol_filter(Pxx, 4, 1)
+        
 
 
         ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
@@ -254,15 +265,52 @@ def plot_fft():
     t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
     dt = np.mean(np.diff(t))
 
-    freq, Pxx = welch(force, 1/dt, nperseg=len(t//4))
+    freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
     ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
-    ax.legend(loc="lower left")
+    
     plt.savefig(save_path, dpi=700)
-    plt.close()
+    # plt.close()
+    return ax
+
+def save_legend(leg):
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    
+    # Transfer the legend to the new figure
+    new_legend = plt.legend(handles=leg.legendHandles, labels=[t.get_text() for t in leg.texts], loc='center')
+
+    # Save only the legend
+    fig.canvas.draw()
+    bbox = new_legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig('figures/legend.pdf', dpi=300, bbox_inches=bbox)
+
+
+
+def plot_combined():
+    """
+    Plot the power and fft next to each other
+    """
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3))
+
+    # First plot
+    ax1 = axs[0]
+    plot_power(ax=ax1)
+
+    # Second plot
+    ax2 = axs[1]
+    plot_power_fft(ax=ax2)
+
+    latex_table = generate_latex_table()
+    fig.text(0.5, 0.97, f'${latex_table}$', horizontalalignment='center', verticalalignment='bottom', usetex=True)
+
+    plt.tight_layout()
+    save_path = "figures/power.pdf"
+    plt.savefig(save_path, dpi=700)
+
 
 
 def test_E_scaling():
@@ -274,15 +322,21 @@ def test_E_scaling():
     t, enst = read_forces(path, interest="E", direction="")
     t, enst_long = t[t > 5], enst[t > 5]/(64*4)
     tl = t % 1
+    path = "/scratch/jmom1n15/full-body-bumps/0.001/128/128/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst_wide = t[t > 5], enst[t > 5]/(128*4)
+    tw = t % 1
+
     fig, ax = plt.subplots(figsize=(3, 3))
     ax.set_ylabel(r"$\langle E \rangle $")
     ax.set_xlabel(r"$t/T$")
-    ax.plot(ts, enst_short, label="Short", ls="none", marker="o", markersize=0.1)
-    ax.plot(tl, enst_long, label="Long", ls="none", marker="o", markersize=.1)
+    ax.plot(ts[10:], enst_short[10:], label="Short", ls="none", marker="o", markersize=0.1)
+    ax.plot(tl[10:], enst_long[10:], label="Long", ls="none", marker="o", markersize=.1)
+    ax.plot(tw[10:], enst_wide[10:], label="Wide", ls="none", marker="o", markersize=.1)
     ax.legend()
-    plt.savefig(f"figures/E_test.pdf", dpi=300)
+    plt.savefig(f"figures/test_z_span_128.pdf", dpi=300)
     plt.close()
-    print((enst_short.max()-enst_long.max())/enst_long.max())
+    print((enst_wide.max()-enst_long.max())/enst_wide.max())
 
 
 def plot_E_body_ts_3d():
@@ -337,7 +391,7 @@ def field_eval_helper(L, crit_str='3d-check', interest='v', direction='x'):
 
 
 def plot_E():
-    lams = [16, 32, 64, 128]#
+    lams = [16, 32, 64, 128]
     order = [0, 3, 4, 1]
 
     cases = [f"0.001/{lam}" for lam in lams]
@@ -355,7 +409,7 @@ def plot_E():
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, enst = read_forces(path, interest="E", direction="")
-        t, enst = t[((t > 8.1) & (t < 12))], enst[((t > 8) & (t < 12))]
+        t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
 
         # t_new = t % 1
         # f = interp1d(t_new, enst, fill_value="extrapolate")
@@ -391,7 +445,7 @@ def plot_E():
 
     path = f"data/test/up/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
-    t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
+    t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
     # t = t % 1
     # f = interp1d(t, enst, fill_value="extrapolate")
     # enst = f(t_sample)
@@ -420,7 +474,7 @@ def plot_E_fft():
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
-    fig, ax = plt.subplots(figsize=(3, 3))
+    fig, ax = plt.subplots(figsize=(4, 3))
     ax.set_ylabel(r"PSD(E)")
     ax.set_xlabel(r"$f^*$")
     ax.set_xlim(0.1, 150)
@@ -433,9 +487,10 @@ def plot_E_fft():
         enst = enst/span(1/lams[idx])
         # enst = enst - np.mean(enst)
 
-        freq, Pxx = welch(enst, 1/dt, nperseg=len(t//1))
+        freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
         # Pxx = savgol_filter(Pxx, 4, 1)
-
+        ax.axvline(lams[idx]/2, color=colours[idx], alpha=0.8, linewidth=0.7, ls="-.")
+        ax.axvline(lams[idx], color=colours[idx], alpha=0.8, linewidth=0.7, ls="-.")
 
         ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
 
@@ -447,12 +502,12 @@ def plot_E_fft():
 
     # enst = enst - np.mean(enst)
 
-    freq, Pxx = welch(enst/4, 1/dt, nperseg=len(t//1))
+    freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
     ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
 
-    save_path = f"figures/fft_E.pdf"
+    save_path = f"figures/fft_E.png"
     ax.legend(loc="lower left")
     plt.savefig(save_path, dpi=700)
     plt.close()
@@ -467,19 +522,29 @@ def SA_enstrophy_scaling(span):
 
 def span(lam):
     if lam == 1/16:
-        span = 256
+        span = 128
     elif lam == 1/32:
-        span = 192
+        span = 128
     else:
         span = 64
     
     return span*4
 
 
+def generate_latex_table():
+    return r'\begin{tabular}{lccccc}' + \
+        r'Colour & ~~ & ~~ & ~~ & ~~ & ~~ \\' + \
+        r'$\lambda$ & $1/16$ & $1/32$ & $1/64$ &  $1/128$ &  $1/0$ \\' + \
+        r'$\overline{C_P}$ & 0.1383 & 0.1366 & 0.1247 & 0.1213 & 0.1276 \\' + \
+        r'\end{tabular}'
+
+
 if __name__ == "__main__":
     # test_E_scaling()
     
-    plot_E()
-    # plot_E_fft()
+    # plot_E()
+    plot_E_fft()
+    plot_combined()
+    # save_legend()
 
     # plot_E_body_ts_3d()
