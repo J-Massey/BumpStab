@@ -1,7 +1,6 @@
 import numpy as np
 import time
 from tqdm import tqdm
-from plot_field import plot_field, gif_gen
 from scipy.ndimage import binary_dilation
 from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import UnivariateSpline
@@ -218,6 +217,7 @@ if __name__ == "__main__":
     import seaborn as sns
     import scienceplots
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from matplotlib.patches import FancyArrowPatch
 
 
     plt.style.use(["science"])
@@ -225,18 +225,42 @@ if __name__ == "__main__":
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
     
-    case = "test/down"
-    # case = "0.001/16
+    # cases = ["test/down", "test/down", "test/down"]
     cases = ["test/up", "0.001/64", "0.001/128"]
-    idxs = (np.arange(0.15, 0.45, 0.05)*200).astype(int)
-
-    fig, axs = plt.subplots(idxs.size, 3, figsize=(10, 12))
-    levels = np.linspace(-0.25, 0.25, 44)
-    _cmap = sns.color_palette("seismic", as_cmap=True)
-
+    bodies = []
     for idxc, case in enumerate(cases):
         dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
         body = dl.body
+        bodies.append(body)
+
+    time_values = np.arange(0.2, 0.45, 0.05)
+    idxs = (time_values * 200).astype(int)
+
+    fig, axs = plt.subplots(idxs.size, len(cases), figsize=(8, 10), sharex=True, sharey=True, )
+    
+    fig.text(0.5, 0.08, r"$x$", ha='center', va='center')
+    fig.text(0.08, 0.5, r"$y$", ha='center', va='center', rotation='vertical')
+    fig.text(0.915, 0.844, 't', horizontalalignment='center', verticalalignment='center')
+
+    #  Calculate the y-position for each label based on the number of rows and the figure height
+    num_rows = len(time_values)
+    row_height = 0.795 / num_rows
+
+    # Add time labels
+    for idx, time in enumerate(time_values):
+        y_pos = 0.89 - (idx + 0.5) * row_height  # Center of each row
+        fig.text(0.945, y_pos, f"{time:.2f}", verticalalignment='center')
+
+    lims = [-0.25, 0.25]
+    levels = np.linspace(lims[0], lims[1], 44)
+    _cmap = sns.color_palette("seismic", as_cmap=True)
+
+    # Column Labels
+    for idxc, lab in enumerate([r"Smooth", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]):
+        axs[0, idxc].set_title(lab)
+
+    for idxc, case in enumerate(cases):
+        body = bodies[idxc]
         _, nx, ny, nt = body.shape
         pxs = np.linspace(0, 1, nx)
         pys = np.linspace(-0.35, 0.35, ny)
@@ -247,34 +271,30 @@ if __name__ == "__main__":
                 pys,
                 body[2, :, :, n].T,
                 levels=levels,
-                vmin=-0.25,
-                vmax=0.25,
-                # norm=norm,
+                vmin=lims[0],
+                vmax=lims[1],
                 cmap=_cmap,
                 extend="both",
-                # alpha=0.7,
             )
-            print(n)
 
             axs[idx, idxc].set_aspect(1)
+    
+    arrow_ax = fig.add_axes([0.92, 0.054, 0.02, 0.79])
+    arrow_ax.axis('off')
+
+    fancy_arrow = FancyArrowPatch((0.5, 1), (0.5, 0.1), mutation_scale=15, arrowstyle='->', color='k')
+    arrow_ax.add_patch(fancy_arrow)
 
     # cbar on top of the plot spanning the whole width
-    cax = fig.add_axes([0.1, 0.95, 0.8, 0.03])
-    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=levels)
-    cb.set_label(r"$p$", labelpad=-35, rotation=0)
+    cax = fig.add_axes([0.175, 0.91, 0.7, 0.022])
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$p$", labelpad=-23.5, rotation=0)
 
-    # divider = make_axes_locatable(ax)
-    # cax = divider.append_axes("top", size="7%", pad=0.2)
-    # fig.add_axes(cax)
-    # cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
-
-    plt.savefig(f"figures/power-recovery/smooth/pressure.pdf", dpi=700)
+    plt.savefig(f"figures/power-recovery/pressure.png", dpi=800)
     plt.close()
-    
-    vort = -np.gradient(body[0, :, :, :], axis=1) + np.gradient(body[1, :, :, :], axis=0)
 
-    for n in idxs:
-        plot_field(vort[:, :, n].T, pxs, pys, f"figures/power-recovery/smooth/vort/{n}.pdf", lim=[-0.05, 0.05], _cmap="seismic")
 
     # for n in range(0, nt, 5):
     #     plot_field(body[2, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")

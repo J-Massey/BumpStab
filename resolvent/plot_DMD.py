@@ -61,27 +61,30 @@ plot_Lambda()
 
 
 
-cases=["test/up", "0.001/16", "0.001/128"]
+cases=["test/up", "0.001/64", "0.001/128"]
+case = "test/up"
+
 for case in cases:
 
     with np.load(f"{os.getcwd()}/data/{case}/data/body_svd.npz") as data:
         Sigmaf = data["Sigmaf"]
 
 
-    dir = f"figures/{case}-DMD"
+    dir = f"figures/phase-info/{case}-DMD"
     os.system(f"mkdir -p {dir}")
     nx, ny, nt = np.load(f"{os.getcwd()}/data/{case}/data/body_nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     vr = np.load(f"{os.getcwd()}/data/{case}/data/body_V_r.npy")
 
-    r=6
+    r=14
     vr.resize(3, nx, ny, r)
 
     for n in range(r):
         fig, ax = plt.subplots(figsize=(5, 3))
-        qi = vr[2, :, :, n].real.T
-        lim = np.std(qi)*4
+        qi = np.angle(vr[2, :, :, n]).T
+        print(np.max(qi), np.min(qi))
+        lim = np.pi
         levels = np.linspace(-lim, lim, 44)
         _cmap = sns.color_palette("seismic", as_cmap=True)
 

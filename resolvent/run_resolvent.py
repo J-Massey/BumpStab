@@ -22,10 +22,10 @@ def main(case, dom):
     # svd_save.save_flucs()
     # svd_save.save_svd()
     resolvent = SaveDMD(f"{os.getcwd()}/data/{case}/data", dom)
-    resolvent.save_fbDMD(r=6)
-    ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000))
-    ra.save_gain()
-    ra.save_omega_peaks()
+    resolvent.save_fbDMD(r=14)
+    # ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(np.log10(0.1), np.log10(150*2*np.pi), 1000))
+    # ra.save_gain()
+    # ra.save_omega_peaks()
 
 
 # Sample usage

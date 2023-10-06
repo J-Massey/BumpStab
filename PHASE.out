@@ -1,7 +1,7 @@
 Running SLURM prolog script on gold58.cluster.local
 ===============================================================================
-Job started on Fri Oct  6 10:23:18 BST 2023
-Job ID          : 4849581
+Job started on Fri Oct  6 10:25:18 BST 2023
+Job ID          : 4849584
 Job name        : ResolventAnalysis
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/genSub
@@ -12,24 +12,32 @@ Num of tasks    : 16
 Hosts allocated : gold58
 Job Output Follows ...
 ===============================================================================
-slurmstepd-gold58: error: *** JOB 4849581 ON gold58 CANCELLED AT 2023-10-06T10:23:24 ***
+
+----- Calculating fbDMD with r=14 -----
+fbDMD calculated in 31.15 seconds.
+
+----- Calculating fbDMD with r=14 -----
+fbDMD calculated in 30.19 seconds.
+
+----- Calculating fbDMD with r=14 -----
+fbDMD calculated in 29.88 seconds.
 ==============================================================================
 Running epilogue script on gold58.
 
-Submit time  : 2023-10-06T10:22:58
-Start time   : 2023-10-06T10:23:18
-End time     : 2023-10-06T10:23:24
-Elapsed time : 00:00:06 (Timelimit=10:00:00)
+Submit time  : 2023-10-06T10:24:59
+Start time   : 2023-10-06T10:25:18
+End time     : 2023-10-06T10:34:18
+Elapsed time : 00:09:00 (Timelimit=20:00:00)
 
-Job ID: 4849581
+Job ID: 4849584
 Cluster: i5
 User/Group: jmom1n15/mm
-State: CANCELLED (exit code 0)
+State: COMPLETED (exit code 0)
 Nodes: 1
 Cores per node: 16
-CPU Utilized: 00:00:01
-CPU Efficiency: 1.04% of 00:01:36 core-walltime
-Job Wall-clock time: 00:00:06
-Memory Utilized: 2.54 MB
-Memory Efficiency: 0.00% of 369.14 GB
+CPU Utilized: 00:12:08
+CPU Efficiency: 8.43% of 02:24:00 core-walltime
+Job Wall-clock time: 00:09:00
+Memory Utilized: 149.36 GB
+Memory Efficiency: 40.46% of 369.14 GB
 
