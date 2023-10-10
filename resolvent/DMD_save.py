@@ -23,6 +23,19 @@ class SaveDMD:
             self.Sigmaf = data["Sigmaf"]
             self.VTf = data["VTf"]
         self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
+    
+    def brunton_dmd(self, r=400):
+        U_r = self.Uf[:, :r]
+        S_r = np.diag(self.Sigmaf[:r])
+        VT_r = self.VTf[:r, :]
+        Atilde = np.linalg.solve(S_r.T,(U_r.T @ self.fluc2 @ VT_r.T).T).T # Step 2
+        Lambda, W = np.linalg.eig(Atilde) # Step 3
+        Lambda = np.diag(Lambda)
+        
+        Phi = self.fluc2 @ np.linalg.solve(S_r.T,VT_r).T @ W # Step 4
+        alpha1 = S_r @ VT_r[:,0]
+        b = np.linalg.solve(W @ Lambda,alpha1)
+        return Phi, Lambda, b
 
     def fbDMD(self, r=400):
         print(f"\n----- Calculating fbDMD with r={r} -----")

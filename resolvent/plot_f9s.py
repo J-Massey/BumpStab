@@ -224,7 +224,7 @@ def plot_power(ax=None):
 
     # ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
 
-    save_path = f"figures/power.pdf"
+    save_path = f"figures/power.png"
 
     # leg = ax.legend(loc="lower left")
     # save_legend(leg)
@@ -235,7 +235,8 @@ def plot_power(ax=None):
 
 
 def plot_power_fft(ax=None):
-    lams = [16, 128]
+    lams = [64, 128]
+    order = [4, 1]
     cases = [f"0.001/{lam}" for lam in lams]
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
@@ -257,7 +258,7 @@ def plot_power_fft(ax=None):
         
 
 
-        ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
+        ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
 
     # Adding the 'Smooth' curve
     path = f"data/test/up/lotus-data/fort.9"
@@ -268,7 +269,7 @@ def plot_power_fft(ax=None):
     freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
-    ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
+    ax.loglog(freq, Pxx, color=colours[2], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
     
@@ -338,6 +339,26 @@ def test_E_scaling():
     plt.close()
     print((enst_wide.max()-enst_long.max())/enst_wide.max())
 
+def test_E_span_scaling():
+    path = "data/test/span128/lotus-data/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst_3d = t[t > 6], enst[t > 6]/(32*4)
+    ts = t % 1
+    path = "data/test/up/lotus-data/fort.9"
+    t, enst = read_forces(path, interest="E", direction="")
+    t, enst_2d = t[t > 6], enst[t > 6]
+    tl = t % 1
+
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"$\langle E \rangle $")
+    ax.set_xlabel(r"$t/T$")
+    ax.plot(ts[10:], enst_3d[10:], label="3-D", ls="none", marker="o", markersize=0.1)
+    ax.plot(tl[10:], enst_2d[10:], label="2-D", ls="none", marker="o", markersize=.1)
+    ax.legend()
+    plt.savefig(f"figures/test_3d_enst.pdf", dpi=300)
+    plt.close()
+    print((enst_3d.mean()-enst_2d.mean())/enst_3d.mean())
+
 
 def plot_E_body_ts_3d():
     cmap = sns.color_palette("Reds", as_cmap=True)
@@ -404,16 +425,16 @@ def plot_E():
 
     fig, ax = plt.subplots(figsize=(3, 3))
     ax.set_ylabel(r"$\langle E \rangle $")
-    ax.set_xlabel(r"$t/T$")
+    ax.set_xlabel(r"$\phi/2\pi$")
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, enst = read_forces(path, interest="E", direction="")
         t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
 
-        # t_new = t % 1
-        # f = interp1d(t_new, enst, fill_value="extrapolate")
-        # enst = f(t_sample)
+        t_new = t % 1
+        f = interp1d(t_new, enst, fill_value="extrapolate")
+        enst = f(t_sample)
 
 
         # wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
@@ -435,7 +456,7 @@ def plot_E():
         enst = enst/span(1/lams[idx])
 
         ax.plot(
-            t,
+            t_sample,
             enst,
             color=colours[order[idx]],
             label=labels[idx],
@@ -443,15 +464,15 @@ def plot_E():
             linewidth=0.7,
         )
 
-    path = f"data/test/up/lotus-data/fort.9"
+    path = f"data/test/span128/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
-    t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
-    # t = t % 1
-    # f = interp1d(t, enst, fill_value="extrapolate")
-    # enst = f(t_sample)
+    t, enst = t[((t > 6) & (t < 12))], enst[((t > 6) & (t < 12))]/(32*4)
+    t = t % 1
+    f = interp1d(t, enst, fill_value="extrapolate")
+    enst = f(t_sample)
 
     ax.plot(
-        t,
+        t_sample,
         enst,
         color=colours[2],
         label="Smooth",
@@ -461,14 +482,15 @@ def plot_E():
 
     # ax.set_yscale("log")
 
-    save_path = f"figures/E.pdf"
+    save_path = f"figures/E.png"
     ax.legend(loc="upper left")
-    plt.savefig(save_path, dpi=300)
+    plt.savefig(save_path, dpi=400)
     plt.close()
 
 
 def plot_E_fft():
-    lams = [16, 128]
+    lams = [64, 128]
+    order = [4, 1]
     cases = [f"0.001/{lam}" for lam in lams]
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
@@ -489,14 +511,15 @@ def plot_E_fft():
 
         freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
         # Pxx = savgol_filter(Pxx, 4, 1)
-        ax.axvline(lams[idx]/2, color=colours[idx], alpha=0.8, linewidth=0.7, ls="-.")
-        ax.axvline(lams[idx], color=colours[idx], alpha=0.8, linewidth=0.7, ls="-.")
+        # ax.axvline(lams[idx]/2, color=colours[order[idx]], alpha=0.8, linewidth=0.7, ls="-.")
+        ax.axvline(lams[idx], color=colours[order[idx]], alpha=0.8, linewidth=0.7, ls="-.")
 
-        ax.loglog(freq, Pxx, color=colours[idx], label=labels[idx], alpha=0.8, linewidth=0.7)
+        ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
 
     # Adding the 'Smooth' curve
     path = f"data/test/up/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
+    # enst = enst
     t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
     dt = np.mean(np.diff(t))
 
@@ -505,7 +528,7 @@ def plot_E_fft():
     freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
-    ax.loglog(freq, Pxx, color=colours[idx + 1], label="Smooth", alpha=0.8, linewidth=0.7)
+    ax.loglog(freq, Pxx, color=colours[2], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_E.png"
     ax.legend(loc="lower left")
@@ -533,7 +556,6 @@ def span(lam):
 
 def generate_latex_table():
     return r'\begin{tabular}{lccccc}' + \
-        r'Colour & ~~ & ~~ & ~~ & ~~ & ~~ \\' + \
         r'$\lambda$ & $1/16$ & $1/32$ & $1/64$ &  $1/128$ &  $1/0$ \\' + \
         r'$\overline{C_P}$ & 0.1383 & 0.1366 & 0.1247 & 0.1213 & 0.1276 \\' + \
         r'\end{tabular}'
@@ -541,10 +563,12 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
+    plot_power()
     
     # plot_E()
-    plot_E_fft()
-    plot_combined()
+    # plot_E_fft()
+    # plot_combined()
+    # test_E_span_scaling()
     # save_legend()
 
     # plot_E_body_ts_3d()

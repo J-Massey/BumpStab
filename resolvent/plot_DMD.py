@@ -14,7 +14,7 @@ import cv2
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 plt.rc('text', usetex=True)
-plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
+plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
 
 colours = sns.color_palette("colorblind", 7)
 
