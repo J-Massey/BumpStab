@@ -12,6 +12,7 @@ plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 plt.rc('text', usetex=True)
 plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+
 colours = sns.color_palette("colorblind", 7)
 order = [2, 4, 1]
 labs = [r"$\lambda = 1/0$", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]
@@ -34,24 +35,34 @@ ts = np.linspace(0, 4, nt)
 dp_dx = np.gradient(p, pxs, axis=0)
 dp_dy = np.gradient(p, pys, axis=1)
 
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+
 # Find the values of dp/dx at the position of the body (y)
-for idt, t in tqdm(enumerate(ts), total=len(ts)):
-    y = np.array([naca_warp(xp) for xp in pxs]) + fwarp(t, pxs)
-    ceil_index = np.argmin(np.abs(pys - y))
-    floor_index = ceil_index + 1
+# for idt, t in tqdm(enumerate(ts), total=len(ts)):
+y = np.array([naca_warp(xp) for xp in pxs]) + fwarp(0.2, pxs)
+for xidix in range(nx):
+    ceil_index = np.where(pys > y[xidix])[0][0]
+
+    ax.scatter(pxs[xidix], pys[ceil_index], color="k", s=1)
+    print(ceil_index)
+
+ax.set_aspect(1)
+plt.savefig("figures/test.png", dpi=200)
+
+    # floor_index = ceil_index + 1
     
-    # Calculate the shifts for each x-coordinate
-    real_shift = y / dy
-    shifts = np.round(real_shift).astype(int)
-    shift_up = np.ceil(y / dy).astype(int)
-    shift_down = np.floor(y / dy).astype(int)
+    # # Calculate the shifts for each x-coordinate
+    # real_shift = y / dy
+    # shifts = np.round(real_shift).astype(int)
+    # shift_up = np.ceil(y / dy).astype(int)
+    # shift_down = np.floor(y / dy).astype(int)
     
-    for i in range(nx):
-        shift = shifts[i]
-        ushift = shift_up[i]
-        dshift = shift_down[i]
-        alpha = shift-real_shift[i]
-        unwarped[i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt])
+    # for i in range(nx):
+    #     shift = shifts[i]
+    #     ushift = shift_up[i]
+    #     dshift = shift_down[i]
+    #     alpha = shift-real_shift[i]
+    #     unwarped[i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt])
 
 
 def naca_warp(x):
