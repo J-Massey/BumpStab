@@ -72,6 +72,21 @@ class LoadData:
             self._filter_data(mask)
             self._body_data_cache = self.uvp
         return self._body_data_cache
+    
+    def body_normal(self, t):
+        """Calculate the normal vector to the body surface."""
+        # Calculate x and y coordinates of the point on the surface at t
+        x=np.linspace(0, 1, 100)
+        y = np.array([naca_warp(xp) for xp in x]) + fwarp(t, x)
+
+        df_dx = np.gradient(y, x, edge_order=2)
+        df_dy = -1
+
+        # Calculate the normal vector to the surface
+        mag = np.sqrt(df_dx**2 + df_dy**2)
+        nx = -df_dx/mag
+        ny = -df_dy/mag
+        return nx, ny
 
     @property
     def unwarped_body(self):
@@ -179,24 +194,43 @@ def apply_shift_interpolation(ushift, dshift, alpha, src, s=0):
     return interped
 
 
-def mask_data(nx, ny):
-    def naca_warp(x):
-        a = 0.6128808410319363
-        b = -0.48095987091980424
-        c = -28.092340603952525
-        d = 222.4879939829765
-        e = -846.4495017866838
-        f = 1883.671432625102
-        g = -2567.366504265927
-        h = 2111.011565214803
-        i = -962.2003374868311
-        j = 186.80721148226274
+def naca_warp(x):
+    a = 0.6128808410319363
+    b = -0.48095987091980424
+    c = -28.092340603952525
+    d = 222.4879939829765
+    e = -846.4495017866838
+    f = 1883.671432625102
+    g = -2567.366504265927
+    h = 2111.011565214803
+    i = -962.2003374868311
+    j = 186.80721148226274
 
-        xp = min(max(x, 0.0), 1.0)
-        
-        return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
-                    f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+    xp = min(max(x, 0.0), 1.0)
     
+    return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
+            f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+
+
+def fwarp(t: float, pxs: np.ndarray):
+    return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+
+
+def normal_to_surface(x: np.ndarray, t):
+    y = np.array([naca_warp(xp) for xp in x]) + fwarp(t, x)
+    y = y*1  # Scale the y-coordinate to get away from the body 
+
+    df_dx = np.gradient(y, x, edge_order=2)
+    df_dy = -1
+
+    # Calculate the normal vector to the surface
+    mag = np.sqrt(df_dx**2 + df_dy**2)
+    nx = -df_dx/mag
+    ny = -df_dy/mag
+    return nx, ny
+
+
+def mask_data(nx, ny):    
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     X, Y = np.meshgrid(pxs, pys)
@@ -206,8 +240,6 @@ def mask_data(nx, ny):
     mask_extended = binary_dilation(mask, iterations=4, border_value=0)
     return mask_extended
 
-def fwarp(t: float, pxs: np.ndarray):
-    return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
 # Sample usage

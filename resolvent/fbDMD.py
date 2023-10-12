@@ -12,13 +12,20 @@ plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 plt.rc('text', usetex=True)
 plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+colours = sns.color_palette("colorblind", 7)
+order = [2, 4, 1]
+labs = [r"$\lambda = 1/0$", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]
 
 case = "test/up"
 cases=["test/up", "0.001/64", "0.001/128"]
 # cases=["test/up"]
 r=14
 # dmds = []
-fig, axs = plt.subplots(figsize=(5, 3))
+fig, ax = plt.subplots(figsize=(5, 3))
+ax.annotate(
+    f"$f^*={2.00:.2f}$"
+            , xy=(0.175, 0.475), xycoords='axes fraction',
+)
 
 for idx, case in enumerate(cases):
     # snapshots = np.load(f"data/{case}/data/body_flucs_p.npy")
@@ -40,39 +47,39 @@ for idx, case in enumerate(cases):
     dir = f"figures/phase-info/{case}-DMD"
     os.system(f"mkdir -p {dir}")
 
+    if idx:
+        n=9
+    else:
+        n=8
 
-    for axid, n in enumerate([8,9]):
-        qi = np.angle(fbdmd.modes.T[n].reshape(nx, ny)).T
-        lim = np.pi
-        levels = np.linspace(-lim, lim, 44)
-        _cmap = sns.color_palette("husl", as_cmap=True)
-
-        axs[axid].annotate(
-            f"$f^*={(np.imag(np.log(fbdmd.eigs[n])/0.005) )/ ( np.pi ):.2f}$"
-                    , xy=(0.175, 0.475), xycoords='axes fraction',
-        )
-
-        cs = axs[axid].contourf(
-            pxs,
-            pys,
-            qi,
-            levels=levels,
-            vmin=-lim,
-            vmax=lim,
-            # norm=norm,
-            cmap=_cmap,
-            extend="both",
-            # alpha=0.7,
-        )
-        axs[axid].set_aspect(1)
-    plt.savefig(f"figures/phase-info/p_angle_{n}.png", dpi=300)
-    plt.close()
+    # for axid, n in enumerate([8,9]):
+    qi = np.angle(fbdmd.modes.T[n].reshape(nx, ny)).T/np.pi
+    lims = [0.2, 0.4]
+    levels = np.linspace(lims[0], lims[1], 6)
+    # levels = np.append(np.linspace(-lims[1], -lims[0], 6), levels)
+    _cmap = sns.color_palette("husl", as_cmap=True)
 
 
-# Now plot the eigenvalues
-colours = sns.color_palette("colorblind", 7)
-order = [2, 4, 1]
-labs = [r"$\lambda = 1/0$", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]
+    co = ax.contour(
+        pxs,
+        pys,
+        qi,
+        levels=levels,
+        vmin=lims[0],
+        vmax=lims[1],
+        colors=[colours[order[idx]]],
+        linewidths=0.25,
+        label=labs[idx],
+        # alpha=0.85,
+    )
+ax.clabel(co, inline=True, fontsize=6, fmt="%.2f", colors='grey')
+ax.set_aspect(1)
+ax.set_xlabel(r"$x$")
+ax.set_ylabel(r"$y$")
+ax.legend()
+plt.savefig(f"figures/phase-info/phase.png", dpi=800)
+plt.close()
+
 
 
 def plot_eigs():
