@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from pydmd import FbDMD
+from scipy.interpolate import UnivariateSpline
+from scipy.signal import savgol_filter
 
 import matplotlib.pyplot as plt
 import scienceplots
@@ -17,52 +19,57 @@ colours = sns.color_palette("colorblind", 7)
 order = [2, 4, 1]
 labs = [r"$\lambda = 1/0$", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]
 
-case = "test/down"
+case = "test/up"
 # cases=["test/up", "0.001/64", "0.001/128"]
 # cases=["test/up"]
 
 snapshot = np.load(f"data/{case}/data/uvp.npy")
-nx, ny, nt = np.load(f"data/{case}/data/body_nxyt.npy")
+_, nx, ny, nt = snapshot.shape
+p = snapshot[0, :, :, :]
+pxs  = np.linspace(-0.35, 2, nx)
+pys = np.linspace(-0.35, 0.35, ny)
+mask = (pxs > 0) & (pxs < 1)
+p = p[mask, :, :]
+nx, ny, nt = p.shape
+
 pxs = np.linspace(0, 1, nx)
-pys = np.linspace(-0.25, 0.25, ny)
-dy = 0.5/ny
+pys = np.linspace(-0.35, 0.35, ny)
 
-snapshot.resize(3, nx, ny, nt)
-p = snapshot[2, :, :, :]
 
-ts = np.linspace(0, 4, nt)
+def normal_pressure(p, lam):
+    dp_dx = np.gradient(p, axis=0)
+    dp_dy = np.gradient(p, axis=1)
 
-dp_dx = np.gradient(p, pxs, axis=0)
-dp_dy = np.gradient(p, pys, axis=1)
+    # Find the values of dp/dx at the position of the body (y)
+    # for idt, t in tqdm(enumerate(ts), total=len(ts)):
+    tidx = 0
+    t=tidx*0.005
+    y = fwarp(t, pxs) + np.array([naca_warp(xp) for xp in pxs])
+    y = y*1.001  # Scale the y-coordinate to get away from the body
 
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+    ceil_index = np.array([np.where(pys > y[xidix])[0][0] for xidix in range(nx)])
+    floor_index = ceil_index - 1
+    alpha = (y - pys[floor_index]) / (pys[ceil_index] - pys[floor_index])
 
-# Find the values of dp/dx at the position of the body (y)
-# for idt, t in tqdm(enumerate(ts), total=len(ts)):
-y = np.array([naca_warp(xp) for xp in pxs]) + fwarp(0.2, pxs)
-for xidix in range(nx):
-    ceil_index = np.where(pys > y[xidix])[0][0]
 
-    ax.scatter(pxs[xidix], pys[ceil_index], color="k", s=1)
-    print(ceil_index)
+    dpdx = np.array([(1-alpha[idx])*dp_dx[idx, floor_index[idx], tidx] + alpha[idx]*dp_dx[idx, ceil_index[idx], tidx] for idx in range(nx)])
+    dpdy = np.array([(1-alpha[idx])*dp_dy[idx, floor_index[idx], tidx] + alpha[idx]*dp_dy[idx, ceil_index[idx], tidx] for idx in range(nx)])
 
-ax.set_aspect(1)
-plt.savefig("figures/test.png", dpi=200)
+    normx, normy = normal_to_surface(pxs, t)
+    dpdn = dpdx*normx + dpdy*normy
 
-    # floor_index = ceil_index + 1
-    
-    # # Calculate the shifts for each x-coordinate
-    # real_shift = y / dy
-    # shifts = np.round(real_shift).astype(int)
-    # shift_up = np.ceil(y / dy).astype(int)
-    # shift_down = np.floor(y / dy).astype(int)
-    
-    # for i in range(nx):
-    #     shift = shifts[i]
-    #     ushift = shift_up[i]
-    #     dshift = shift_down[i]
-    #     alpha = shift-real_shift[i]
-    #     unwarped[i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt])
+
+# Plot dpdx
+fig, ax = plt.subplots(figsize=(3, 3))
+ax.plot(pxs, dpdx, lw=.2, color="red", label=r"$\frac{\partial p}{\partial x}$")
+ax.plot(pxs, dpdy, lw=.2, color="blue", label=r"$\frac{\partial p}{\partial y}$")
+ax.plot(pxs, dpdn, lw=.2, color="green", label=r"$\frac{\partial p}{\partial n}$")
+ax.legend()
+plt.savefig("figures/test.pdf", dpi=200)
+
+def roughness(lam):
+    return 0.001*np.sin(2*np.pi*lam*pxs)
+
 
 
 def naca_warp(x):
@@ -84,7 +91,7 @@ def naca_warp(x):
 
 
 def fwarp(t: float, pxs: np.ndarray):
-    return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+    return 0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
 def normal_to_surface(x: np.ndarray, t):
@@ -132,5 +139,5 @@ def dp_dn(bsnap, fsnap, phi=0):
         int(len(dpdn) / 8),
         2,
     )
-    
-    return np.array(x), np.array(dpdn)
+
+
