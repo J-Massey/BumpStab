@@ -257,8 +257,8 @@ if __name__ == "__main__":
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
     
+    cases = ["test/span64", "0.001/64", "0.001/128"]
     # cases = ["test/down", "test/down", "test/down"]
-    cases = ["test/up", "0.001/64", "0.001/128"]
     bodies = []
     for idxc, case in enumerate(cases):
         dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
@@ -268,11 +268,15 @@ if __name__ == "__main__":
     time_values = np.arange(0.2, 0.45, 0.05)
     idxs = (time_values * 200).astype(int)
 
-    fig, axs = plt.subplots(idxs.size, len(cases), figsize=(8, 10), sharex=True, sharey=True, )
-    
-    fig.text(0.5, 0.08, r"$x$", ha='center', va='center')
+    fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
+    fig.text(0.5, 0.07, r"$x$", ha='center', va='center')
     fig.text(0.08, 0.5, r"$y$", ha='center', va='center', rotation='vertical')
-    fig.text(0.915, 0.844, 't', horizontalalignment='center', verticalalignment='center')
+    fig.text(0.915, 0.844, r'$\varphi$', horizontalalignment='center', verticalalignment='center')
+
+    arrow_ax = fig.add_axes([0.92, 0.054, 0.02, 0.79])
+    arrow_ax.axis('off')
+    fancy_arrow = FancyArrowPatch((0.5, 1), (0.5, 0.1), mutation_scale=15, arrowstyle='->', color='k')
+    arrow_ax.add_patch(fancy_arrow)
 
     #  Calculate the y-position for each label based on the number of rows and the figure height
     num_rows = len(time_values)
@@ -283,13 +287,13 @@ if __name__ == "__main__":
         y_pos = 0.89 - (idx + 0.5) * row_height  # Center of each row
         fig.text(0.945, y_pos, f"{time:.2f}", verticalalignment='center')
 
-    lims = [-0.25, 0.25]
+    lims = [-400, 400]
     levels = np.linspace(lims[0], lims[1], 44)
     _cmap = sns.color_palette("seismic", as_cmap=True)
 
     # Column Labels
     for idxc, lab in enumerate([r"Smooth", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]):
-        axs[0, idxc].set_title(lab)
+        axs[0, idxc].set_title(lab, fontsize=10.5)
 
     for idxc, case in enumerate(cases):
         body = bodies[idxc]
@@ -297,37 +301,37 @@ if __name__ == "__main__":
         pxs = np.linspace(0, 1, nx)
         pys = np.linspace(-0.35, 0.35, ny)
 
+        vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+
         for idx, n in enumerate(idxs):
+            avg_vort = (vorticity[:, :, n]+vorticity[:, :, n+199]+vorticity[:, :, n+399]+vorticity[:, :, n+599])/4
             cs = axs[idx, idxc].contourf(
                 pxs,
                 pys,
-                body[2, :, :, n].T,
+                vorticity[:, :, n].T,
                 levels=levels,
                 vmin=lims[0],
                 vmax=lims[1],
                 cmap=_cmap,
                 extend="both",
             )
-
+            axs[idx, idxc].set_ylim([-0.2, 0.2])
             axs[idx, idxc].set_aspect(1)
-    
-    arrow_ax = fig.add_axes([0.92, 0.054, 0.02, 0.79])
-    arrow_ax.axis('off')
-
-    fancy_arrow = FancyArrowPatch((0.5, 1), (0.5, 0.1), mutation_scale=15, arrowstyle='->', color='k')
-    arrow_ax.add_patch(fancy_arrow)
 
     # cbar on top of the plot spanning the whole width
-    cax = fig.add_axes([0.175, 0.91, 0.7, 0.022])
+    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
     cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$p$", labelpad=-23.5, rotation=0)
+    cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-25, rotation=0)
 
-    plt.savefig(f"figures/power-recovery/pressure.png", dpi=800)
+    fig_width, fig_height = fig.get_size_inches()
+    new_width = 8
+    scale_factor = new_width / fig_width
+    new_height = fig_height * scale_factor
+    fig.set_size_inches(new_width, new_height)
+
+    plt.savefig(f"figures/power-recovery/vorticity.pdf", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity.png", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity.pgf", dpi=800)
     plt.close()
-
-
-    # for n in range(0, nt, 5):
-    #     plot_field(body[2, :, :, n].T, pxs, pys, f"figures/{case}-warp/{n}.png", lim=[-0.15, 0.15], _cmap="seismic")
-    # gif_gen(f"figures/{case}-warp/", f"figures/{case}_warped.gif", 10)

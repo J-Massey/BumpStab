@@ -433,56 +433,39 @@ def plot_E():
         t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
 
         t_new = t % 1
-        f = interp1d(t_new, enst, fill_value="extrapolate")
-        enst = f(t_sample)
-
-
-        # wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
-        # wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
-        # wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
-
-
-        # enst_bins = [enst[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-        # t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-
-
-        # # Calculate the standard deviation of each bin
-        # enst_diff = np.empty((4, t_sample.size))
-        # for id in range(len(enst_bins)):
-        #     f_bins = interp1d(t_bins[id], enst_bins[id], fill_value="extrapolate")
-        #     enst_bins[id] = f_bins(t_sample)
-        #     enst_diff[id] = enst_bins[id] - enst
         
         enst = enst/span(1/lams[idx])
 
         ax.plot(
-            t_sample,
+            t_new,
             enst,
             color=colours[order[idx]],
             label=labels[idx],
             alpha=0.8,
-            linewidth=0.7,
+            linestyle="none",
+            marker="o",
+            markersize=0.1,
         )
 
-    path = f"data/test/span128/lotus-data/fort.9"
+    path = f"data/test/span64/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
-    t, enst = t[((t > 6) & (t < 12))], enst[((t > 6) & (t < 12))]/(32*4)
-    t = t % 1
-    f = interp1d(t, enst, fill_value="extrapolate")
-    enst = f(t_sample)
+    t, enst = t[((t > 12.01) & (t < 16))], enst[((t > 12.01) & (t < 16))]/(64*4)
+    t_new = t % 1
 
     ax.plot(
-        t_sample,
+        t_new,
         enst,
         color=colours[2],
         label="Smooth",
         alpha=0.8,
-        linewidth=0.7,
+        linestyle="none",
+        marker="o",
+        markersize=0.1,
     )
 
     # ax.set_yscale("log")
 
-    save_path = f"figures/E.png"
+    save_path = f"figures/E.pdf"
     ax.legend(loc="upper left")
     plt.savefig(save_path, dpi=400)
     plt.close()
@@ -491,7 +474,7 @@ def plot_E():
 def plot_E_fft():
     lams = [64, 128]
     order = [4, 1]
-    cases = [f"0.001/{lam}" for lam in lams]
+    cases = [f"0.001/{lam}" for lam in lams]  
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
@@ -503,13 +486,13 @@ def plot_E_fft():
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
-        t, enst = read_forces(path, interest="tke", direction="")
+        t, enst = read_forces(path, interest="E", direction="")
         dt = 4/len(t)
 
         enst = enst/span(1/lams[idx])
-        # enst = enst - np.mean(enst)
 
         freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
+
         # Pxx = savgol_filter(Pxx, 4, 1)
         # ax.axvline(lams[idx]/2, color=colours[order[idx]], alpha=0.8, linewidth=0.7, ls="-.")
         ax.axvline(lams[idx], color=colours[order[idx]], alpha=0.8, linewidth=0.7, ls="-.")
@@ -517,20 +500,19 @@ def plot_E_fft():
         ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
 
     # Adding the 'Smooth' curve
-    path = f"data/test/up/lotus-data/fort.9"
+    path = f"data/test/span64/lotus-data/fort.9"
     t, enst = read_forces(path, interest="E", direction="")
-    # enst = enst
-    t, enst = t[((t > 8) & (t < 12))], enst[((t > 8) & (t < 12))]
+    enst = enst/(64*4)
+    t, enst = t[((t > 12) & (t < 16))], enst[((t > 12) & (t < 16))]
     dt = np.mean(np.diff(t))
 
-    # enst = enst - np.mean(enst)
 
     freq, Pxx = welch(enst, 1/dt, nperseg=len(t//2))
     # Applay savgiol filter
     # Pxx = savgol_filter(Pxx, 4, 1)
     ax.loglog(freq, Pxx, color=colours[2], label="Smooth", alpha=0.8, linewidth=0.7)
 
-    save_path = f"figures/fft_E.png"
+    save_path = f"figures/fft_E.pdf"
     ax.legend(loc="lower left")
     plt.savefig(save_path, dpi=700)
     plt.close()
@@ -563,10 +545,10 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    plot_power()
+    # plot_power()
     
-    # plot_E()
-    # plot_E_fft()
+    plot_E()
+    plot_E_fft()
     # plot_combined()
     # test_E_span_scaling()
     # save_legend()
