@@ -265,7 +265,7 @@ if __name__ == "__main__":
         body = dl.body
         bodies.append(body)
 
-    time_values = np.arange(0.2, 0.45, 0.05)
+    time_values = np.arange(0.7, 0.95, 0.05)
     idxs = (time_values * 200).astype(int)
 
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
@@ -316,6 +316,7 @@ if __name__ == "__main__":
                 extend="both",
             )
             axs[idx, idxc].set_ylim([-0.2, 0.2])
+            axs[idx, idxc].set_xlim([0.8, 1])
             axs[idx, idxc].set_aspect(1)
 
     # cbar on top of the plot spanning the whole width
@@ -329,9 +330,9 @@ if __name__ == "__main__":
     new_width = 8
     scale_factor = new_width / fig_width
     new_height = fig_height * scale_factor
-    fig.set_size_inches(new_width, new_height)
+    fig.set_size_inches(7, 16)
 
-    plt.savefig(f"figures/power-recovery/vorticity.pdf", dpi=800)
-    plt.savefig(f"figures/power-recovery/vorticity.png", dpi=800)
-    plt.savefig(f"figures/power-recovery/vorticity.pgf", dpi=800)
-    plt.close()
+    plt.savefig(f"figures/power-recovery/vorticity_tail.pdf", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity_tail.png", dpi=800)
+    # plt.savefig(f"figures/power-recovery/vorticity.pgf", dpi=800)
+    # plt.close()
