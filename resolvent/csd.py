@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from pydmd import FbDMD
+from scipy.fftpack import fft2, fftshift, fftfreq
 from scipy.ndimage import gaussian_filter1d
 from scipy.signal import savgol_filter
 
@@ -18,48 +19,6 @@ plt.rc('text', usetex=True)
 plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
 
 
-def init(case):
-    snapshot = np.load(f"data/{case}/data/uvp.npy")
-    _, nx, ny, nt = snapshot.shape
-    p = snapshot[2, :, :, :]
-    pxs  = np.linspace(-0.35, 2, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
-    mask = (pxs > 0) & (pxs < 1)
-    p = p[mask, :, :]
-    nx, ny, nt = p.shape
-
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
-    return nt,p,pxs,pys
-
-
-def normal_pressure(nt, p, pxs, pys):
-    ts = np.arange(0, 0.005*nt, 0.005)
-    nx, ny, nt = p.shape
-
-    # dp_dx = np.gradient(p, pxs, axis=0)
-    # dp_dy = np.gradient(p, pys, axis=1)
-
-    # Find the values of dp/dx at the position of the body (y)
-    p_ny = np.zeros((len(ts), nx))
-    for tidx, t in tqdm(enumerate(ts), total=len(ts)):
-        y = fwarp(t, pxs) + np.array([naca_warp(xp) for xp in pxs])
-        y = y*1.00005  # Scale the y-coordinate to get away from the body
-
-        ceil_index = np.array([np.where(pys > y[xidix])[0][0] for xidix in range(nx)])
-        floor_index = ceil_index - 1
-        alpha = (y - pys[floor_index]) / (pys[ceil_index] - pys[floor_index])
-
-
-        p_ny[tidx] = np.array([(1-alpha[idx])*p[idx, floor_index[idx], tidx] + alpha[idx]*p[idx, ceil_index[idx], tidx] for idx in range(nx)])
-        # dpdy = np.array([(1-alpha[idx])*dp_dy[idx, floor_index[idx], tidx] + alpha[idx]*dp_dy[idx, ceil_index[idx], tidx] for idx in range(nx)])
-
-        normx, normy = normal_to_surface(pxs, t)
-        p_ny[tidx] = p_ny[tidx]*velocity(t, pxs)
-        
-    return ts,p_ny
-
-
 def phase_average(ts, p_ny):
     # split into 4 equal parts
     p_ny1 = p_ny[:int(len(ts)/4)]
@@ -69,224 +28,226 @@ def phase_average(ts, p_ny):
     return (p_ny1 + p_ny2 + p_ny3 + p_ny4)/4
 
 
-def naca_warp(x):
-    a = 0.6128808410319363
-    b = -0.48095987091980424
-    c = -28.092340603952525
-    d = 222.4879939829765
-    e = -846.4495017866838
-    f = 1883.671432625102
-    g = -2567.366504265927
-    h = 2111.011565214803
-    i = -962.2003374868311
-    j = 186.80721148226274
+def init(cases):
+    p_ns = []
+    for idx, case in enumerate(cases):
+        p_n = np.load(f"data/{case}/data/p_n.npy")
+        ts = np.arange(0, 0.005*p_n.shape[0], 0.005)
+        p_ns.append(phase_average(ts, p_n))
+    p_ns = np.array(p_ns)
+    pxs = np.linspace(0, 1, p_ns.shape[-1])
+    return ts, pxs, p_ns
 
-    xp = min(max(x, 0.0), 1.0)
+
+def plot_difference(cases):
+    ts, pxs, p_ns = init(cases)
+    p_ns_filtered = gaussian_filter1d(p_ns, 3, radius=12, axis=1)
+    p_ns_filtered = gaussian_filter1d(p_ns_filtered, 3, radius=12, axis=2)
+    p_ns_filtered = p_ns
+
+    phi = ts[:ts.size//4]
+
+    fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
+    fig.text(0.5, 0.05, r"$x$", ha='center', va='center')
+    fig.text(0.05, 0.5, r"$\varphi$", ha='center', va='center', rotation='vertical')
+
+    ax[1, 0].set_title(r"$\lambda = 1/64$", fontsize=10)
+    ax[1, 1].set_title(r"$\lambda = 1/128$", fontsize=10)
+    ax[0, 0].set_title(r"$\lambda = 1/16$", fontsize=10)
+    ax[0, 1].set_title(r"$\lambda = 1/32$", fontsize=10)
+
+    [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
+    [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
     
-    return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
-            f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+    lims = [-0.01, 0.01]
 
+    dp_64 = p_ns_filtered[0]-p_ns_filtered[1]
+    dp_128 = p_ns_filtered[0]-p_ns_filtered[2]
+    dp_16 = p_ns_filtered[0]-p_ns_filtered[3]
+    dp_32 = p_ns_filtered[0]-p_ns_filtered[4]
 
-def fwarp(t: float, pxs: np.ndarray):
-    return 0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+    print([(p_ns_filter).sum() for p_ns_filter in p_ns])
+    # print(dp_16.sum(), dp_32.sum(), dp_64.sum(), dp_128.sum())
 
-
-def velocity(t, pxs):
-    return np.pi * (0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.cos(2 * np.pi * (t - 1.42 * pxs))
-
-
-def normal_to_surface(x: np.ndarray, t):
-    y = np.array([naca_warp(xp) for xp in x]) + fwarp(t, x)
-
-    df_dx = np.gradient(y, x, edge_order=2)
-    df_dy = 1
-
-    # Calculate the normal vector to the surface
-    mag = np.sqrt(df_dx**2 + df_dy**2)
-    nx = -df_dx/mag
-    ny = df_dy/mag
-    return nx, ny
-
-
-def plot_pa_recovery(colours, order, cases):
-    fig, ax = plt.subplots(figsize=(6, 3))
-    divider = make_axes_locatable(ax)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(r"$\varphi$")
-
-    ax.set_xlim(0, 1)
-    # ax.set_ylim(0, 0.1)
-
-    lim = [-0.04, 0.001]  # min(np.max(p_n), np.abs(np.min(p_n)))
-    levels = np.linspace(lim[0], lim[1], 4)
-    for idx, case in enumerate(cases):
-        # nt, p, pxs, pys = init(case)
-        # ts, p_n = normal_pressure(nt, p, pxs, pys)
-        # np.save(f"data/{case}/data/p_n.npy", p_n)
-
-        p_n = np.load(f"data/{case}/data/p_n.npy")
-        nt = p_n.shape[0]
-        pxs = np.linspace(0, 1, p_n.shape[1])
-        ts = np.arange(0, 0.005*nt, 0.005)
-
-        p_n_filtered = gaussian_filter1d(p_n, sigma=10, axis=1)
-        p_n_filtered = gaussian_filter1d(p_n_filtered, sigma=10, axis=0)
-        print(p_n_filtered.max(), p_n_filtered.min(), p_n_filtered.mean(), p_n.max(), p_n.min(), p_n.mean())
-        pa = -phase_average(ts, p_n_filtered)
-
-        phi = ts[:nt//4]
-        cs = ax.contour(
-        pxs,
-        phi,
-        pa,
-        levels=levels,
-        vmin=lim[0],
-        vmax=lim[1],
-        colors=[colours[order[idx]]],
-        linewidths=0.5,
-        )
-        # print((-pa).max(), (-pa).min())
-        cs.clabel(cs.levels, fontsize=6, fmt="%.2f", colors='grey')
-
-    # ax.set_title(r"$ \vec{v}\cdot\frac{\partial p}{\partial n}\Big |_{n=0}$", rotation=0)
-    plt.savefig(f"figures/phase-info/surface/phase_average_recovery.pdf", dpi=450, transparent=True)
-    plt.close()
-
-
-def plot_pa_recovery(colours, order, cases):
-    fig, ax = plt.subplots(figsize=(6, 3))
-    divider = make_axes_locatable(ax)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(r"$\varphi$")
-
-    ax.set_xlim(0, 1)
-    # ax.set_ylim(0, 0.1)
-
-    lim = [-0.04, 0.001]  # min(np.max(p_n), np.abs(np.min(p_n)))
-    levels = np.linspace(lim[0], lim[1], 4)
-    for idx, case in enumerate(cases):
-        # nt, p, pxs, pys = init(case)
-        # ts, p_n = normal_pressure(nt, p, pxs, pys)
-        # np.save(f"data/{case}/data/p_n.npy", p_n)
-
-        p_n = np.load(f"data/{case}/data/p_n.npy")
-        nt = p_n.shape[0]
-        pxs = np.linspace(0, 1, p_n.shape[1])
-        ts = np.arange(0, 0.005*nt, 0.005)
-
-        p_n_filtered = gaussian_filter1d(p_n, sigma=10, axis=1)
-        p_n_filtered = gaussian_filter1d(p_n_filtered, sigma=10, axis=0)
-        print(p_n_filtered.max(), p_n_filtered.min(), p_n_filtered.mean(), p_n.max(), p_n.min(), p_n.mean())
-        pa = -phase_average(ts, p_n_filtered)
-
-        phi = ts[:nt//4]
-        cs = ax.contour(
-        pxs,
-        phi,
-        pa,
-        levels=levels,
-        vmin=lim[0],
-        vmax=lim[1],
-        colors=[colours[order[idx]]],
-        linewidths=0.5,
-        )
-        # print((-pa).max(), (-pa).min())
-        cs.clabel(cs.levels, fontsize=6, fmt="%.2f", colors='grey')
-
-    # ax.set_title(r"$ \vec{v}\cdot\frac{\partial p}{\partial n}\Big |_{n=0}$", rotation=0)
-    plt.savefig(f"figures/phase-info/surface/phase_average_recovery.pdf", dpi=450, transparent=True)
-    plt.close()
-
-def mid_body_recovery(lams, cases):
-    for idx, case in enumerate(cases):
-        fig, ax = plt.subplots(figsize=(3, 3))
-        divider = make_axes_locatable(ax)
-        ax.set_xlabel(r"$x$")
-        ax.set_ylabel(r"$\varphi$")
-
-        lim = 0.02  # min(np.max(p_n), np.abs(np.min(p_n)))
-        levels = np.linspace(-lim, lim, 22)
-
-        p_n = np.load(f"data/{case}/data/p_n.npy")
-        nt = p_n.shape[0]
-        pxs = np.linspace(0, 1, p_n.shape[1])
-        ts = np.arange(0, 0.005*nt, 0.005)
-
-        p_n_filtered = gaussian_filter1d(p_n, sigma=2, axis=1)
-        p_n_filtered = gaussian_filter1d(p_n_filtered, sigma=2, axis=0)
-        p_n_filtered = p_n
-        pa = phase_average(ts, p_n_filtered)
-
-        phi = ts[:nt//4]
-        phi_recovery_mask = (phi > 0.7) & (phi < 1.0)
-        body_recovery_mask = (pxs > 0.4) & (pxs < 0.8)
-        cs = ax.contourf(
-        pxs[body_recovery_mask],
-        phi[phi_recovery_mask],
-        pa[phi_recovery_mask, :][:, body_recovery_mask],
-        levels=levels,
-        vmin=-lim,
-        vmax=lim,
-        cmap=sns.color_palette("icefire", as_cmap=True),
-        extend="both",
-        )
-
-        cax = divider.append_axes("right", size="7%", pad=0.2)
-        fig.add_axes(cax)
-        cb = plt.colorbar(cs, cax=cax, orientation="vertical", ticks=np.linspace(-lim, lim, 5))
-                
-
-        # ax.set_title(r"$ \vec{v}\cdot\frac{\partial p}{\partial n}\Big |_{n=0}$", rotation=0)
-        plt.savefig(f"figures/phase-info/surface/mid_body_recovery_{int(1/lams[idx])}.png", dpi=450, transparent=True)
-        plt.close()
-
-def plot_body_velocity(case):
-    fig, ax = plt.subplots(figsize=(3, 3))
-    divider = make_axes_locatable(ax)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(r"$\varphi$")
-
-    lim = 0.6
-    levels = np.linspace(-lim, lim, 22)
-
-    p_n = np.load(f"data/{case}/data/p_n.npy")
-    nt = p_n.shape[0]
-    pxs = np.linspace(0, 1, p_n.shape[1])
-    ts = np.arange(0, 0.005*nt, 0.005)
-
-    phi = ts[:nt//4]
-    cs = ax.contourf(
-    pxs,
-    phi,
-    [velocity(t, pxs) for t in phi],
-    levels=levels,
-    vmin=-lim,
-    vmax=lim,
-    cmap=sns.color_palette("icefire", as_cmap=True),
-    extend="both",
+    ax[0,0].imshow(
+        dp_16,
+        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower'
     )
 
-    cax = divider.append_axes("right", size="7%", pad=0.2)
-    fig.add_axes(cax)
-    cb = plt.colorbar(cs, cax=cax, orientation="vertical", ticks=np.linspace(-lim, lim, 5))
-    # cb label
-    cb.set_label(r"$\vec{v}$", labelpad=-45, rotation=0)
+    ax[0,1].imshow(
+        dp_32,
+        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower'
+    )
+
+    ax[1,0].imshow(
+        dp_64,
+        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower'
+    )
     
-    plt.savefig(f"figures/phase-info/surface/velocity.pdf", dpi=450, transparent=True)
+    im128 = ax[1,1].imshow(
+        dp_128,
+        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower'
+    )
+
+    # plot colorbar
+    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
+    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\langle p_{s,smooth}-p_{s,rough} \rangle$", labelpad=-25, rotation=0)    
+
+    plt.savefig(f"figures/phase-info/surface/difference.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/difference.png", dpi=450, transparent=True)
     plt.close()
+
+
+# Function to compute 2D (x-t) cross-spectral density
+def compute_crosscorr(array1, array2):
+    # Normalise
+    array1 /= np.linalg.norm(array1)
+    array2 /= np.linalg.norm(array2)
+
+    FFT1 = np.fft.fft2(array1)
+    FFT2 = np.fft.fft2(array2)
+    cross_corr_freq = FFT1 * np.conj(FFT2)
+
+    # Inverse Fourier Transform to get cross-correlation in spatial domain
+    cross_corr = np.fft.ifft2(cross_corr_freq).real
+    return cross_corr
+
+
+def plot_difference_spectra(cases):
+    ts, pxs, p_ns = init(cases)
+    phi = ts[:ts.size//4]
+    p_ns_filtered = gaussian_filter1d(p_ns, 3, radius=12, axis=1)
+    p_ns_filtered = gaussian_filter1d(p_ns_filtered, 3, radius=12, axis=2)
+    # p_ns_filtered = p_ns
+
+    dx = 4/4096  # Spatial step
+    dt = 0.005  # Temporal step
+    
+    cc64 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[1])
+    cc64 = np.fft.fftshift(cc64)
+    cc128 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[2])
+    cc128 = np.fft.fftshift(cc128)
+    cc16 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[3])
+    cc16 = np.fft.fftshift(cc16)
+    cc32 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[4])
+    cc32 = np.fft.fftshift(cc32)
+
+    num_rows, num_cols = p_ns[0].shape
+    freq_x = np.fft.fftshift(np.fft.fftfreq(num_cols, 4/4096))
+    freq_y = np.fft.fftshift(np.fft.fftfreq(num_rows, 0.005))
+
+    extent=[freq_x.min(), freq_x.max(), freq_y.min(), freq_y.max()]
+
+    fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
+    fig.text(0.5, 0.01, r"$1/k_x$", ha='center', va='center')
+    fig.text(0.03, 0.5, r"$f^*$", ha='center', va='center', rotation='vertical')
+    # title for each plot
+    ax[1, 0].set_title(r"$\lambda = 1/64$")
+    ax[1, 1].set_title(r"$\lambda = 1/128$")
+    ax[0, 0].set_title(r"$\lambda = 1/16$")
+    ax[0, 1].set_title(r"$\lambda = 1/32$")
+
+    # [ax.set_xlim(0, 1) for ax in ax]
+    # [ax.set_ylim(0, 1) for ax in ax]
+    
+    lims = [0, 4]
+    cmap = sns.color_palette("icefire", as_cmap=True)
+
+    im64 = ax[1, 0].imshow(
+        np.log(np.abs(cc64)),
+        extent=extent,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=cmap,
+        aspect='auto',
+        origin='lower',
+    )
+    
+    im128 = ax[1, 1].imshow(
+        np.log(np.abs(cc128)),
+        extent=extent,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=cmap,
+        aspect='auto',
+        origin='lower',
+    )
+
+    im16 = ax[0, 0].imshow(
+        np.log(np.abs(cc16)),
+        extent=extent,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=cmap,
+        aspect='auto',
+        origin='lower'
+    )
+
+    im32 = ax[0, 1].imshow(
+        np.log(np.abs(cc32)),
+        extent=extent,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=cmap,
+        aspect='auto',
+        origin='lower',
+    )
+
+    # set all axes with symlog
+    [[ax.set_xscale('symlog') for ax in ax[n, :]] for n in range(2)]
+    [[ax.set_yscale('symlog') for ax in ax[n, :]] for n in range(2)]
+
+    # annotate with a box
+    [[ax.axhspan(2.5, 10, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
+    [[ax.axvspan(-24, -8, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
+    [[ax[n, m].plot([-24, -8], [2.5, 2.5], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    [[ax[n, m].plot([-24, -8], [10, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    [[ax[n, m].plot([-24, -24], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    [[ax[n, m].plot([-8, -8], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+
+
+    # plot colorbar
+    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
+    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$PSD(\langle p_{s,smooth}-p_{s,rough} \rangle)$", labelpad=-25, rotation=0)
+    
+    plt.savefig(f"figures/phase-info/surface/csd.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/csd.png", dpi=450, transparent=True)
 
 if __name__ == "__main__":
     colours = sns.color_palette("colorblind", 7)
-    order = [2, 4, 1]
-    lams = [1e9, 1/64, 1/128]
+    order = [2, 4, 1, 0, 3]
+    lams = [1e9, 1/64, 1/128, 1/16, 1/32]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["test/span64", "0.001/64", "0.001/128"]
+    cases = ["test/span64", "0.001/64", "0.001/128", "0.001/16", "0.001/32"]
 
-    # plot_body_velocity("test/span64")
-    plot_pa_recovery(colours, order, cases)
-    # mid_body_recovery(phase_average, lams, cases)
-
-    # for idx, case in enumerate(cases):
-
-
+    # plot_csd(cases)
+    plot_difference(cases)
+    plot_difference_spectra(cases)
+    
 

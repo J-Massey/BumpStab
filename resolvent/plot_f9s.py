@@ -162,6 +162,7 @@ def plot_power(ax=None):
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
+        print(case, force.mean())
         t_new = t % 1
         f = interp1d(t_new, force, fill_value="extrapolate")
         force_av = f(t_sample)
@@ -545,10 +546,10 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    # plot_power()
+    plot_power()
     
-    plot_E()
-    plot_E_fft()
+    # plot_E()
+    # plot_E_fft()
     # plot_combined()
     # test_E_span_scaling()
     # save_legend()
