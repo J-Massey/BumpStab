@@ -10,7 +10,7 @@ def run_bumps(lam):
 
 def run_cont(lam):
     new_f90(lam)
-    run(1024, f'{cwd}/lotus-data', f'/scratch/jmom1n15/BumpStab/data/0.001/{1/lam:.0f}/{1/lam:.0f}/')
+    run(1024, f'{cwd}/spressure', f'/scratch/jmom1n15/BumpStab/data/0.001/{1/lam:.0f}/{1/lam:.0f}/')
 
 if __name__ == "__main__":
     cwd = os.getcwd()

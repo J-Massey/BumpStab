@@ -12,6 +12,7 @@ import scienceplots
 from tqdm import tqdm
 import sys
 import seaborn as sns
+from matplotlib.colors import TwoSlopeNorm
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -33,7 +34,7 @@ def init(cases):
     for idx, case in enumerate(cases):
         p_n = np.load(f"data/{case}/data/p_n.npy")
         ts = np.arange(0, 0.005*p_n.shape[0], 0.005)
-        p_ns.append(phase_average(ts, p_n))
+        p_ns.append(p_n)
     p_ns = np.array(p_ns)
     pxs = np.linspace(0, 1, p_ns.shape[-1])
     return ts, pxs, p_ns
@@ -41,9 +42,9 @@ def init(cases):
 
 def plot_difference(cases):
     ts, pxs, p_ns = init(cases)
-    p_ns_filtered = gaussian_filter1d(p_ns, 3, radius=12, axis=1)
-    p_ns_filtered = gaussian_filter1d(p_ns_filtered, 3, radius=12, axis=2)
-    p_ns_filtered = p_ns
+    # p_ns_filtered = gaussian_filter1d(p_ns, 2, radius=7, axis=1)
+    p_ns_filtered = gaussian_filter1d(p_ns, 2, radius=7, axis=1)
+    p_ns_filtered = np.array([phase_average(ts, p_n) for p_n in p_ns_filtered])
 
     phi = ts[:ts.size//4]
 
@@ -59,54 +60,59 @@ def plot_difference(cases):
     [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
     [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
     
-    lims = [-0.01, 0.01]
+    lims = [-0.005, 0.005]
+    norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
 
     dp_64 = p_ns_filtered[0]-p_ns_filtered[1]
     dp_128 = p_ns_filtered[0]-p_ns_filtered[2]
     dp_16 = p_ns_filtered[0]-p_ns_filtered[3]
     dp_32 = p_ns_filtered[0]-p_ns_filtered[4]
 
-    print([(p_ns_filter).sum() for p_ns_filter in p_ns])
-    # print(dp_16.sum(), dp_32.sum(), dp_64.sum(), dp_128.sum())
+    print([(p_ns_filter+np.roll(p_ns_filter, ts.size//2)).sum()/409.6/4 for p_ns_filter in p_ns])
+    print(dp_16.sum(), dp_32.sum(), dp_64.sum(), dp_128.sum())
 
     ax[0,0].imshow(
         dp_16,
         extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        vmin=lims[0],
-        vmax=lims[1],
+        # vmin=lims[0],
+        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect='auto',
-        origin='lower'
+        origin='lower',
+        norm=norm,
     )
 
     ax[0,1].imshow(
         dp_32,
         extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        vmin=lims[0],
-        vmax=lims[1],
+        # vmin=lims[0],
+        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect='auto',
-        origin='lower'
+        origin='lower',
+        norm=norm,
     )
 
     ax[1,0].imshow(
         dp_64,
         extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        vmin=lims[0],
-        vmax=lims[1],
+        # vmin=lims[0],
+        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect='auto',
-        origin='lower'
+        origin='lower',
+        norm=norm,
     )
     
     im128 = ax[1,1].imshow(
         dp_128,
         extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        vmin=lims[0],
-        vmax=lims[1],
+        # vmin=lims[0],
+        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect='auto',
-        origin='lower'
+        origin='lower',
+        norm=norm,
     )
 
     # plot colorbar
@@ -116,8 +122,8 @@ def plot_difference(cases):
     cb.ax.xaxis.set_label_position('top')  # Move label to top
     cb.set_label(r"$\langle p_{s,smooth}-p_{s,rough} \rangle$", labelpad=-25, rotation=0)    
 
-    plt.savefig(f"figures/phase-info/surface/difference.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/difference.png", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/difference_pa_smooth.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/difference_pa_smooth.png", dpi=450, transparent=True)
     plt.close()
 
 
@@ -141,7 +147,7 @@ def plot_difference_spectra(cases):
     phi = ts[:ts.size//4]
     p_ns_filtered = gaussian_filter1d(p_ns, 3, radius=12, axis=1)
     p_ns_filtered = gaussian_filter1d(p_ns_filtered, 3, radius=12, axis=2)
-    # p_ns_filtered = p_ns
+    p_ns_filtered = p_ns
 
     dx = 4/4096  # Spatial step
     dt = 0.005  # Temporal step
@@ -220,14 +226,13 @@ def plot_difference_spectra(cases):
     [[ax.set_xscale('symlog') for ax in ax[n, :]] for n in range(2)]
     [[ax.set_yscale('symlog') for ax in ax[n, :]] for n in range(2)]
 
-    # annotate with a box
-    [[ax.axhspan(2.5, 10, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
-    [[ax.axvspan(-24, -8, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
-    [[ax[n, m].plot([-24, -8], [2.5, 2.5], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    [[ax[n, m].plot([-24, -8], [10, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    [[ax[n, m].plot([-24, -24], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    [[ax[n, m].plot([-8, -8], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-
+    # # annotate with a box
+    # [[ax.axhspan(2.5, 10, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
+    # [[ax.axvspan(-24, -8, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
+    # [[ax[n, m].plot([-24, -8], [2.5, 2.5], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    # [[ax[n, m].plot([-24, -8], [10, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    # [[ax[n, m].plot([-24, -24], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
+    # [[ax[n, m].plot([-8, -8], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
 
     # plot colorbar
     cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])

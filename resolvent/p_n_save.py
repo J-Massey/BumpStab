@@ -34,7 +34,7 @@ def normal_pressure(nt, p, pxs, pys, offset=4, sigma=1):
         p_ny[tidx] = np.zeros(nx)
         for idx in range(nx):
             y_center = y[idx]
-            indices = np.arange(max(0, idx), min(nx, idx + 3))  # Taking a radius of 2 grid points
+            indices = np.arange(max(0, idx-1), min(nx, idx + 2))  # Taking a radius of 2 grid points
             weights = gaussian_kernel(y_center, pys[indices], sigma)
             weights /= np.sum(weights)  # Normalize weights
 

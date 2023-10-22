@@ -166,7 +166,7 @@ def plot_power(ax=None):
         t_new = t % 1
         f = interp1d(t_new, force, fill_value="extrapolate")
         force_av = f(t_sample)
-        print(f"{force_av.mean():.4f} &")
+        # print(f"{force_av.mean():.4f} &")
 
 
         wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
@@ -205,9 +205,9 @@ def plot_power(ax=None):
         #     edgecolor="none",
         # )
 
-    path = f"data/test/up/lotus-data/fort.9"
+    path = f"data/test/span64/lotus-data/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+    t, force = t[((t > 12) & (t < 16))], force[((t > 12) & (t < 16))]
     t = t % 1
     f = interp1d(t, force, fill_value="extrapolate")
     force_av_s = f(t_sample)
@@ -277,6 +277,57 @@ def plot_power_fft(ax=None):
     plt.savefig(save_path, dpi=700)
     # plt.close()
     return ax
+
+
+def plot_power_diff_fft(ax=None):
+    lams = [16, 32, 64, 128]
+    order = [0, 3, 4, 1]
+    cases = [f"0.001/{lam}" for lam in lams]
+    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
+    labels.append("Smooth")
+    colours = sns.color_palette("colorblind", 7)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(3, 3))
+    ax.set_ylabel(r"PSD($C_P$)")
+    ax.set_xlabel(r"$f^*$")
+    ax.set_xlim(0.1, 200)
+
+    # Adding the 'Smooth' curve
+    path = f"data/test/span64/lotus-data/fort.9"
+    t, force = read_forces(path, interest="cp", direction="")
+    t, sforce = t[((t > 12) & (t < 16))], force[((t > 12) & (t < 16))]
+
+    t_smaple = np.linspace(0, 4, 12000)
+    f = interp1d(t, sforce, fill_value="extrapolate")
+    sforce = f(t_smaple)
+
+    for idx, case in enumerate(cases):
+        path = f"data/{case}/lotus-data/fort.9"
+        t, force = read_forces(path, interest="cp", direction="")
+        t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
+        f = interp1d(t, force, fill_value="extrapolate")
+        force = f(t_smaple)
+        dt = 4/len(t_smaple)
+
+        freq, Pxx = welch(sforce-force, 1/dt, nperseg=len(t_smaple//2))
+        # Pxx = savgol_filter(Pxx, 4, 1)
+
+        ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
+
+    dt = np.mean(np.diff(t))
+
+    freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
+    # Applay savgiol filter
+    # Pxx = savgol_filter(Pxx, 4, 1)
+    ax.loglog(freq, Pxx, color=colours[2], label="Smooth", alpha=0.8, linewidth=0.7)
+
+    save_path = f"figures/fft_power_diff.pdf"
+    
+    plt.savefig(save_path, dpi=700)
+    # plt.close()
+    return ax
+
 
 def save_legend(leg):
     fig, ax = plt.subplots()
@@ -546,7 +597,8 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    plot_power()
+    # plot_power()
+    plot_power_diff_fft()
     
     # plot_E()
     # plot_E_fft()

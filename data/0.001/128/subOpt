@@ -3,22 +3,19 @@
 #SBATCH --ntasks=1024
 #SBATCH --nodes=16
 #SBATCH --partition=amd
-#SBATCH --job-name=fbb
-#SBATCH --time=60:00:00
-#SBATCH --output=JOB.out
-# SBATCH --exclude=ruby035,ruby036,ruby037
-# SBATCH --dependency=afterok:1908224
+#SBATCH --job-name=sp-128
+#SBATCH --time=10:00:00
 
 echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
 
-module purge
+# module purge
 module load openmpi/4.0.5/amd
 module load conda
-source activate an
+source activate rlotus
 
 python run-rough.py
-cd ../../..
-python data/watch_simdir.py
-python data/bmask.py
-python data/collect_save.py
+# cd ../../..
+# python data/watch_simdir.py
+# python data/bmask.py
+# python data/collect_save.py
