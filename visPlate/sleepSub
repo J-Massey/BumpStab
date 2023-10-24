@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --ntasks=32
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=32
+#SBATCH --partition=amd
+#SBATCH --job-name=interactive
+#SBATCH --time=2:00:00
+
+echo "Starting calculation at $(date)"
+echo "---------------------------------------------------------------"
+
+# module purge
+module load conda
+# source activate rLotus
+
+# python resolvent/SVD_save.py
+sleep 720000
