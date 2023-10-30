@@ -81,7 +81,8 @@ program swimming_plate
         vforce = 2.*nu*geom%vforce_s(flow%velocity)/(A*n(3)*xg(3)%h)
         enstrophy_body = flow%velocity%enstrophy(lcorn=L*[-0.25,-0.5,0.],ucorn=L*[2.0,0.5,0.125])
         tke_body = flow%velocity%tke(lcorn=L*[-0.25,-0.5,0.],ucorn=L*[2.0,0.5,0.125])
-        call geom%surfacePressure(flow%pressure)
+        call geom%surfacePressureTop(flow%pressure)
+        call geom%surfacePressureBot(flow%pressure)
   
         if((mod(t,1./f)<dt).and.(root)) print "('Time:',f15.3)",&
         t*f

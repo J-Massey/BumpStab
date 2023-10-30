@@ -1,8 +1,6 @@
 from lotus import run
 from changef90 import new_f90
 import os
-import sys
-
 
 def run_bumps(lam):
     new_f90(lam)
@@ -14,5 +12,5 @@ def run_cont(lam):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    run_cont(1/int(sys.argv[1]))
+    run_cont(1/16)
     
