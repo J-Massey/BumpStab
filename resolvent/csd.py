@@ -1,258 +1,101 @@
 import os
-import numpy as np
-from pydmd import FbDMD
-from scipy.fftpack import fft2, fftshift, fftfreq
-from scipy.ndimage import gaussian_filter1d
-from scipy.signal import savgol_filter
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import matplotlib.colors as colors
-import scienceplots
 from tqdm import tqdm
 import sys
+import numpy as np
+
+from matplotlib import colors
+from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+import scienceplots
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import ScalarFormatter
+
+from scipy.interpolate import interp1d
+from scipy.signal import welch, savgol_filter
+from scipy.interpolate import CubicSpline
+
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
-plt.rc('text', usetex=True)
-plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+plt.rc("text", usetex=True)
+plt.rc("text.latex", preamble=r"\usepackage{mathpazo}")
 
 
-def phase_average(ts, p_ny):
-    # split into 4 equal parts
-    p_ny1 = p_ny[:int(len(ts)/4)]
-    p_ny2 = p_ny[int(len(ts)/4):int(len(ts)/2)]
-    p_ny3 = p_ny[int(len(ts)/2):int(3*len(ts)/4)]
-    p_ny4 = p_ny[int(3*len(ts)/4):]
-    return (p_ny1 + p_ny2 + p_ny3 + p_ny4)/4
+def read_forces(force_file, interest="p", direction="x"):
+    names = [
+        "t",
+        "dt",
+        "px",
+        "py",
+        "pz",
+        "cp",
+        "vx",
+        "vy",
+        "vz",
+        "E",
+        "tke",
+    ]
+    fos = np.transpose(np.genfromtxt(force_file))
+
+    forces_dic = dict(zip(names, fos))
+    t = forces_dic["t"]
+    u = forces_dic[interest + direction]
+
+    u = np.squeeze(np.array(u))
+    return t, u
 
 
-def init(cases):
-    p_ns = []
-    for idx, case in enumerate(cases):
-        p_n = np.load(f"data/{case}/data/p_n.npy")
-        ts = np.arange(0, 0.005*p_n.shape[0], 0.005)
-        p_ns.append(p_n)
-    p_ns = np.array(p_ns)
-    pxs = np.linspace(0, 1, p_ns.shape[-1])
-    return ts, pxs, p_ns
+def fnorm(case):
+    if case == "0.001/16" or case == "0.001/32":
+        span = 128
+    else:
+        span = 64
+    normalise = 0.1 * 4096 * span * 4 / 2
+    return normalise
 
 
-def plot_difference(cases):
-    ts, pxs, p_ns = init(cases)
-    # p_ns_filtered = gaussian_filter1d(p_ns, 2, radius=7, axis=1)
-    p_ns_filtered = gaussian_filter1d(p_ns, 2, radius=7, axis=1)
-    p_ns_filtered = np.array([phase_average(ts, p_n) for p_n in p_ns_filtered])
+def load_phase_avg_cp(cases):
+    if os.path.isfile("data/spressure.npy"):
+        body = np.load("data/spressure.npy")
+    else:
+        t, pxs, body = [], [], []
+        for case in tqdm(cases):
+            cp = np.genfromtxt(f"data/{case}/spressure/fort.1")  # Load the 1D array
+            start = np.where(cp[0] != 0)[0][0]
+            bodtop = cp[:, start : start + 1024] / fnorm(case)
 
-    phi = ts[:ts.size//4]
+            cp = np.genfromtxt(f"data/{case}/spressure/fort.2")  # Load the 1D array
+            start = np.where(cp[0] != 0)[0][0]
+            bodbot = cp[:, start : start + 1024] / fnorm(case)
 
-    fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
-    fig.text(0.5, 0.05, r"$x$", ha='center', va='center')
-    fig.text(0.05, 0.5, r"$\varphi$", ha='center', va='center', rotation='vertical')
+            tr, _ = read_forces(f"data/{case}/spressure/fort.9", "cp", "")
+            ts = np.linspace(0.001, 0.999, 10000)
 
-    ax[1, 0].set_title(r"$\lambda = 1/64$", fontsize=10)
-    ax[1, 1].set_title(r"$\lambda = 1/128$", fontsize=10)
-    ax[0, 0].set_title(r"$\lambda = 1/16$", fontsize=10)
-    ax[0, 1].set_title(r"$\lambda = 1/32$", fontsize=10)
+            # Sort and average duplicates
+            sorted_indices_top = np.argsort(tr % 1)
+            sorted_indices_bot = np.argsort((tr+0.5) % 1)
+            unique_x_top, unique_indices_top = np.unique((tr % 1)[sorted_indices_top], return_index=True)
+            unique_x_bot, unique_indices_bot = np.unique(((tr+0.5) % 1)[sorted_indices_bot], return_index=True)
 
-    [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
-    [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
-    
-    lims = [-0.005, 0.005]
-    norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
+            avg_y_top = np.zeros((unique_x_top.shape[0], bodtop.shape[1]))
+            avg_y_bot = np.zeros((unique_x_bot.shape[0], bodbot.shape[1]))
 
-    dp_64 = p_ns_filtered[0]-p_ns_filtered[1]
-    dp_128 = p_ns_filtered[0]-p_ns_filtered[2]
-    dp_16 = p_ns_filtered[0]-p_ns_filtered[3]
-    dp_32 = p_ns_filtered[0]-p_ns_filtered[4]
+            for col in tqdm(range(1024)):
+                sorted_col_top = bodtop[:, col][sorted_indices_top]
+                sorted_col_bot = bodbot[:, col][sorted_indices_bot]
 
-    print([(p_ns_filter+np.roll(p_ns_filter, ts.size//2)).sum()/409.6/4 for p_ns_filter in p_ns])
-    print(dp_16.sum(), dp_32.sum(), dp_64.sum(), dp_128.sum())
+                for i, idx in enumerate(unique_indices_top):
+                    avg_y_top[i, col] = np.mean(sorted_col_top[sorted_indices_top == idx])
+                for i, idx in enumerate(unique_indices_bot):
+                    avg_y_bot[i, col] = np.mean(sorted_col_bot[sorted_indices_bot == idx])
+            
+            unique_y = (avg_y_top + avg_y_bot)/2
 
-    ax[0,0].imshow(
-        dp_16,
-        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        # vmin=lims[0],
-        # vmax=lims[1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
-        aspect='auto',
-        origin='lower',
-        norm=norm,
-    )
-
-    ax[0,1].imshow(
-        dp_32,
-        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        # vmin=lims[0],
-        # vmax=lims[1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
-        aspect='auto',
-        origin='lower',
-        norm=norm,
-    )
-
-    ax[1,0].imshow(
-        dp_64,
-        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        # vmin=lims[0],
-        # vmax=lims[1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
-        aspect='auto',
-        origin='lower',
-        norm=norm,
-    )
-    
-    im128 = ax[1,1].imshow(
-        dp_128,
-        extent=[pxs[0], pxs[-1], phi[0], phi[-1]],
-        # vmin=lims[0],
-        # vmax=lims[1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
-        aspect='auto',
-        origin='lower',
-        norm=norm,
-    )
-
-    # plot colorbar
-    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
-    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
-    cb.ax.xaxis.tick_top()  # Move ticks to top
-    cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$\langle p_{s,smooth}-p_{s,rough} \rangle$", labelpad=-25, rotation=0)    
-
-    plt.savefig(f"figures/phase-info/surface/difference_pa_smooth.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/difference_pa_smooth.png", dpi=450, transparent=True)
-    plt.close()
-
-
-# Function to compute 2D (x-t) cross-spectral density
-def compute_crosscorr(array1, array2):
-    # Normalise
-    array1 /= np.linalg.norm(array1)
-    array2 /= np.linalg.norm(array2)
-
-    FFT1 = np.fft.fft2(array1)
-    FFT2 = np.fft.fft2(array2)
-    cross_corr_freq = FFT1 * np.conj(FFT2)
-
-    # Inverse Fourier Transform to get cross-correlation in spatial domain
-    cross_corr = np.fft.ifft2(cross_corr_freq).real
-    return cross_corr
-
-
-def plot_difference_spectra(cases):
-    ts, pxs, p_ns = init(cases)
-    phi = ts[:ts.size//4]
-    p_ns_filtered = gaussian_filter1d(p_ns, 3, radius=12, axis=1)
-    p_ns_filtered = gaussian_filter1d(p_ns_filtered, 3, radius=12, axis=2)
-    p_ns_filtered = p_ns
-
-    dx = 4/4096  # Spatial step
-    dt = 0.005  # Temporal step
-    
-    cc64 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[1])
-    cc64 = np.fft.fftshift(cc64)
-    cc128 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[2])
-    cc128 = np.fft.fftshift(cc128)
-    cc16 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[3])
-    cc16 = np.fft.fftshift(cc16)
-    cc32 = np.fft.fft2(p_ns_filtered[0]-p_ns_filtered[4])
-    cc32 = np.fft.fftshift(cc32)
-
-    num_rows, num_cols = p_ns[0].shape
-    freq_x = np.fft.fftshift(np.fft.fftfreq(num_cols, 4/4096))
-    freq_y = np.fft.fftshift(np.fft.fftfreq(num_rows, 0.005))
-
-    extent=[freq_x.min(), freq_x.max(), freq_y.min(), freq_y.max()]
-
-    fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
-    fig.text(0.5, 0.01, r"$1/k_x$", ha='center', va='center')
-    fig.text(0.03, 0.5, r"$f^*$", ha='center', va='center', rotation='vertical')
-    # title for each plot
-    ax[1, 0].set_title(r"$\lambda = 1/64$")
-    ax[1, 1].set_title(r"$\lambda = 1/128$")
-    ax[0, 0].set_title(r"$\lambda = 1/16$")
-    ax[0, 1].set_title(r"$\lambda = 1/32$")
-
-    # [ax.set_xlim(0, 1) for ax in ax]
-    # [ax.set_ylim(0, 1) for ax in ax]
-    
-    lims = [0, 4]
-    cmap = sns.color_palette("icefire", as_cmap=True)
-
-    im64 = ax[1, 0].imshow(
-        np.log(np.abs(cc64)),
-        extent=extent,
-        vmin=lims[0],
-        vmax=lims[1],
-        cmap=cmap,
-        aspect='auto',
-        origin='lower',
-    )
-    
-    im128 = ax[1, 1].imshow(
-        np.log(np.abs(cc128)),
-        extent=extent,
-        vmin=lims[0],
-        vmax=lims[1],
-        cmap=cmap,
-        aspect='auto',
-        origin='lower',
-    )
-
-    im16 = ax[0, 0].imshow(
-        np.log(np.abs(cc16)),
-        extent=extent,
-        vmin=lims[0],
-        vmax=lims[1],
-        cmap=cmap,
-        aspect='auto',
-        origin='lower'
-    )
-
-    im32 = ax[0, 1].imshow(
-        np.log(np.abs(cc32)),
-        extent=extent,
-        vmin=lims[0],
-        vmax=lims[1],
-        cmap=cmap,
-        aspect='auto',
-        origin='lower',
-    )
-
-    # set all axes with symlog
-    [[ax.set_xscale('symlog') for ax in ax[n, :]] for n in range(2)]
-    [[ax.set_yscale('symlog') for ax in ax[n, :]] for n in range(2)]
-
-    # # annotate with a box
-    # [[ax.axhspan(2.5, 10, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
-    # [[ax.axvspan(-24, -8, facecolor='grey', alpha=0.2, edgecolor='none') for ax in ax[n, :]] for n in range(2)]
-    # [[ax[n, m].plot([-24, -8], [2.5, 2.5], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    # [[ax[n, m].plot([-24, -8], [10, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    # [[ax[n, m].plot([-24, -24], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-    # [[ax[n, m].plot([-8, -8], [2.5, 10], color='green', linewidth=1) for m in range(2)] for n in range(2)]
-
-    # plot colorbar
-    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
-    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
-    cb.ax.xaxis.tick_top()  # Move ticks to top
-    cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$PSD(\langle p_{s,smooth}-p_{s,rough} \rangle)$", labelpad=-25, rotation=0)
-    
-    plt.savefig(f"figures/phase-info/surface/csd.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/csd.png", dpi=450, transparent=True)
-
-if __name__ == "__main__":
-    colours = sns.color_palette("colorblind", 7)
-    order = [2, 4, 1, 0, 3]
-    lams = [1e9, 1/64, 1/128, 1/16, 1/32]
-    labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["test/span64", "0.001/64", "0.001/128", "0.001/16", "0.001/32"]
-
-    # plot_csd(cases)
-    plot_difference(cases)
-    plot_difference_spectra(cases)
-    
-
+            # Create spline
+            cs = CubicSpline(unique_x_top, unique_y)
+            y_spline = cs(ts)
+            body.append(y_spline)
+        np.save("data/spressure.npy", body)
+    return np.linspace(0.001, 0.999, 10000), np.linspace(0, 1, 1024), body

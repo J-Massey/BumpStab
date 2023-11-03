@@ -157,7 +157,7 @@ def plot_power(ax=None):
 
     ax.set_xlim(0, 1)
     ax.set_ylabel(r"$\langle C_P \rangle $")
-    ax.set_xlabel(r"$\phi/2\pi$")
+    ax.set_xlabel(r"$\varphi$")
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/lotus-data/fort.9"
@@ -222,15 +222,8 @@ def plot_power(ax=None):
         linewidth=0.7,
     )
 
-
-    # ax.axhline(np.mean(force_av_s), color=colours[idx+1], alpha=0.8, linewidth=0.7)
-
-    save_path = f"figures/power.png"
-
-    # leg = ax.legend(loc="lower left")
-    # save_legend(leg)
-
-    plt.savefig(save_path, dpi=700)
+    plt.savefig(f"figures/power.png", dpi=700)
+    plt.savefig(f"figures/power.pdf")
     # plt.close()
     return ax
 
@@ -324,7 +317,9 @@ def plot_power_diff_fft(ax=None):
 
     save_path = f"figures/fft_power_diff.pdf"
     
-    plt.savefig(save_path, dpi=700)
+    plt.savefig(f"figures/fft_power_diff.pdf", dpi=700)
+    plt.savefig(f"figures/fft_power_diff.png", dpi=700)
+
     # plt.close()
     return ax
 
@@ -597,7 +592,7 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    # plot_power()
+    plot_power()
     plot_power_diff_fft()
     
     # plot_E()

@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=10
+    real, parameter    :: finish=12
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
@@ -81,15 +81,13 @@ program swimming_plate
         vforce = 2.*nu*geom%vforce_s(flow%velocity)/(A*n(3)*xg(3)%h)
         enstrophy_body = flow%velocity%enstrophy(lcorn=L*[-0.25,-0.5,0.],ucorn=L*[2.0,0.5,0.125])
         tke_body = flow%velocity%tke(lcorn=L*[-0.25,-0.5,0.],ucorn=L*[2.0,0.5,0.125])
-        call geom%surfacePressureTop(flow%pressure)
-        call geom%surfacePressureBot(flow%pressure)
   
         if((mod(t,1./f)<dt).and.(root)) print "('Time:',f15.3)",&
         t*f
   
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
-        ! if((t>(finish-4)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
+        if((t>(finish-4)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
         ! exit
       end do time_loop
       

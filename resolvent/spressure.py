@@ -10,10 +10,12 @@ import scienceplots
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import ScalarFormatter
 
 from scipy.interpolate import interp1d
 from scipy.signal import welch, savgol_filter
 from scipy.interpolate import CubicSpline
+from scipy.ndimage import gaussian_filter1d
 
 
 plt.style.use(["science"])
@@ -55,37 +57,57 @@ def fnorm(case):
     return normalise
 
 
-def load_cp(cases):
-    if os.path.isfile("data/spressure.npy"):
-        body = np.load("data/spressure.npy")
+def splineit(tr, cp, T=2, bodshape=1024):
+    start = np.where(cp[0] != 0)[0][0]
+    bod = cp[:, start : start + bodshape]
+    sorted_indices = np.argsort(tr % T)
+    unique_x, unique_indices = np.unique((tr % T)[sorted_indices], return_index=True)
+    sorted_y = bod[sorted_indices]
+    unique_y = sorted_y[unique_indices]
+    cs = CubicSpline(unique_x, unique_y)
+    y_spline = cs(np.linspace(0.0001, 1.9999, 10000))
+    return y_spline
+
+
+
+def load_phase_avg_cp(cases, sigma=2):
+    bodshape = 1024
+    T = 2
+    ts = np.linspace(0.0001, 0.9999, 5000)
+    if os.path.isfile("data/cp_phase_map.npy") and os.path.isfile("data/cp_instantaneous.npy"):
+        phase_avg = np.load("data/cp_phase_map.npy")
+        instantaneous = np.load("data/cp_instantaneous.npy")
     else:
-        t, pxs, body = [], [], []
+        phase_avg = []; instantaneous = []
         for case in tqdm(cases):
-            cp = np.genfromtxt(f"data/{case}/spressure/fort.1")  # Load the 1D array
-            start = np.where(cp[0] != 0)[0][0]
-            bod = cp[:, start : start + 1024] / fnorm(case)
-            # body.append()   # Clip to the body
             tr, _ = read_forces(f"data/{case}/spressure/fort.9", "cp", "")
-            # Resample onto uniform time
-            ts = np.linspace(0.001, 0.999, 2000)
-            # Sort and remove duplicates
-            sorted_indices = np.argsort(tr % 1)
-            sorted_x = (tr % 1)[sorted_indices]
-            sorted_y = bod[sorted_indices]
-            unique_x, unique_idx = np.unique(sorted_x, return_index=True)
-            unique_y = sorted_y[unique_idx]
-            # Create spline
-            cs = CubicSpline(unique_x, unique_y)
-            y_spline = cs(ts)
-            body.append(y_spline)
-        np.save("data/spressure.npy", body)
-    return np.linspace(0.001, 0.999, 2000), np.linspace(0, 1, 1024), body
+
+            cp = np.genfromtxt(f"data/{case}/spressure/fort.1")  # Load the 1D array
+            cp = gaussian_filter1d(cp, sigma=sigma)
+            y_spline_top = splineit(tr, cp)/fnorm(case)
+            onetop, twotop = y_spline_top[:int(len(y_spline_top)/2)], y_spline_top[int(len(y_spline_top)/2):]
+
+            cp = np.genfromtxt(f"data/{case}/spressure/fort.2")  # Load the 1D array
+            cp = gaussian_filter1d(cp, sigma=sigma)
+            y_spline_bot = splineit(tr, cp)/fnorm(case)
+            y_spline_bot = np.roll(y_spline_bot, y_spline_bot.shape[0]//(2*T), axis=0)
+            onebot, twobot = y_spline_bot[:int(len(y_spline_bot)/2)], y_spline_bot[int(len(y_spline_bot)/2):]
+
+            instantaneous.append([onetop, twotop, onebot, twobot])
+            phase_avg.append((onetop + twotop + onebot + twobot)/4)
+
+        np.save("data/cp_phase_map.npy", phase_avg)
+        np.save("data/cp_instantaneous.npy", instantaneous)
+    
+    # Smooth the phase-averaged cp data using gaussian_filter1d
+    
+    return ts, np.linspace(0, 1, bodshape), phase_avg_smoothed, instantaneous
 
 
 def straight_line(a, b):
     m = (b[1] - a[1]) / (b[0] - a[0])
     c = a[1] - m * a[0]
-    print(m)
+    # print(m)
     return [c, m + c]
 
     
@@ -105,11 +127,6 @@ def plot_cp(ts, pxs, body):
     lims = [-0.002, 0.002]
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
 
-    # dp_64 = body[0]-body[1]
-    # dp_128 = body[0]-body[2]
-    # dp_16 = body[0]-body[3]
-    # dp_32 = body[0]-body[4]
-
     ax[0,0].imshow(
         body[0],
         extent=[0, 1, 0, 1],
@@ -122,16 +139,16 @@ def plot_cp(ts, pxs, body):
     )
 
 
-    # ax[0,1].imshow(
-    #     body[3],
-    #     extent=[0, 1, 0, 1],
-    #     # vmin=lims[0],
-    #     # vmax=lims[1],
-    #     cmap=sns.color_palette("seismic", as_cmap=True),
-    #     aspect='auto',
-    #     origin='lower',
-    #     norm=norm,
-    # )
+    ax[0,1].imshow(
+        body[3],
+        extent=[0, 1, 0, 1],
+        # vmin=lims[0],
+        # vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower',
+        norm=norm,
+    )
 
     ax[1, 0].imshow(
         body[1],
@@ -170,74 +187,100 @@ def plot_cp(ts, pxs, body):
     )
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$\langle p_{s} \rangle$", labelpad=-25, rotation=0)
+    cb.set_label(r"$\langle c_P \rangle$", labelpad=-25, rotation=0)
 
     plt.savefig(f"figures/phase-info/surface/spressure.pdf", dpi=450, transparent=True)
     plt.savefig(f"figures/phase-info/surface/spressure.png", dpi=450, transparent=True)
     plt.close()
 
 
-def plot_cp_diff(ts, pxs, body):
-    fig, ax = plt.subplots(1, 2, figsize=(6, 3), sharex=True, sharey=True)
-    fig.text(0.5, 0.01, r"$x$", ha="center", va="center")
-    fig.text(0.07, 0.5, r"$\varphi$", ha="center", va="center", rotation="vertical")
+def vertical_integral(fig, divider, t_ints):
+    vax = divider.append_axes("right", size="20%", pad=0.05)
+    fig.add_axes(vax)
+    for t_int in t_ints:
+        vax.plot(t_int[t_int>0], ts[t_int>0], color='red', marker='o', linestyle='none', markersize=.1)
+        vax.plot(t_int[t_int<0], ts[t_int<0], color='blue', marker='o', linestyle='none', markersize=.1)
+    vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.2, linestyle='--', alpha=0.8)
+    vax.set_ylim(0, 1)
+    vax.set_xlim(-0.03, 0.03)
+    vax.text(1.3, 0.5, r"$\int \langle \Delta c_P \rangle dx$", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
+    vax.yaxis.set_visible(False)
+    vax.set_xticks([-0.03, 0.03])
+    vax.set_xticklabels([-0.03, 0.03], fontsize=8)
+    vax.xaxis.tick_top()
+    return vax
 
-    # ax[0].set_title(r"$\lambda = 1/64$", fontsize=10)
-    # ax[1].set_title(r"$\lambda = 1/128$", fontsize=10)
 
-    # [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
-    # [[ax.set_xlim(0, 1) for ax in ax[n, :]] for n in range(2)]
+def horizontal_integral(fig, divider, x_ints):
+    hax = divider.append_axes("bottom", size="20%", pad=0.05)
+    fig.add_axes(hax)
+    for x_int in x_ints:
+        hax.plot(pxs[x_int>0], x_int[x_int>0], color='red', marker='o', linestyle='none', markersize=.05)
+        hax.plot(pxs[x_int<0], x_int[x_int<0], color='blue', marker='o', linestyle='none', markersize=.05)
+    hax.plot(pxs, x_ints.mean(axis=0), color='k', linewidth=0.2, linestyle='--', alpha=0.8)
+    hax.set_xlim(0, 1)
+    hax.set_ylim(-0.1, 0.1)
+    hax.xaxis.set_visible(False)
+    hax.text(0.5, -.3, r"$\int \langle \Delta c_P \rangle dt$", transform=hax.transAxes, ha='center', va='center', fontsize=8)
+    return hax
+        
+
+def plot_cp_diff(ts, pxs, ph_avg, instant):
+    fig, ax = plt.subplots(1, 2, figsize=(6.5, 3), sharex=True, sharey=True)
+    ax[0].text(-0.15, 0.98, r"(a)", transform=ax[0].transAxes)
+    ax[1].text(-0.15, 0.98, r"(b)", transform=ax[1].transAxes)
+    
+    fig.text(0.5, 0.07, r"$x$", ha="center", va="center")
+    # fig.text(0.07, 0.5, r"$\varphi$", ha="center", va="center", rotation="vertical")
+    ax[0].set_ylabel(r"$\varphi$")
+
+    ax[0].text(0.1, 0.85, r"$\lambda = 1/64$", fontsize=10)
+    ax[1].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
+
+    for ax_id in ax:
+        ax_id.xaxis.tick_top()
+        ax_id.xaxis.set_label_position('top')
+
+        # Set major ticks and their labels at the top
+        ax_id.set_xticks([0.25, 0.5, 0.75])
+        ax_id.set_xticklabels([0.25, 0.5, 0.75])
+
+        # Set ticks at both top and bottom but no labels at the bottom
+        ax_id.xaxis.set_tick_params(which='both', top=True, bottom=True)
+        ax_id.xaxis.set_tick_params(which='both', labelbottom=False)
+
+    
+    ax[0].set_yticks([0.25, 0.5, 0.75])
+    ax[0].set_yticklabels([0.25, 0.5, 0.75])
 
     lims = [-0.001, 0.001]
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
 
-    dp_64 = body[0] - body[1]
-    dp_128 = body[0] - body[2]
-    # dp_32 = body[0]-body[3]
-    # dp_16 = body[0]-body[3]
-    # dp_32 = body[0]-body[4]
+    dp_64 = ph_avg[0] - ph_avg[1]
+    inst_64 = instant[0] - instant[1]
+    dp_128 = ph_avg[0] - ph_avg[2]
+    inst_128 = instant[0] - instant[2]
 
     ax[0].imshow(
         dp_64,
         extent=[0, 1, 0, 1],
-        # vmin=lims[0],
-        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect="auto",
         origin="lower",
         norm=norm,
+        
     )
     ax[0].set_aspect(1)
 
-    # new axis next to the plot
     divider = make_axes_locatable(ax[0])
-    vax1 = divider.append_axes("right", size="20%", pad=0.1)
-    fig.add_axes(vax1)
-    t_int64 = dp_64.sum(axis=1)
-    vax1.plot(t_int64[t_int64>0], ts[t_int64>0], color='red', marker='o', linestyle='none', markersize=.1)
-    vax1.plot(t_int64[t_int64<0], ts[t_int64<0], color='blue', marker='o', linestyle='none', markersize=.1)
-    vax1.set_ylim(0, 1)
-    vax1.set_xlim(-0.03, 0.03)
-
-    vax1.xaxis.set_visible(False)
-    vax1.yaxis.set_visible(False)
-        
-    hax1 = divider.append_axes("top", size="20%", pad=0.1)
-    fig.add_axes(hax1)
-    x_int64 = dp_64.sum(axis=0)
-    hax1.plot(pxs[x_int64>0], x_int64[x_int64>0], color='red', marker='o', linestyle='none', markersize=.1)
-    hax1.plot(pxs[x_int64<0], x_int64[x_int64<0], color='blue', marker='o', linestyle='none', markersize=.1)
-    hax1.set_xlim(0, 1)
-    hax1.set_ylim(-0.1, 0.1)
-    print(pxs[x_int64.argmax()], x_int64.min())
-    hax1.xaxis.set_visible(False)
-    hax1.yaxis.set_visible(False)
+    hax = horizontal_integral(fig, divider, inst_64.sum(axis=1))
+    hax.set_yticks([-0.1, 0, 0.1])
+    hax.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
+    # vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
     
     im128 = ax[1].imshow(
         dp_128,
         extent=[0, 1, 0, 1],
-        # vmin=lims[0],
-        # vmax=lims[1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect="auto",
         origin="lower",
@@ -245,41 +288,22 @@ def plot_cp_diff(ts, pxs, body):
     )
     ax[1].set_aspect(1)
 
-    divider = make_axes_locatable(ax[1])
-    vax2 = divider.append_axes("right", size="20%", pad=0.1)
-    fig.add_axes(vax2)
-    t_int128 = dp_128.sum(axis=1)
-    vax2.plot(t_int128[t_int128>0], ts[t_int128>0], color='red', marker='o', linestyle='none', markersize=.1)
-    vax2.plot(t_int128[t_int128<0], ts[t_int128<0], color='blue', marker='o', linestyle='none', markersize=.1)
-    vax2.set_ylim(0, 1)
-    vax2.set_xlim(-0.03, 0.03)
-    vax2.xaxis.set_visible(False)
-    vax2.yaxis.set_visible(False)
-
-    hax2 = divider.append_axes("top", size="20%", pad=0.1)
-    fig.add_axes(hax2)
-    x_int128 = dp_128.sum(axis=0)
-    hax2.plot(pxs[x_int128>0], x_int128[x_int128>0], color='red', marker='o', linestyle='none', markersize=.1)
-    hax2.plot(pxs[x_int128<0], x_int128[x_int128<0], color='blue', marker='o', linestyle='none', markersize=.1)
-    hax2.set_xlim(0, 1)
-    hax2.set_ylim(-0.1, 0.1)
-    print(x_int128.max(), x_int128.min())
-    hax2.xaxis.set_visible(False)
-    hax2.yaxis.set_visible(False)
+    divider = make_axes_locatable(ax[1])    
+    hax2 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
+    hax2.set_yticklabels([])
+    # vax2 = vertical_integral(fig, divider, inst_128.sum(axis=1))
 
     # plot colorbar
-    cax = fig.add_axes([0.175, 0.95, 0.7, 0.08])
-    cb = plt.colorbar(
-        im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal"
-    )
+    cax = fig.add_axes([0.175, 0.96, 0.7, 0.07])
+    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
+    tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e3]  # Adjust the format as needed
+    cb.set_ticklabels(tick_labels)
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(
-        r"$\langle p_{s,smooth}-p_{s,rough} \rangle$", labelpad=-24, rotation=0
-    )
+    cb.set_label(r"$\langle \Delta c_P \rangle \quad \times 10^{3}$", labelpad=-24, rotation=0, fontsize=9)
 
-    plt.savefig(f"figures/phase-info/surface/diff_ps.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/diff_ps.pdf")
+    plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450)
     plt.close()
 
 
@@ -352,18 +376,18 @@ def plot_difference_spectra(ts, pxs, body):
     # cb.ax.xaxis.set_label_position('top')  # Move label to top
     # cb.set_label(r"$PSD(\langle p_{s,smooth}-p_{s,rough} \rangle)$", labelpad=-25, rotation=0)
 
-    plt.savefig(f"figures/phase-info/surface/diff_spec.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/diff_spec.png", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/diff_spec.pdf", dpi=450)
+    plt.savefig(f"figures/phase-info/surface/diff_spec.png", dpi=450)
 
 
 if __name__ == "__main__":
     # extract arrays from fort.7
-    lams = [1e9, 1 / 64, 1 / 128]
+    lams = [1e9, 1 / 64, 1 / 128, 1/32, 1/16]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["test/span64", "0.001/64", "0.001/128"]  # , "0.001/32"]#, "0.001/32"]
+    cases = ["test/span64", "0.001/64", "0.001/128" , "0.001/32", "0.001/16"]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
-    ts, pxs, body = load_cp(cases)
-    # plot_cp(ts, pxs, body)
-    plot_cp_diff(ts, pxs, body)
-    # plot_difference_spectra(ts, pxs, body)
+    ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
+    # plot_cp(ts, pxs, ph_avg)
+    plot_cp_diff(ts, pxs, ph_avg, instant)
+    # plot_difference_spectra(ts, pxs, ph_avg)
