@@ -50,7 +50,7 @@ def main(directory_to_watch):
 
 
 if __name__ == "__main__":
-    case = sys.argv[1]
+    case = "0.001/0"
     fln = "fluAv"; bln = "bodAv"
     L = 4096 
     fnroot = f"{os.getcwd()}/{case}"

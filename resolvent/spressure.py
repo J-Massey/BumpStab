@@ -49,51 +49,53 @@ def read_forces(force_file, interest="p", direction="x"):
 
 
 def fnorm(case):
-    if case == "0.001/16" or case == "0.001/32":
+    if case == "16" or case == "32":
         span = 128
+    elif case =="0":
+        span = 16
     else:
         span = 64
     normalise = 0.1 * 4096 * span * 4 / 2
     return normalise
 
 
-def splineit(tr, cp, T=2, bodshape=1024):
+def splineit(tr, cp, T=2, bodshape=1024, sigma=2):
     start = np.where(cp[0] != 0)[0][0]
     bod = cp[:, start : start + bodshape]
+    bod = gaussian_filter1d(bod, sigma=sigma, axis=1)
+    bod = gaussian_filter1d(bod, sigma=sigma, axis=0)
     sorted_indices = np.argsort(tr % T)
     unique_x, unique_indices = np.unique((tr % T)[sorted_indices], return_index=True)
     sorted_y = bod[sorted_indices]
     unique_y = sorted_y[unique_indices]
     cs = CubicSpline(unique_x, unique_y)
-    y_spline = cs(np.linspace(0.0001, 1.9999, 10000))
+    y_spline = cs(np.linspace(0.001, 1.999, 10000))
     return y_spline
 
 
 
-def load_phase_avg_cp(cases, sigma=2):
+def load_phase_avg_cp(cases):
     bodshape = 1024
     T = 2
-    ts = np.linspace(0.0001, 0.9999, 5000)
+    ts = np.linspace(0.001, 0.999, 5000)
     if os.path.isfile("data/cp_phase_map.npy") and os.path.isfile("data/cp_instantaneous.npy"):
         phase_avg = np.load("data/cp_phase_map.npy")
         instantaneous = np.load("data/cp_instantaneous.npy")
     else:
         phase_avg = []; instantaneous = []
         for case in tqdm(cases):
-            tr, _ = read_forces(f"data/{case}/spressure/fort.9", "cp", "")
+            tr, _ = read_forces(f"data/0.001/{case}/spressure/fort.9", "cp", "")
 
-            cp = np.genfromtxt(f"data/{case}/spressure/fort.1")  # Load the 1D array
-            cp = gaussian_filter1d(cp, sigma=sigma)
+            cp = np.genfromtxt(f"data/0.001/{case}/spressure/fort.1")  # Load the 1D array
             y_spline_top = splineit(tr, cp)/fnorm(case)
-            onetop, twotop = y_spline_top[:int(len(y_spline_top)/2)], y_spline_top[int(len(y_spline_top)/2):]
+            onetop, twotop = y_spline_top[:int(len(y_spline_top)//2)], y_spline_top[int(len(y_spline_top)//2):]
 
-            cp = np.genfromtxt(f"data/{case}/spressure/fort.2")  # Load the 1D array
-            cp = gaussian_filter1d(cp, sigma=sigma)
+            cp = np.genfromtxt(f"data/0.001/{case}/spressure/fort.2")  # Load the 1D array
             y_spline_bot = splineit(tr, cp)/fnorm(case)
             y_spline_bot = np.roll(y_spline_bot, y_spline_bot.shape[0]//(2*T), axis=0)
-            onebot, twobot = y_spline_bot[:int(len(y_spline_bot)/2)], y_spline_bot[int(len(y_spline_bot)/2):]
+            onebot, twobot = y_spline_bot[:int(len(y_spline_bot)//2)], y_spline_bot[int(len(y_spline_bot)//2):]
 
-            instantaneous.append([onetop, twotop, onebot, twobot])
+            instantaneous.append(np.array([onetop, twotop, onebot, twobot]))
             phase_avg.append((onetop + twotop + onebot + twobot)/4)
 
         np.save("data/cp_phase_map.npy", phase_avg)
@@ -101,7 +103,7 @@ def load_phase_avg_cp(cases, sigma=2):
     
     # Smooth the phase-averaged cp data using gaussian_filter1d
     
-    return ts, np.linspace(0, 1, bodshape), phase_avg_smoothed, instantaneous
+    return ts, np.linspace(0, 1, bodshape), phase_avg, instantaneous
 
 
 def straight_line(a, b):
@@ -200,7 +202,7 @@ def vertical_integral(fig, divider, t_ints):
     for t_int in t_ints:
         vax.plot(t_int[t_int>0], ts[t_int>0], color='red', marker='o', linestyle='none', markersize=.1)
         vax.plot(t_int[t_int<0], ts[t_int<0], color='blue', marker='o', linestyle='none', markersize=.1)
-    vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.2, linestyle='--', alpha=0.8)
+    vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     vax.set_ylim(0, 1)
     vax.set_xlim(-0.03, 0.03)
     vax.text(1.3, 0.5, r"$\int \langle \Delta c_P \rangle dx$", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
@@ -217,7 +219,7 @@ def horizontal_integral(fig, divider, x_ints):
     for x_int in x_ints:
         hax.plot(pxs[x_int>0], x_int[x_int>0], color='red', marker='o', linestyle='none', markersize=.05)
         hax.plot(pxs[x_int<0], x_int[x_int<0], color='blue', marker='o', linestyle='none', markersize=.05)
-    hax.plot(pxs, x_ints.mean(axis=0), color='k', linewidth=0.2, linestyle='--', alpha=0.8)
+    hax.plot(pxs, x_ints.mean(axis=0), color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     hax.set_xlim(0, 1)
     hax.set_ylim(-0.1, 0.1)
     hax.xaxis.set_visible(False)
@@ -256,27 +258,27 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     lims = [-0.001, 0.001]
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
 
-    dp_64 = ph_avg[0] - ph_avg[1]
-    inst_64 = instant[0] - instant[1]
-    dp_128 = ph_avg[0] - ph_avg[2]
-    inst_128 = instant[0] - instant[2]
+    # dp_64 = ph_avg[0] - ph_avg[1]
+    # inst_64 = instant[0] - instant[1]
+    dp_128 = ph_avg[0] - ph_avg[1]
+    inst_128 = instant[0] - instant[1]
 
-    ax[0].imshow(
-        dp_64,
-        extent=[0, 1, 0, 1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
-        aspect="auto",
-        origin="lower",
-        norm=norm,
+    # ax[0].imshow(
+    #     dp_64,
+    #     extent=[0, 1, 0, 1],
+    #     cmap=sns.color_palette("seismic", as_cmap=True),
+    #     aspect="auto",
+    #     origin="lower",
+    #     norm=norm,
         
-    )
-    ax[0].set_aspect(1)
+    # )
+    # ax[0].set_aspect(1)
 
-    divider = make_axes_locatable(ax[0])
-    hax = horizontal_integral(fig, divider, inst_64.sum(axis=1))
-    hax.set_yticks([-0.1, 0, 0.1])
-    hax.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
-    # vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
+    # divider = make_axes_locatable(ax[0])
+    # hax = horizontal_integral(fig, divider, inst_64.sum(axis=1))
+    # hax.set_yticks([-0.1, 0, 0.1])
+    # hax.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
+    # # vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
     
     im128 = ax[1].imshow(
         dp_128,
@@ -291,7 +293,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     divider = make_axes_locatable(ax[1])    
     hax2 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
     hax2.set_yticklabels([])
-    # vax2 = vertical_integral(fig, divider, inst_128.sum(axis=1))
+    vax2 = vertical_integral(fig, divider, inst_128.sum(axis=2))
 
     # plot colorbar
     cax = fig.add_axes([0.175, 0.96, 0.7, 0.07])
@@ -384,7 +386,8 @@ if __name__ == "__main__":
     # extract arrays from fort.7
     lams = [1e9, 1 / 64, 1 / 128, 1/32, 1/16]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["test/span64", "0.001/64", "0.001/128" , "0.001/32", "0.001/16"]
+    cases = ["0", "64", "128" , "32", "16"]
+    cases = ["0", "128"]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
     ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)

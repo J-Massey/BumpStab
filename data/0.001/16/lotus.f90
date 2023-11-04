@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=12
+    real, parameter    :: finish=10
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
@@ -47,7 +47,7 @@ program swimming_plate
       if(ndims==2) then
         z = 0.0
       else
-        z = 0.0625
+        z = 0.046875
       end if
       m = [1.0, 1.0, z]
       n = composite(L*m,prnt=root)
@@ -87,8 +87,13 @@ program swimming_plate
   
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
-        if((t>(finish-4)/f).and.(mod(t,0.005/f)<dt)) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
-        ! exit
+
+        if(t>(finish-2)/f) then
+          call geom%surfacePressureTop(flow%pressure)
+          call geom%surfacePressureBot(flow%pressure)
+          ! if(mod(t,0.005/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
+        end if
+
       end do time_loop
       
       if(root) print *,'Loop complete: writing restart files and exiting'

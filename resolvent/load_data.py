@@ -394,17 +394,18 @@ if __name__ == "__main__":
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
     
     cases = ["test/span64", "0.001/64", "0.001/128"]
-    # cases = ["test/down", "test/down", "test/down"]
+    cases = [16, 32, 128]
     bodies = []
     for idxc, case in enumerate(cases):
-        dl = LoadData(f"{os.getcwd()}/data/{case}/data", dt=0.005)
+        dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)
         body = dl.body
-        bodies.append(body)
+        np.save(f"data/0.001/{case}/data/body.npy", body)
+        # bodies.append(body)
 
-    time_values = np.arange(0.7, 0.95, 0.05)
-    idxs = (time_values * 200).astype(int)
+    # time_values = np.arange(0.7, 0.95, 0.05)
+    # idxs = (time_values * 200).astype(int)
 
     # plot_vort(cases, bodies, time_values, idxs)
-    plot_du_dy(cases, bodies, time_values, idxs)
+    # plot_du_dy(cases, bodies, time_values, idxs)
     # plt.savefig(f"figures/power-recovery/vorticity.pgf", dpi=800)
     # plt.close()
