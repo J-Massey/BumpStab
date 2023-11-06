@@ -393,8 +393,7 @@ if __name__ == "__main__":
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
     
-    cases = ["test/span64", "0.001/64", "0.001/128"]
-    cases = [16, 32, 128]
+    cases = [0]
     bodies = []
     for idxc, case in enumerate(cases):
         dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)

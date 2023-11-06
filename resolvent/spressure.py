@@ -258,27 +258,27 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     lims = [-0.001, 0.001]
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
 
-    # dp_64 = ph_avg[0] - ph_avg[1]
-    # inst_64 = instant[0] - instant[1]
-    dp_128 = ph_avg[0] - ph_avg[1]
-    inst_128 = instant[0] - instant[1]
+    dp_64 = ph_avg[0] - ph_avg[1]
+    inst_64 = instant[0] - instant[1]
+    dp_128 = ph_avg[0] - ph_avg[2]
+    inst_128 = instant[0] - instant[2]
 
-    # ax[0].imshow(
-    #     dp_64,
-    #     extent=[0, 1, 0, 1],
-    #     cmap=sns.color_palette("seismic", as_cmap=True),
-    #     aspect="auto",
-    #     origin="lower",
-    #     norm=norm,
+    ax[0].imshow(
+        dp_64,
+        extent=[0, 1, 0, 1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect="auto",
+        origin="lower",
+        norm=norm,
         
-    # )
-    # ax[0].set_aspect(1)
+    )
+    ax[0].set_aspect(1)
 
-    # divider = make_axes_locatable(ax[0])
-    # hax = horizontal_integral(fig, divider, inst_64.sum(axis=1))
-    # hax.set_yticks([-0.1, 0, 0.1])
-    # hax.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
-    # # vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
+    divider = make_axes_locatable(ax[0])
+    hax1 = horizontal_integral(fig, divider, inst_64.sum(axis=1))
+    hax1.set_yticks([-0.1, 0, 0.1])
+    hax1.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
+    vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
     
     im128 = ax[1].imshow(
         dp_128,
@@ -387,7 +387,6 @@ if __name__ == "__main__":
     lams = [1e9, 1 / 64, 1 / 128, 1/32, 1/16]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
     cases = ["0", "64", "128" , "32", "16"]
-    cases = ["0", "128"]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
     ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)

@@ -47,7 +47,7 @@ program swimming_plate
       if(ndims==2) then
         z = 0.0
       else
-        z = 0.046875
+        z = 0.0625
       end if
       m = [1.0, 1.0, z]
       n = composite(L*m,prnt=root)
@@ -93,7 +93,7 @@ program swimming_plate
           call geom%surfacePressureBot(flow%pressure)
           ! if(mod(t,0.005/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
         end if
-
+        
       end do time_loop
       
       if(root) print *,'Loop complete: writing restart files and exiting'
