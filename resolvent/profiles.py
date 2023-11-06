@@ -96,37 +96,30 @@ def point_at_distance(x1, y1, nx, ny, s=0.1):
     return p_new
 
 
-def delta(profile, normal_dis):
-    du_dn = np.gradient(profile, normal_dis, edge_order=2, axis=1)
-    d2u_dn2 = np.gradient(du_dn, normal_dis, edge_order=2, axis=1)
-    d2u_dn2 = (d2u_dn2/np.ptp(d2u_dn2, axis=1)[:, None])
-    d2u_dn2 = gaussian_filter1d(d2u_dn2, sigma=1, axis=1)
-    delta = np.empty(d2u_dn2.shape[0])
-    for idxp in range(d2u_dn2.shape[0]):
-        mask = abs(d2u_dn2[idxp]) > 0.01
-        delta[idxp] = normal_dis[mask][-1]
-    return delta
-
-
-def tangental_profiles(case, prof_dist=0.05, num_points=4096):
-    if os.path.isfile(f"data/0.001/{case}/data/s_profile.np"):
+def tangental_profiles(case, prof_dist=0.05):
+    if os.path.isfile(f"data/0.001/{case}/data/s_profile.npy") and os.path.isfile(f"data/0.001/{case}/data/omega_profile.npy"):
+        omega_profile = np.load(f"data/0.001/{case}/data/omega_profile.npy")
         s_profile = np.load(f"data/0.001/{case}/data/s_profile.npy")
         ts = np.arange(0, s_profile.shape[0], 1)
         pxs = np.linspace(0, 1, s_profile.shape[1])
-        return ts, pxs, s_profile
+        return ts, pxs, s_profile, omega_profile
     else:
         bod = np.load(f"data/0.001/{case}/data/uvp.npy")
         pxs = np.linspace(-0.35, 2, bod.shape[1])
         bod_mask = np.where((pxs > 0) & (pxs < 1))
         pys = np.linspace(-0.35, 0.35, bod.shape[2])
+        num_points = int(prof_dist*4096)
 
-        ts = np.arange(0, bod.shape[-1], 10)
+        ts = np.arange(0, bod.shape[-1], 1)
         s_profile = np.empty((ts.size, pxs.size, num_points))
+        omega_profile = np.empty((ts.size, pxs.size, num_points))
         for idt, t_idx in tqdm(enumerate(ts), total=ts.size):
             t = (t_idx/200)%1
             # Interpolation function for the body
             f_u = RegularGridInterpolator((pxs, pys), bod[0, :, :, t_idx].astype(np.float64), bounds_error=False, fill_value=1)
             f_v = RegularGridInterpolator((pxs, pys), bod[1, :, :, t_idx].astype(np.float64), bounds_error=False, fill_value=1)
+            omega = np.gradient(bod[1, :, :, t_idx], pxs, edge_order=2, axis=0) - np.gradient(bod[0, :, :, t_idx], pys, edge_order=2, axis=1)
+            f_omega = RegularGridInterpolator((pxs, pys), omega.astype(np.float64), bounds_error=False, fill_value=1)
             y_surface = np.array([naca_warp(xp) for xp in pxs]) - np.array([fwarp(t, xp) for xp in pxs])
 
             nx, ny = normal_to_surface(pxs, t)
@@ -139,10 +132,43 @@ def tangental_profiles(case, prof_dist=0.05, num_points=4096):
                 u_profile = f_u(line_points)
                 v_profile = f_v(line_points)    
                 s_profile[idt, pidx] = u_profile*sx[pidx] + v_profile*sy[pidx]
+                omega_profile[idt, pidx] = f_omega(line_points)
         
         s_profile = s_profile[:, bod_mask[0], :]
+        omega_profile = omega_profile[:, bod_mask[0], :]
         np.save(f"data/0.001/{case}/data/s_profile.npy", s_profile)
-        return ts, pxs, s_profile
+        np.save(f"data/0.001/{case}/data/omega_profile.npy", omega_profile)
+        return ts, pxs, s_profile, omega_profile
+
+
+def delta_tilde(profile, normal_dis):
+    delta = np.empty(profile.shape[0])
+    for idxp in range(profile.shape[0]):
+        mask = profile[idxp] > 0.9*profile[idxp][-1]
+        delta[idxp] = normal_dis[mask][0]
+    return delta
+
+def delta_shear(profile, normal_dis):
+    du_dn = np.gradient(profile, normal_dis, edge_order=2, axis=1)
+    d2u_dn2 = du_dn#np.gradient(du_dn, normal_dis, edge_order=2, axis=1)
+    d2u_dn2 = (d2u_dn2/np.ptp(d2u_dn2, axis=1)[:, None])
+    d2u_dn2 = gaussian_filter1d(d2u_dn2, sigma=1, axis=1)
+    delta = np.empty(d2u_dn2.shape[0])
+    for idxp in range(d2u_dn2.shape[0]):
+        mask = abs(d2u_dn2[idxp]) > 0.1
+        delta[idxp] = normal_dis[mask][-1]
+    return delta
+
+
+def delta_yomega(profile, normal_dis):
+    delta = np.empty(profile.shape[0])
+    y_profile = -profile * normal_dis
+    for idxp in range(y_profile.shape[0]):
+        target = 0.02*np.max(y_profile[idxp])
+        mask = y_profile[idxp] > target
+        inside = np.where(normal_dis == normal_dis[mask][-1])[0]+1
+        delta[idxp] = normal_dis[inside]
+    return delta
 
 
 def plot_profiles(case):
@@ -152,23 +178,32 @@ def plot_profiles(case):
 
     prof_dist = 0.05
     num_points = int(prof_dist*4096)
-    ts, pxs, s_profile = tangental_profiles(case, prof_dist=prof_dist, num_points=num_points)
+    ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
 
     ax.set_xlim([0, 1.2])
     ax.set_ylim([0, prof_dist])
-
 
     normal_dis = np.linspace(0, prof_dist, num_points)
     x_samples = np.array([0.001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     n_profs = x_samples.size
     closest_index = [np.argmin(abs(pxs-x)) for x in x_samples]
 
-    for idt, t_idx in tqdm(enumerate(ts), total=ts.size):
+    for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
         for idxp in range(n_profs):
             profile  = s_profile[idt, closest_index[idxp]]-s_profile[idt, closest_index[idxp], 0]  # Subtract the body velocity
             ax.plot(profile/10+x_samples[idxp], normal_dis, color='grey', linewidth=0.1, alpha=0.02)
-            delt = delta(s_profile[idt], normal_dis)
-            ax.plot(profile/10+x_samples[idxp], delt[closest_index[idxp]], color='green', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
+
+            delt = delta_tilde(s_profile[idt], normal_dis)[closest_index[idxp]]
+            nrst_x = np.argmin(abs(normal_dis-delt))
+            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='green', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
+
+            delt = delta_shear(s_profile[idt], normal_dis)[closest_index[idxp]]
+            nrst_x = np.argmin(abs(normal_dis-delt))
+            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='purple', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
+    
+            delt = delta_yomega(omega_profile[idt], normal_dis)[closest_index[idxp]]
+            nrst_x = np.argmin(abs(normal_dis-delt))
+            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='red', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
     
     # Find the time avg
     stationary = s_profile - s_profile[:, :, 0][:, :, None]
@@ -178,39 +213,18 @@ def plot_profiles(case):
         ax.plot(avg_profile[closest_index[idxp]]/10 + x_samples[idxp], normal_dis, color='red', linewidth=0.5, alpha=0.6, ls='-.')
     
 
-    plt.savefig(f"figures/profiles/body_profiles.pdf")
-    plt.savefig(f"figures/profiles/body_profiles.png", dpi=800)
+    leg_elements = [plt.Line2D([0], [0], color='grey', linewidth=0.5, alpha=0.6, label=r"$ u_s $"),
+                    plt.Line2D([0], [0], color='red', linewidth=0.5, alpha=0.6, ls='-.', label=r"$\langle u_s \rangle$"),
+                    plt.Line2D([0], [0], color='green', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\tilde{u_s}}$"),
+                    plt.Line2D([0], [0], color='yellow', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\partial u_s/\partial dn}$"),
+                    plt.Line2D([0], [0], color='purple', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\omega_z}$")]
+    ax.legend(handles=leg_elements, loc='upper left', ncol=1, frameon=False, fontsize=8)
+    plt.savefig(f"figures/profiles/time_profiles_{case}.pdf")
+    plt.savefig(f"figures/profiles/time_profiles_{case}.png", dpi=800)
 
 
 if __name__ == "__main__":
-    cases = [0, 16, 32, 128]
+    cases = [0, 16, 32, 64, 128]
+    # cases = [0, 16]
     case = cases[0]
-    ts, pxs, s_profile = tangental_profiles(case)
-    plot_profiles(case)
-
-    fig, ax = plt.subplots(1, 1, figsize=(6, 3), sharex=True, sharey=True)
-    ax.set_xlabel(r" $x_{n=0}+$ Locally scaled $ \partial^2 u_s/\partial n^2$")
-    ax.set_ylabel(r"$n$")
-
-    prof_dist = 0.05
-    num_points = int(prof_dist*4096)
-
-    ts = np.arange(0, bod.shape[-1], 1)
-    normal_dis = np.linspace(0, prof_dist, num_points)
-    x_samples = np.array([0.001, 0.002, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    x_samples = np.linspace(0, 1, 10)
-    
-    ax.set_xlim([x_samples[0]-0.1, x_samples[-1]+.2])
-    ax.set_ylim([0, prof_dist])
-
-    n_profs = x_samples.size
-    closest_index = [np.argmin(abs(pxs-x)) for x in x_samples]
-    avg_profile = np.load(f"data/0.001/{case}/data/avg_profile.npy")
-    
-    # Find du/dn
-    delt = delta(avg_profile, normal_dis)
-    delt = delt[bod_mask]
-    ax.plot(pxs[bod_mask], delt, color='black', linewidth=0.5, alpha=0.6, ls='-.')
-    
-    plt.savefig(f"figures/profiles/body_test.pdf")
-    plt.savefig(f"figures/profiles/body_test.png", dpi=800)
+    [plot_profiles(case) for case in cases]

@@ -78,7 +78,7 @@ def load_phase_avg_cp(cases):
     bodshape = 1024
     T = 2
     ts = np.linspace(0.001, 0.999, 5000)
-    if os.path.isfile("data/cp_phase_map.npy") and os.path.isfile("data/cp_instantaneous.npy"):
+    if os.path.isfile("data/cp_phase_map.np") and os.path.isfile("data/cp_instantaneous.npy"):
         phase_avg = np.load("data/cp_phase_map.npy")
         instantaneous = np.load("data/cp_instantaneous.npy")
     else:
@@ -102,7 +102,6 @@ def load_phase_avg_cp(cases):
         np.save("data/cp_instantaneous.npy", instantaneous)
     
     # Smooth the phase-averaged cp data using gaussian_filter1d
-    
     return ts, np.linspace(0, 1, bodshape), phase_avg, instantaneous
 
 
@@ -228,18 +227,23 @@ def horizontal_integral(fig, divider, x_ints):
         
 
 def plot_cp_diff(ts, pxs, ph_avg, instant):
-    fig, ax = plt.subplots(1, 2, figsize=(6.5, 3), sharex=True, sharey=True)
+    fig, axs = plt.subplots(2, 2, figsize=(6.5, 6), sharex=True, sharey=True)
+    ax = axs.ravel()
     ax[0].text(-0.15, 0.98, r"(a)", transform=ax[0].transAxes)
     ax[1].text(-0.15, 0.98, r"(b)", transform=ax[1].transAxes)
+    ax[2].text(-0.15, 0.98, r"(c)", transform=ax[2].transAxes)
+    ax[3].text(-0.15, 0.98, r"(d)", transform=ax[3].transAxes)
     
     fig.text(0.5, 0.07, r"$x$", ha="center", va="center")
-    # fig.text(0.07, 0.5, r"$\varphi$", ha="center", va="center", rotation="vertical")
-    ax[0].set_ylabel(r"$\varphi$")
+    fig.text(0.07, 0.5, r"$\varphi$", ha="center", va="center", rotation="vertical")
+    # ax[0].set_ylabel(r"$\varphi$")
 
-    ax[0].text(0.1, 0.85, r"$\lambda = 1/64$", fontsize=10)
-    ax[1].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
+    ax[0].text(0.1, 0.85, r"$\lambda = 1/16$", fontsize=10)
+    ax[1].text(0.1, 0.85, r"$\lambda = 1/32$", fontsize=10)
+    ax[2].text(0.1, 0.85, r"$\lambda = 1/64$", fontsize=10)
+    ax[3].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
 
-    for ax_id in ax:
+    for ax_id in ax[:-2]:
         ax_id.xaxis.tick_top()
         ax_id.xaxis.set_label_position('top')
 
@@ -262,9 +266,13 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     inst_64 = instant[0] - instant[1]
     dp_128 = ph_avg[0] - ph_avg[2]
     inst_128 = instant[0] - instant[2]
+    dp_16 = ph_avg[0] - ph_avg[3]
+    inst_16 = instant[0] - instant[3]
+    dp_32 = ph_avg[0] - ph_avg[4]
+    inst_32 = instant[0] - instant[4]
 
     ax[0].imshow(
-        dp_64,
+        dp_16,
         extent=[0, 1, 0, 1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect="auto",
@@ -275,13 +283,13 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[0].set_aspect(1)
 
     divider = make_axes_locatable(ax[0])
-    hax1 = horizontal_integral(fig, divider, inst_64.sum(axis=1))
+    hax1 = horizontal_integral(fig, divider, inst_16.sum(axis=1))
     hax1.set_yticks([-0.1, 0, 0.1])
     hax1.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
-    vax1 = vertical_integral(fig, divider, inst_64.sum(axis=1))
+    vax1 = vertical_integral(fig, divider, inst_16.sum(axis=2))
     
-    im128 = ax[1].imshow(
-        dp_128,
+    ax[1].imshow(
+        dp_32,
         extent=[0, 1, 0, 1],
         cmap=sns.color_palette("seismic", as_cmap=True),
         aspect="auto",
@@ -291,12 +299,42 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[1].set_aspect(1)
 
     divider = make_axes_locatable(ax[1])    
-    hax2 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
+    hax2 = horizontal_integral(fig, divider, inst_32.sum(axis=1))
     hax2.set_yticklabels([])
-    vax2 = vertical_integral(fig, divider, inst_128.sum(axis=2))
+    vax2 = vertical_integral(fig, divider, inst_32.sum(axis=2))
+
+    ax[2].imshow(
+        dp_64,
+        extent=[0, 1, 0, 1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect="auto",
+        origin="lower",
+        norm=norm,
+    )
+    ax[1].set_aspect(1)
+
+    divider = make_axes_locatable(ax[2])    
+    hax3 = horizontal_integral(fig, divider, inst_64.sum(axis=1))
+    hax3.set_yticklabels([])
+    vax3 = vertical_integral(fig, divider, inst_64.sum(axis=2))
+
+    im128 = ax[3].imshow(
+        dp_128,
+        extent=[0, 1, 0, 1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect="auto",
+        origin="lower",
+        norm=norm,
+    )
+    ax[1].set_aspect(1)
+
+    divider = make_axes_locatable(ax[3])    
+    hax4 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
+    hax4.set_yticklabels([])
+    vax4 = vertical_integral(fig, divider, inst_128.sum(axis=2))
 
     # plot colorbar
-    cax = fig.add_axes([0.175, 0.96, 0.7, 0.07])
+    cax = fig.add_axes([0.175, 0.96, 0.7, 0.045])
     cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
     tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e3]  # Adjust the format as needed
     cb.set_ticklabels(tick_labels)
@@ -384,9 +422,9 @@ def plot_difference_spectra(ts, pxs, body):
 
 if __name__ == "__main__":
     # extract arrays from fort.7
-    lams = [1e9, 1 / 64, 1 / 128, 1/32, 1/16]
+    lams = [1e9, 1 / 64, 1 / 128, 1/16, 1/32]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["0", "64", "128" , "32", "16"]
+    cases = ["0", "64", "128" , "16", "32"]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
     ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)

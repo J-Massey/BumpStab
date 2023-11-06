@@ -1,16 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=re-save_data
-#SBATCH --ntasks=32
+#SBATCH --job-name=profiles
+#SBATCH --ntasks=16
 #SBATCH --nodes=1
 #SBATCH --partition=highmem
-#SBATCH --time=20:00:00
+#SBATCH --time=02:30:00
 
 # module purge
 module load texlive
 module load conda
 source activate an
 
-python watch_simdir.py "0.001/0"
-python bmask.py "0.001/0"
-python collect_save.py "0.001/0"
+python resolvent/profiles.py
 
