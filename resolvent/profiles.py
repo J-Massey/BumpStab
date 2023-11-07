@@ -13,6 +13,7 @@ import seaborn as sns
 import scienceplots
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import FancyArrowPatch
+from matplotlib.lines import Line2D
 
 
 plt.style.use(["science"])
@@ -144,7 +145,7 @@ def tangental_profiles(case, prof_dist=0.05):
 def delta_tilde(profile, normal_dis):
     delta = np.empty(profile.shape[0])
     for idxp in range(profile.shape[0]):
-        mask = profile[idxp] > 0.9*profile[idxp][-1]
+        mask = profile[idxp] > 0.99*profile[idxp][-1]
         delta[idxp] = normal_dis[mask][0]
     return delta
 
@@ -155,7 +156,7 @@ def delta_shear(profile, normal_dis):
     d2u_dn2 = gaussian_filter1d(d2u_dn2, sigma=1, axis=1)
     delta = np.empty(d2u_dn2.shape[0])
     for idxp in range(d2u_dn2.shape[0]):
-        mask = abs(d2u_dn2[idxp]) > 0.1
+        mask = abs(d2u_dn2[idxp]) > 0.01
         delta[idxp] = normal_dis[mask][-1]
     return delta
 
@@ -171,40 +172,93 @@ def delta_yomega(profile, normal_dis):
     return delta
 
 
-def plot_profiles(case):
-    fig, ax = plt.subplots(1, 1, figsize=(6, 3), sharex=True, sharey=True)
-    ax.set_xlabel(r"$x_{n=0}+u_s/10$")
-    ax.set_ylabel(r"$n$")
+def plot_profile_ident(cases):
+    fig, axs = plt.subplots(len(cases), 1, figsize=(6, 9), sharex=True, sharey=True)
+    fig.text(0.5, 0.0, r"$x_{n=0}+u_s/10$", ha='center')
+    fig.text(0.0, 0.5, r"$n$", va='center', rotation='vertical')
+    # fig.set_xlabel(r"$x_{n=0}+u_s/10$")
+    # ax.set_ylabel(r"$n$")
 
     prof_dist = 0.05
     num_points = int(prof_dist*4096)
-    ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
+    axs[0].set_xlim([0, 1.2])
+    axs[0].set_ylim([0, prof_dist])
+    for idax, case in enumerate(cases):
+        ax = axs[idax]
+        ax.title
+        ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
 
+        normal_dis = np.linspace(0, prof_dist, num_points)
+        x_samples = np.array([0.001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        n_profs = x_samples.size
+        closest_index = [np.argmin(abs(pxs-x)) for x in x_samples]
+
+        for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
+            for idxp in range(n_profs):
+                profile  = s_profile[idt, closest_index[idxp]]-s_profile[idt, closest_index[idxp], 0]  # Subtract the body velocity
+                ax.plot(profile/10+x_samples[idxp], normal_dis, color='grey', linewidth=0.1, alpha=0.02)
+
+                # range_omega = np.ptp(omega_profile[idt, closest_index[idxp]])
+                # ax.plot(0.1*omega_profile[idt, closest_index[idxp]]/range_omega+x_samples[idxp], normal_dis, color='blue', linewidth=0.1, alpha=0.02)
+
+                delt = delta_tilde(s_profile[idt], normal_dis)[closest_index[idxp]]
+                nrst_x = np.argmin(abs(normal_dis-delt))
+                ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='green', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+
+                delt = delta_shear(s_profile[idt], normal_dis)[closest_index[idxp]]
+                nrst_x = np.argmin(abs(normal_dis-delt))
+                ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='yellow', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+        
+                delt = delta_yomega(omega_profile[idt], normal_dis)[closest_index[idxp]]
+                nrst_x = np.argmin(abs(normal_dis-delt))
+                ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='purple', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+        
+        # Find the time avg
+        stationary = s_profile - s_profile[:, :, 0][:, :, None]
+        avg_profile = np.mean(stationary, axis=0)
+
+        for idxp in range(n_profs):
+            ax.plot(avg_profile[closest_index[idxp]]/10 + x_samples[idxp], normal_dis, color='red', linewidth=0.5, alpha=0.6, ls='-.')
+    
+
+    leg_elements = [plt.Line2D([0], [0], color='grey', linewidth=0.5, alpha=0.6, label=r"$ u_s $"),
+                    plt.Line2D([0], [0], color='red', linewidth=0.5, alpha=0.6, ls='-.', label=r"$\langle u_s \rangle$"),
+                    plt.Line2D([0], [0], color='green', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\tilde{u_s}}$"),
+                    plt.Line2D([0], [0], color='yellow', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\partial u_s/\partial dn}$"),
+                    plt.Line2D([0], [0], color='purple', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\omega_z}$")]
+    axs[0].legend(handles=leg_elements, loc='upper left', ncol=1, frameon=False, fontsize=8)
+
+    fig.tight_layout()
+    plt.savefig(f"figures/profiles/time_profile_ident.pdf")
+    plt.savefig(f"figures/profiles/time_profile_ident.png", dpi=800)
+
+
+def plot_smooth_profiles():
+    fig, ax = plt.subplots(1, 1, figsize=(6, 3), sharex=True, sharey=True)
+    fig.text(0.5, 0.01, r"$x_{n=0}+u_s/10$", ha='center')
+    fig.text(0.01, 0.5, r"$n$", va='center', rotation='vertical')
+    # fig.set_xlabel(r"$x_{n=0}+u_s/10$")
+    # ax.set_ylabel(r"$n$")
+
+    prof_dist = 0.05
+    num_points = int(prof_dist*4096)
     ax.set_xlim([0, 1.2])
     ax.set_ylim([0, prof_dist])
+    
+    ts, pxs, s_profile, omega_profile = tangental_profiles(0, prof_dist=prof_dist)
 
     normal_dis = np.linspace(0, prof_dist, num_points)
     x_samples = np.array([0.001, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     n_profs = x_samples.size
     closest_index = [np.argmin(abs(pxs-x)) for x in x_samples]
 
+    delta_omega = np.empty((ts.size, pxs.size))
     for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
+        delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
         for idxp in range(n_profs):
             profile  = s_profile[idt, closest_index[idxp]]-s_profile[idt, closest_index[idxp], 0]  # Subtract the body velocity
             ax.plot(profile/10+x_samples[idxp], normal_dis, color='grey', linewidth=0.1, alpha=0.02)
-
-            delt = delta_tilde(s_profile[idt], normal_dis)[closest_index[idxp]]
-            nrst_x = np.argmin(abs(normal_dis-delt))
-            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='green', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
-
-            delt = delta_shear(s_profile[idt], normal_dis)[closest_index[idxp]]
-            nrst_x = np.argmin(abs(normal_dis-delt))
-            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='purple', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
-    
-            delt = delta_yomega(omega_profile[idt], normal_dis)[closest_index[idxp]]
-            nrst_x = np.argmin(abs(normal_dis-delt))
-            ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='red', marker='o', markersize=0.5, alpha=0.3, markerfacecolor='none')
-    
+        
     # Find the time avg
     stationary = s_profile - s_profile[:, :, 0][:, :, None]
     avg_profile = np.mean(stationary, axis=0)
@@ -212,19 +266,83 @@ def plot_profiles(case):
     for idxp in range(n_profs):
         ax.plot(avg_profile[closest_index[idxp]]/10 + x_samples[idxp], normal_dis, color='red', linewidth=0.5, alpha=0.6, ls='-.')
     
+    avg_delta = np.mean(delta_omega, axis=0)
+    for idxx in range(pxs.size):
+        nrstx = np.argmin(abs(avg_delta[idxx]-normal_dis))
+        ax.plot(avg_profile[idxx][nrstx]/10+pxs[idxx], avg_delta[idxx], color='purple', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+
 
     leg_elements = [plt.Line2D([0], [0], color='grey', linewidth=0.5, alpha=0.6, label=r"$ u_s $"),
                     plt.Line2D([0], [0], color='red', linewidth=0.5, alpha=0.6, ls='-.', label=r"$\langle u_s \rangle$"),
-                    plt.Line2D([0], [0], color='green', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\tilde{u_s}}$"),
-                    plt.Line2D([0], [0], color='yellow', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\partial u_s/\partial dn}$"),
-                    plt.Line2D([0], [0], color='purple', marker='o', markersize=2, alpha=0.6, markerfacecolor='none', label=r"$\delta_{\omega_z}$")]
+                    plt.Line2D([0], [0], color='purple', ls='--', linewidth=1, label=r'$\overline{\delta}$')]
     ax.legend(handles=leg_elements, loc='upper left', ncol=1, frameon=False, fontsize=8)
-    plt.savefig(f"figures/profiles/time_profiles_{case}.pdf")
-    plt.savefig(f"figures/profiles/time_profiles_{case}.png", dpi=800)
+    plt.savefig(f"figures/profiles/smooth_profiles.pdf")
+    plt.savefig(f"figures/profiles/smooth_profiles.png", dpi=800)
+
+
+def plot_deltas(cases):
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    ax = axs[0]
+    # fig.text(0.5, 0.01, r"$x_{n=0}+u_s/10$", ha='center')
+    # fig.text(0.01, 0.5, r"$n$", va='center', rotation='vertical')
+    ax.set_xlabel(r"$x$")
+    ax.set_ylabel(r"$\overline{\delta}, \sigma_{\delta}$")
+    axs[1].set_xlabel(r"$x$")
+    axs[1].set_ylabel(r"$\mathcal{A}_{\delta}$")
+
+    prof_dist = 0.05
+    num_points = int(prof_dist*4096)
+    ax.set_xlim([0, 1])
+
+    colours = sns.color_palette("colorblind", len(cases))
+    c_order = [2, 1, 0, 3, 4, 1]
+    
+    for idcase, case in enumerate(cases):
+        ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
+        normal_dis = np.linspace(0, prof_dist, num_points)
+        # delta_omega = np.empty((ts.size, pxs.size))
+        # for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
+        #     delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
+        # np.save(f"data/0.001/{case}/data/delta_omega.npy", delta_omega)
+        delta_omega = np.load(f"data/0.001/{case}/data/delta_omega.npy")
+
+        avg_delta = np.mean(delta_omega, axis=0)
+        ax.plot(pxs, avg_delta, color=colours[c_order[idcase]], linewidth=1, label=fr"$\lambda=1/{case}$")
+        # Plot fluctuations
+        ax.plot(pxs, np.std(delta_omega, axis=0), color=colours[c_order[idcase]], linewidth=1, ls='--')
+        # Plot autocorrelation
+        axs[1].plot(pxs, [auto_corr(delta_omega[:, idx]) for idx in range(pxs.size)], color=colours[c_order[idcase]], linewidth=0.5, ls='-.')
+
+    mean_lines = [Line2D([0], [0], color=colours[c_order[idcase]], linewidth=0.5) for idcase, case in enumerate(cases)]
+    color_legend = axs[1].legend(mean_lines, [fr"$\lambda=1/{case}$" for case in cases], loc='lower left', frameon=False, fontsize=10)
+    style_legend_lines = [Line2D([0], [0], color='black', linewidth=0.5),Line2D([0], [0], color='black', linewidth=0.5, ls='--'),Line2D([0], [0], color='black', linewidth=0.5, ls='-.')]
+    ax.legend(style_legend_lines, [r'$\overline{\delta}$', r'$\sigma_{\delta}$'], loc='upper left', frameon=False, fontsize=10)
+
+
+    fig.tight_layout()
+    plt.savefig(f"figures/profiles/delta_x_128.pdf")
+    plt.savefig(f"figures/profiles/delta_x_128.png", dpi=800)
+
+    
+def auto_corr(x):
+    """
+    Compute the autocorrelation of the signal x
+    x: (T, N) where T is the number of time steps and N is the number of data points.
+    return: 
+    """
+    x1 = x[:-1] - x[:-1].mean()
+    x2= x[1:] - x[1:].mean()
+    cor = np.sum(x1*x2)
+    var1 = np.sum((x1)**2)
+    var2 = np.sum((x2)**2)
+    r = cor/np.sqrt(var1*var2)
+    return r
 
 
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
-    # cases = [0, 16]
+    cases = [0, 128]
     case = cases[0]
-    [plot_profiles(case) for case in cases]
+    # plot_profile_ident(cases)
+    # plot_smooth_profiles()
+    plot_deltas(cases)

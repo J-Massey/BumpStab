@@ -13,71 +13,71 @@ plt.rcParams["font.size"] = "10.5"
 plt.rc('text', usetex=True)
 plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
 colours = sns.color_palette("colorblind", 7)
+
 order = [2, 4, 1]
 labs = [r"$\lambda = 1/0$", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]
-
-case = "test/up"
-cases=["test/up", "0.001/64", "0.001/128"]
-# cases=["test/up"]
+cases=["0", "64", "128"]
 r=14
-# dmds = []
+dmds = []
 fig, ax = plt.subplots(figsize=(5, 3))
 ax.annotate(
     f"$f^*={2.00:.2f}$"
             , xy=(0.175, 0.475), xycoords='axes fraction',
 )
 
-for idx, case in enumerate(cases):
-    # snapshots = np.load(f"data/{case}/data/body_flucs_p.npy")
-    nx, ny, nt = np.load(f"data/{case}/data/body_nxyt.npy")
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
+case = '0'
+# for idx, case in enumerate(cases):
+snapshots = np.load(f"data/0.001/{case}/data/body_flucs_p.npy")
+nx, ny, nt = np.load(f"data/0.001/{case}/data/body_nxyt.npy")
+pxs = np.linspace(0, 1, nx)
+pys = np.linspace(-0.25, 0.25, ny)
 
-    # fbdmd = FbDMD(svd_rank=r)
-    # fbdmd.fit(snapshots)
-    # dmds.append(fbdmd)
-    fbdmd = dmds[idx]
-    Phi = fbdmd.modes
+fbdmd = FbDMD(svd_rank=r)
+fbdmd.fit(snapshots)
+dmds.append(fbdmd)
+fbdmd = dmds[idx]
+Phi = fbdmd.modes
 
-    # Phi.resize(nx, ny, Phi.shape[1])
-    # print(Phi.shape)
+Phi.resize(nx, ny, Phi.shape[1])
+print(Phi.shape)
 
-    # # Phi, Lambda, b = SaveDMD(f"data/{case}/data", "body").brunton_dmd(r)
+# # Phi, Lambda, b = SaveDMD(f"data/{case}/data", "body").brunton_dmd(r)
 
-    dir = f"figures/phase-info/{case}-DMD"
-    os.system(f"mkdir -p {dir}")
+dir = f"figures/phase-info/{case}-DMD"
+os.system(f"mkdir -p {dir}")
 
-    if idx:
-        n=9
-    else:
-        n=8
+if idx:
+    n=9
+else:
+    n=8
 
-    # for axid, n in enumerate([8,9]):
-    qi = np.angle(fbdmd.modes.T[n].reshape(nx, ny)).T/np.pi
-    lims = [0.2, 0.4]
-    levels = np.linspace(lims[0], lims[1], 6)
-    # levels = np.append(np.linspace(-lims[1], -lims[0], 6), levels)
-    _cmap = sns.color_palette("husl", as_cmap=True)
+# for axid, n in enumerate([8,9]):
+qi = np.real(fbdmd.modes.T[n].reshape(nx, ny)).T
+lims = [0.2, 0.4]
+levels = np.linspace(lims[0], lims[1], 6)
+# levels = np.append(np.linspace(-lims[1], -lims[0], 6), levels)
+_cmap = sns.color_palette("husl", as_cmap=True)
 
 
-    co = ax.contour(
-        pxs,
-        pys,
-        qi,
-        levels=levels,
-        vmin=lims[0],
-        vmax=lims[1],
-        colors=[colours[order[idx]]],
-        linewidths=0.25,
-        label=labs[idx],
-        # alpha=0.85,
-    )
+co = ax.contour(
+    pxs,
+    pys,
+    qi,
+    levels=levels,
+    vmin=lims[0],
+    vmax=lims[1],
+    colors=[colours[order[idx]]],
+    linewidths=0.25,
+    label=labs[idx],
+    # alpha=0.85,
+)
+
 ax.clabel(co, inline=True, fontsize=6, fmt="%.2f", colors='grey')
 ax.set_aspect(1)
 ax.set_xlabel(r"$x$")
 ax.set_ylabel(r"$y$")
 ax.legend()
-plt.savefig(f"figures/phase-info/phase.png", dpi=800)
+plt.savefig(f"figures/phase-info/modes.png", dpi=800)
 plt.close()
 
 

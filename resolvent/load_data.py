@@ -393,12 +393,14 @@ if __name__ == "__main__":
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
     
-    cases = [0]
+    cases = [0, 64, 128]
     bodies = []
     for idxc, case in enumerate(cases):
         dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)
         body = dl.body
         np.save(f"data/0.001/{case}/data/body.npy", body)
+        unwarped = dl.unwarped_body
+        np.save(f"data/0.001/{case}/data/body_unwarped.npy", unwarped)
         # bodies.append(body)
 
     # time_values = np.arange(0.7, 0.95, 0.05)

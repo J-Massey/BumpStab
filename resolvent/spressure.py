@@ -49,9 +49,11 @@ def read_forces(force_file, interest="p", direction="x"):
 
 
 def fnorm(case):
-    if case == "16" or case == "32":
-        span = 128
-    elif case =="0":
+    if case==16:
+        span = 256
+    elif case==32:
+        span = 192
+    elif case==0:
         span = 16
     else:
         span = 64
@@ -100,18 +102,15 @@ def load_phase_avg_cp(cases):
 
         np.save("data/cp_phase_map.npy", phase_avg)
         np.save("data/cp_instantaneous.npy", instantaneous)
-    
-    # Smooth the phase-averaged cp data using gaussian_filter1d
     return ts, np.linspace(0, 1, bodshape), phase_avg, instantaneous
 
 
 def straight_line(a, b):
     m = (b[1] - a[1]) / (b[0] - a[0])
     c = a[1] - m * a[0]
-    # print(m)
     return [c, m + c]
 
-    
+
 def plot_cp(ts, pxs, body):
     fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
     fig.text(0.5, 0.05, r"$x$", ha="center", va="center")
@@ -141,7 +140,7 @@ def plot_cp(ts, pxs, body):
 
 
     ax[0,1].imshow(
-        body[3],
+        body[4],
         extent=[0, 1, 0, 1],
         # vmin=lims[0],
         # vmax=lims[1],
@@ -204,7 +203,7 @@ def vertical_integral(fig, divider, t_ints):
     vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     vax.set_ylim(0, 1)
     vax.set_xlim(-0.03, 0.03)
-    vax.text(1.3, 0.5, r"$\int \langle \Delta c_P \rangle dx$", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
+    vax.text(1.3, 0.5, r"$\Sigma_x \Delta c_P $", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
     vax.yaxis.set_visible(False)
     vax.set_xticks([-0.03, 0.03])
     vax.set_xticklabels([-0.03, 0.03], fontsize=8)
@@ -222,7 +221,7 @@ def horizontal_integral(fig, divider, x_ints):
     hax.set_xlim(0, 1)
     hax.set_ylim(-0.1, 0.1)
     hax.xaxis.set_visible(False)
-    hax.text(0.5, -.3, r"$\int \langle \Delta c_P \rangle dt$", transform=hax.transAxes, ha='center', va='center', fontsize=8)
+    hax.text(0.5, -.3, r"$\Sigma_t \Delta c_P $", transform=hax.transAxes, ha='center', va='center', fontsize=8)
     return hax
         
 
@@ -235,15 +234,15 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[3].text(-0.15, 0.98, r"(d)", transform=ax[3].transAxes)
     
     fig.text(0.5, 0.07, r"$x$", ha="center", va="center")
-    fig.text(0.07, 0.5, r"$\varphi$", ha="center", va="center", rotation="vertical")
-    # ax[0].set_ylabel(r"$\varphi$")
+    ax[0].set_ylabel(r"$\varphi$")
+    ax[2].set_ylabel(r"$\varphi$")
 
     ax[0].text(0.1, 0.85, r"$\lambda = 1/16$", fontsize=10)
     ax[1].text(0.1, 0.85, r"$\lambda = 1/32$", fontsize=10)
     ax[2].text(0.1, 0.85, r"$\lambda = 1/64$", fontsize=10)
     ax[3].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
 
-    for ax_id in ax[:-2]:
+    for ax_id in ax[1:]:
         ax_id.xaxis.tick_top()
         ax_id.xaxis.set_label_position('top')
 
@@ -334,13 +333,13 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     vax4 = vertical_integral(fig, divider, inst_128.sum(axis=2))
 
     # plot colorbar
-    cax = fig.add_axes([0.175, 0.96, 0.7, 0.045])
+    cax = fig.add_axes([0.15, 0.95, 0.7, 0.04])
     cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
     tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e3]  # Adjust the format as needed
     cb.set_ticklabels(tick_labels)
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$\langle \Delta c_P \rangle \quad \times 10^{3}$", labelpad=-24, rotation=0, fontsize=9)
+    cb.set_label(r"$\langle \Delta c_P \rangle \quad \times 10^{3}$", labelpad=-25, rotation=0, fontsize=9)
 
     plt.savefig(f"figures/phase-info/surface/diff_ps.pdf")
     plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450)
@@ -424,10 +423,10 @@ if __name__ == "__main__":
     # extract arrays from fort.7
     lams = [1e9, 1 / 64, 1 / 128, 1/16, 1/32]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["0", "64", "128" , "16", "32"]
+    cases = [0, 64, 128, 16, 32]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
     ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
-    # plot_cp(ts, pxs, ph_avg)
+    plot_cp(ts, pxs, ph_avg)
     plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, ph_avg)
