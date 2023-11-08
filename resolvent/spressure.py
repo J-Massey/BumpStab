@@ -80,7 +80,7 @@ def load_phase_avg_cp(cases):
     bodshape = 1024
     T = 2
     ts = np.linspace(0.001, 0.999, 5000)
-    if os.path.isfile("data/cp_phase_map.np") and os.path.isfile("data/cp_instantaneous.npy"):
+    if os.path.isfile("data/cp_phase_map.npy") and os.path.isfile("data/cp_instantaneous.npy"):
         phase_avg = np.load("data/cp_phase_map.npy")
         instantaneous = np.load("data/cp_instantaneous.npy")
     else:
@@ -187,7 +187,7 @@ def plot_cp(ts, pxs, body):
     )
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$\langle c_P \rangle$", labelpad=-25, rotation=0)
+    cb.set_label(r"$ c_P $", labelpad=-25, rotation=0)
 
     plt.savefig(f"figures/phase-info/surface/spressure.pdf", dpi=450, transparent=True)
     plt.savefig(f"figures/phase-info/surface/spressure.png", dpi=450, transparent=True)
@@ -203,7 +203,7 @@ def vertical_integral(fig, divider, t_ints):
     vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     vax.set_ylim(0, 1)
     vax.set_xlim(-0.03, 0.03)
-    vax.text(1.3, 0.5, r"$\Sigma_x \Delta c_P $", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
+    vax.text(1.3, 0.5, r"$ \Delta C_P $", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
     vax.yaxis.set_visible(False)
     vax.set_xticks([-0.03, 0.03])
     vax.set_xticklabels([-0.03, 0.03], fontsize=8)
@@ -221,7 +221,7 @@ def horizontal_integral(fig, divider, x_ints):
     hax.set_xlim(0, 1)
     hax.set_ylim(-0.1, 0.1)
     hax.xaxis.set_visible(False)
-    hax.text(0.5, -.3, r"$\Sigma_t \Delta c_P $", transform=hax.transAxes, ha='center', va='center', fontsize=8)
+    hax.text(0.5, -.3, r"$\overline{\Delta c_P}$", transform=hax.transAxes, ha='center', va='center', fontsize=8)
     return hax
         
 
@@ -339,7 +339,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     cb.set_ticklabels(tick_labels)
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$\langle \Delta c_P \rangle \quad \times 10^{3}$", labelpad=-25, rotation=0, fontsize=9)
+    cb.set_label(r"$ \Delta c_P  \quad \times 10^{3}$", labelpad=-25, rotation=0, fontsize=9)
 
     plt.savefig(f"figures/phase-info/surface/diff_ps.pdf")
     plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450)

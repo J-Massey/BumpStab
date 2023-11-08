@@ -1,7 +1,7 @@
 Running SLURM prolog script on gold56.cluster.local
 ===============================================================================
-Job started on Tue Nov  7 06:44:45 GMT 2023
-Job ID          : 4969239
+Job started on Wed Nov  8 07:03:04 GMT 2023
+Job ID          : 4973862
 Job name        : interactive
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
@@ -12,5 +12,5 @@ Num of tasks    : 4
 Hosts allocated : gold56
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Tue Nov  7 06:44:46 GMT 2023
+Starting calculation at Wed Nov  8 07:03:05 GMT 2023
 ---------------------------------------------------------------

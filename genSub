@@ -10,5 +10,5 @@ module load texlive
 module load conda
 source activate an
 
-python resolvent/profiles.py
+python resolvent/load_data.py
 

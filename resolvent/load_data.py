@@ -100,7 +100,7 @@ class LoadData:
         t0 = time.time()
         print("\n----- Unwarping body data -----")
 
-        for idt, t in tqdm(enumerate(ts), total=len(ts)):
+        for idt, t in tqdm(enumerate(ts[:2]), total=len(ts)):
             # Calculate the shifts for each x-coordinate
             fw = fwarp(t, pxs)
             real_shift = fw / dy
@@ -114,11 +114,11 @@ class LoadData:
                 dshift = shift_down[i]
                 alpha = shift-real_shift[i]
                 for d in range(3):
-                    unwarped[d, i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt])
+                    unwarped[d, i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, self.body[d, i, :, idt], s=1)
 
         # del self._body_data_cache
-        # Now smooth using a savgol filter
         unwarped = gaussian_filter1d(unwarped, sigma=1, axis=1)
+        unwarped = gaussian_filter1d(unwarped, sigma=1, axis=2)
 
         print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
         print("\n----- Clipping in y -----")
@@ -139,15 +139,8 @@ class LoadData:
             # Now mask the boundary to avoid artifacts
             for d in range(3):
                 unwarped[d, :, :, idt][new_mask] = 0.
-
-        t0 = time.time()
-        print("\n----- Subtracting mean -----")
-        unwarped_mean = unwarped.mean(axis=3, keepdims=True)
-        unwarped =  unwarped - unwarped_mean
-        print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
-        del unwarped_mean
-
         return unwarped
+
     
     def flat_subdomain(self, region):
         """Flatten the velocity field."""
@@ -155,9 +148,19 @@ class LoadData:
             np.save(f'{self.path}/wake_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
             return self.wake.reshape(3 * self.nx * self.ny, self.nt)
         elif region=='body':
+            meanless = self._subtract_mean(self.unwarped_body)
             return self.unwarped_body.reshape(3 * self.nx * self.ny, self.nt)
         else:
             raise ValueError("Invalid region. Must be 'wake' or 'body'.")
+
+    @staticmethod
+    def _subtract_mean(self, unwarped):
+        t0 = time.time()
+        print("\n----- Subtracting mean -----")
+        unwarped_mean = unwarped.mean(axis=3, keepdims=True)
+        unwarped = unwarped - unwarped_mean
+        print(f"Mean subtracted in {time.time() - t0:.2f} seconds.")
+        return unwarped
 
 
 def clip_arrays(arr1, arr2):
@@ -165,7 +168,7 @@ def clip_arrays(arr1, arr2):
     return arr1[:, :min_shape], arr2[:, :min_shape]
 
 
-def apply_shift_interpolation(ushift, dshift, alpha, src, s=0):
+def apply_shift_interpolation(ushift, dshift, alpha, src, s=0.01):
     """
     Applies a shift to an array using spline interpolation based on the rounding error (alpha).
     
@@ -212,8 +215,13 @@ def naca_warp(x):
             f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
 
 
-def fwarp(t: float, pxs: np.ndarray):
-    return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+def fwarp(t: float, pxs):
+    if isinstance(pxs, float):
+        x = pxs
+        xp = min(max(x, 0.0), 1.0)
+        return -0.5*(0.28 * xp**2 - 0.13 * xp + 0.05) * np.sin(2*np.pi*(t - (1.42* xp)))
+    else:
+        return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
 def normal_to_surface(x: np.ndarray, t):
@@ -241,7 +249,7 @@ def mask_data(nx, ny):
     return mask_extended
 
 
-def plot_vort(cases, bodies, time_values, idxs):
+def plot_vort_cascade(cases, bodies, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
     fig.text(0.5, 0.07, r"$x$", ha='center', va='center')
     fig.text(0.08, 0.5, r"$y$", ha='center', va='center', rotation='vertical')
@@ -379,6 +387,128 @@ def plot_du_dy(cases, bodies, time_values, idxs):
     plt.savefig(f"figures/power-recovery/dudy.pdf", dpi=800)
     plt.savefig(f"figures/power-recovery/dudy.png", dpi=800)
 
+
+def plot_vort(vorticity, tidx, time_value, case=0):
+    fig, ax = plt.subplots(figsize=(5,3), sharex=True, sharey=True)
+    ax.set_xlabel(r"$x$")
+    ax.set_ylabel(r"$y$")
+    ax.set_title(f"$t = {time_value:.2f}$", fontsize=9)
+
+    lims = [-150, 150]
+    levels = np.linspace(lims[0], lims[1], 44)
+    _cmap = sns.color_palette("seismic", as_cmap=True)
+
+    nx, ny, nt = vorticity.shape
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    tail_mask = pxs > 0.6
+
+    bodt = np.array([naca_warp(xp) - fwarp(time_value, xp) for xp in pxs])
+    ax.plot(pxs[tail_mask], bodt[tail_mask], color='k', linewidth=0.7, label=r"Body")
+    bodb = np.array([-naca_warp(xp) - fwarp(time_value, xp) for xp in pxs])
+    ax.plot(pxs[tail_mask], bodb[tail_mask], color='k', linewidth=0.7)
+
+    avg_vort = vorticity[:, :, tidx::200].mean(axis=2)
+    cs = ax.contourf(
+        pxs,
+        pys,
+        avg_vort.T,
+        levels=levels,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=_cmap,
+        extend="both",
+    )
+    ax.set_ylim([-0.1, 0.15])
+    ax.set_xlim([0.6, 1])
+    ax.set_aspect(1)
+
+    # cbar on top of the plot spanning the whole width
+    cax = fig.add_axes([0.175, 0.95, 0.7, 0.06])
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-22, rotation=0, fontsize=9)
+
+    plt.savefig(f"figures/phase-info/tail-strucs/{case}_vort_{time_value:.2f}.pdf", dpi=800)
+    plt.savefig(f"figures/phase-info/tail-strucs/{case}_vort_{time_value:.2f}.png", dpi=800)
+    plt.close()
+
+
+def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
+    fig, ax = plt.subplots(figsize=(5,3), sharex=True, sharey=True)
+    ax.set_xlabel(r"$x$")
+    ax.set_ylabel(r"$y$")
+    ax.set_title(f"$t = {time_value:.2f}$", fontsize=9)
+
+    lims = [-150, 150]
+    levels = np.linspace(lims[0], lims[1], 44)
+    _cmap = sns.color_palette("seismic", as_cmap=True)
+
+    nx, ny, nt = vorticity.shape
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    tail_mask = pxs > 0.6
+
+    bodt = np.array([naca_warp(xp) for xp in pxs])
+    ax.plot(pxs[tail_mask], bodt[tail_mask], color='k', linewidth=0.7, label=r"Body")
+    bodb = np.array([-naca_warp(xp) for xp in pxs])
+    ax.plot(pxs[tail_mask], bodb[tail_mask], color='k', linewidth=0.7)
+
+    avg_vort = vorticity[:, :, tidx::200].mean(axis=2)
+    cs = ax.contourf(
+        pxs,
+        pys,
+        avg_vort.T,
+        levels=levels,
+        vmin=lims[0],
+        vmax=lims[1],
+        cmap=_cmap,
+        extend="both",
+    )
+    ax.set_ylim([-0.1, 0.15])
+    ax.set_xlim([0.6, 1])
+    ax.set_aspect(1)
+
+    # cbar on top of the plot spanning the whole width
+    cax = fig.add_axes([0.175, 0.95, 0.7, 0.06])
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-22, rotation=0, fontsize=9)
+
+    plt.savefig(f"figures/phase-info/tail-strucs/unwarped/{case}_vort_{time_value:.2f}.pdf", dpi=800)
+    plt.savefig(f"figures/phase-info/tail-strucs/unwarped/{case}_vort_{time_value:.2f}.png", dpi=800)
+    plt.close()
+
+
+def load_save_data():
+    cases = [0]
+    cases = [64]
+    bodies = []
+    for idxc, case in enumerate(cases):
+        dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)
+        body = dl.body
+        np.save(f"data/0.001/{case}/data/body.npy", body)
+        unwarped = dl.unwarped_body
+        np.save(f"data/0.001/{case}/data/body_unwarped.npy", unwarped)
+
+
+def vorts_and_all():
+    cases = [0, 128, 64, 32]
+    for idx, case in enumerate(cases):
+        body = np.load(f"data/0.001/{case}/data/body.npy", allow_pickle=True)
+        _, nx, ny, nt = body.shape
+        pxs = np.linspace(0, 1, nx)
+        pys = np.linspace(-0.35, 0.35, ny)
+        vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+
+        time_values = np.arange(0., 1, 0.02)
+        tidxs = (time_values * 200).astype(int)
+        for tidx in tqdm(tidxs, desc="Plot loop"):
+            plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
+
+
 if __name__ == "__main__":
     import os
     import matplotlib.pyplot as plt
@@ -392,21 +522,29 @@ if __name__ == "__main__":
     plt.rcParams["font.size"] = "10.5"
     plt.rc('text', usetex=True)
     plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+
+    vorts_and_all()
+    # load_save_data()
     
-    cases = [0, 64, 128]
-    bodies = []
-    for idxc, case in enumerate(cases):
-        dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)
-        body = dl.body
-        np.save(f"data/0.001/{case}/data/body.npy", body)
-        unwarped = dl.unwarped_body
-        np.save(f"data/0.001/{case}/data/body_unwarped.npy", unwarped)
-        # bodies.append(body)
+    # cases = [0]
+    # for idx, case in enumerate(cases):
+    #     body = np.load(f"data/0.001/{case}/data/body_unwarped.npy", allow_pickle=True)
+    #     _, nx, ny, nt = body.shape
+    #     pxs = np.linspace(0, 1, nx)
+    #     pys = np.linspace(-0.35, 0.35, ny)
+    #     vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
 
-    # time_values = np.arange(0.7, 0.95, 0.05)
-    # idxs = (time_values * 200).astype(int)
+    #     time_values = np.arange(0., 0.04, 0.02)
+    #     tidxs = (time_values * 200).astype(int)
+    #     for tidx in tqdm(tidxs, desc="Plot loop"):
+    #         plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
 
-    # plot_vort(cases, bodies, time_values, idxs)
-    # plot_du_dy(cases, bodies, time_values, idxs)
-    # plt.savefig(f"figures/power-recovery/vorticity.pgf", dpi=800)
-    # plt.close()
+
+    dl = LoadData(f"{os.getcwd()}/data/0.001/64/data", dt=0.005)
+    body = dl.body
+    unwarped = dl.unwarped_body
+    _, nx, ny, nt = unwarped.shape
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    vorticity = np.gradient(unwarped[1, :, :, :], pxs, axis=0) - np.gradient(unwarped[0, :, :, :], pys, axis=1)
+    plot_unwarped_vort(, vorticity, 0, 0.0, 64)

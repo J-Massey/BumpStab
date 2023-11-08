@@ -294,7 +294,7 @@ def plot_deltas(cases):
     num_points = int(prof_dist*4096)
     ax.set_xlim([0, 1])
 
-    colours = sns.color_palette("colorblind", len(cases))
+    colours = sns.color_palette("colorblind", 5)
     c_order = [2, 1, 0, 3, 4, 1]
     
     for idcase, case in enumerate(cases):
