@@ -22,6 +22,33 @@ plt.rc('text', usetex=True)
 plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
 
 
+def naca_warp(x):
+    a = 0.6128808410319363
+    b = -0.48095987091980424
+    c = -28.092340603952525
+    d = 222.4879939829765
+    e = -846.4495017866838
+    f = 1883.671432625102
+    g = -2567.366504265927
+    h = 2111.011565214803
+    i = -962.2003374868311
+    j = 186.80721148226274
+
+    xp = min(max(x, 0.0), 1.0)
+    
+    return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
+            f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+
+
+def fwarp(t: float, pxs):
+    if isinstance(pxs, float):
+        x = pxs
+        xp = min(max(x, 0.0), 1.0)
+        return -0.5*(0.28 * xp**2 - 0.13 * xp + 0.05) * np.sin(2*np.pi*(t - (1.42* xp)))
+    else:
+        return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+
+
 def plot_vort_cascade(cases, bodies, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
     fig.text(0.5, 0.07, r"$x$", ha='center', va='center')
@@ -204,7 +231,7 @@ def plot_vort(vorticity, tidx, time_value, case=0):
     cb.ax.xaxis.set_label_position('top')  # Move label to top
     cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-22, rotation=0, fontsize=9)
 
-    plt.savefig(f"figures/phase-info/tail-strucs/{case}_vort_{time_value:.2f}.pdf", dpi=800)
+    plt.savefig(f"figures/phase-info/tail-strucs/warped/{case}_vort_{time_value:.2f}.pdf", dpi=800)
     plt.savefig(f"figures/phase-info/tail-strucs/{case}_vort_{time_value:.2f}.png", dpi=800)
     plt.close()
 
@@ -259,7 +286,7 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
 def load_save_data():
     cases = [0, 128, 64]#, 32, 16]
     bodies = []
-    for idxc, case in enumerate(cases):
+    for case in cases:
         dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/unmasked", dt=0.005)
         body = dl.body
         np.save(f"data/0.001/{case}/unmasked/body.npy", body)
@@ -269,9 +296,9 @@ def load_save_data():
 
 
 def vorts_and_all():
-    cases = [0, 128, 64, 32]
+    cases = [0]#, 128, 64, 32]
     for idx, case in enumerate(cases):
-        body = np.load(f"data/0.001/{case}/data/body.npy", allow_pickle=True)
+        body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
         _, nx, ny, nt = body.shape
         pxs = np.linspace(0, 1, nx)
         pys = np.linspace(-0.35, 0.35, ny)
@@ -391,33 +418,29 @@ def cascade_contours():
 # cascade_contours()
 
 if __name__ == "__main__":
-    load_save_data()
-    # vorts_and_all()
-    
-    # cases = [0, 64, 128]
-    # # vorts = []
-    # for idx, case in enumerate(cases):
-    #     body = np.load(f"data/0.001/{case}/data/body_unwarped.npy", allow_pickle=True)
-    #     _, nx, ny, nt = body.shape
-    #     pxs = np.linspace(0, 1, nx)
-    #     pys = np.linspace(-0.25, 0.25, ny)
-    #     vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
-    #     vorts.append(vorticity)
+    # load_save_data()
+    # cases = [0]#, 32, 16]
+    # bodies = []
+    # for case in cases:
+    #     dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/unmasked", dt=0.005)
+    #     body = dl.body
+    #     np.save(f"data/0.001/{case}/unmasked/body.npy", body)
+    #     unwarped = dl.unwarped_body
+    #     np.save(f"data/0.001/{case}/unmasked/body_unwarped.npy", unwarped)
 
-    #     for tidx in tqdm(tidxs, desc="Plot loop"):
-    #         plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
+    # for case in cases:
+    #     body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
+    #     vorts_unwarped(unwarped, case)
 
-    
+    cases = [0]#, 128, 64, 32]
+    for idx, case in enumerate(cases):
+        body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
+        _, nx, ny, nt = body.shape
+        pxs = np.linspace(0, 1, nx)
+        pys = np.linspace(-0.35, 0.35, ny)
+        vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
 
-    # plt.savefig(f"figures/phase-info/tail-strucs/unwarped/{case}_vort_{time_value:.2f}.pdf", dpi=800)
-    # plt.savefig(f"figures/phase-info/tail-strucs/unwarped/{case}_vort_{time_value:.2f}.png", dpi=800)
-    # plt.close()
-
-    # dl = LoadData(f"{os.getcwd()}/data/0.001/64/data", dt=0.005)
-    # body = dl.body
-    # unwarped = dl.unwarped_body
-    # _, nx, ny, nt = unwarped.shape
-    # pxs = np.linspace(0, 1, nx)
-    # pys = np.linspace(-0.25, 0.25, ny)
-    # vort = np.gradient(unwarped[1, :, :, :], pxs, axis=0) - np.gradient(unwarped[0, :, :, :], pys, axis=1)
-    # plot_unwarped_vort(vort, 0, 0.0, case=64)
+        time_values = np.arange(0., 1, 0.02)
+        tidxs = (time_values * 200).astype(int)
+        for tidx in tqdm(tidxs, desc="Plot loop"):
+            plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)

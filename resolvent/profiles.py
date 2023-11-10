@@ -99,14 +99,14 @@ def point_at_distance(x1, y1, nx, ny, s=0.1):
 
 
 def tangental_profiles(case, prof_dist=0.05):
-    if os.path.isfile(f"data/0.001/{case}/data/s_profile.npy") and os.path.isfile(f"data/0.001/{case}/data/omega_profile.npy"):
+    if os.path.isfile(f"data/0.001/{case}/unmasked/s_profile.npy") and os.path.isfile(f"data/0.001/{case}/unmasked/omega_profile.npy"):
         omega_profile = np.load(f"data/0.001/{case}/data/omega_profile.npy")
         s_profile = np.load(f"data/0.001/{case}/data/s_profile.npy")
         ts = np.arange(0, s_profile.shape[0], 1)
         pxs = np.linspace(0, 1, s_profile.shape[1])
         return ts, pxs, s_profile, omega_profile
     else:
-        bod = np.load(f"data/0.001/{case}/data/uvp.npy")
+        bod = np.load(f"data/0.001/{case}/unmasked/uvp.npy")
         pxs = np.linspace(-0.35, 2, bod.shape[1])
         bod_mask = np.where((pxs > 0) & (pxs < 1))
         pys = np.linspace(-0.35, 0.35, bod.shape[2])
@@ -138,8 +138,8 @@ def tangental_profiles(case, prof_dist=0.05):
         
         s_profile = s_profile[:, bod_mask[0], :]
         omega_profile = omega_profile[:, bod_mask[0], :]
-        np.save(f"data/0.001/{case}/data/s_profile.npy", s_profile)
-        np.save(f"data/0.001/{case}/data/omega_profile.npy", omega_profile)
+        np.save(f"data/0.001/{case}/unmasked/s_profile.npy", s_profile)
+        np.save(f"data/0.001/{case}/unmasked/omega_profile.npy", omega_profile)
         return ts, pxs, s_profile, omega_profile
 
 

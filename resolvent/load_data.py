@@ -136,12 +136,6 @@ class LoadData:
         _, self.nx, self.ny, self.nt = unwarped.shape
         np.save(f'{self.path}/body_nxyt.npy', np.array([self.nx, self.ny, self.nt]))
 
-        # print("\n----- Binary dilation -----")
-        new_mask = mask_data(self.nx, self.ny).T
-        # for idt in tqdm(range(unwarped.shape[-1]), total=unwarped.shape[-1]):
-        #     # Now mask the boundary to avoid artifacts
-        #     for d in range(3):
-        #         unwarped[d, :, :, idt][new_mask] = 0.
         return unwarped
 
     
