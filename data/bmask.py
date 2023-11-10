@@ -13,11 +13,11 @@ def bmask(dp, sp):
         p = np.load(os.path.join(dp, fnp))
         b = np.load(os.path.join(dp, fnb))
         bmask = np.where(b <= 1, False, True)
-        u = np.where(bmask, u, 0)
+        # u = np.where(bmask, u, 0)
         np.save(os.path.join(sp, f"u_{idx}"), u)
-        v = np.where(bmask, v, 0)
+        # v = np.where(bmask, v, 0)
         np.save(os.path.join(sp, f"v_{idx}"), v)
-        p = np.where(bmask, p, 0)
+        # p = np.where(bmask, p, 0)
         np.save(os.path.join(sp, f"p_{idx}"), p)
         # Now remove the files
         try:
@@ -59,6 +59,7 @@ def fns(dp):
 if __name__ == "__main__":
     fln = "fluAv"; bln = "bodAv"
     case = sys.argv[1]
+    os.system(f"mkdir -p {case}/unmasked")
     dp = f"{os.getcwd()}/{case}/uvp"
-    sp = f"{os.getcwd()}/{case}/data"
+    sp = f"{os.getcwd()}/{case}/unmasked"
     bmask(dp, sp)

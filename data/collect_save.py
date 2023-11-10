@@ -91,6 +91,6 @@ def collect_data(data_dir):
 
 if __name__ == "__main__":
     case = sys.argv[1]
-    data_dir = sp = f"{os.getcwd()}/{case}/data"
+    data_dir = sp = f"{os.getcwd()}/{case}/unmasked"
     uvp = collect_data(data_dir)
     np.save(f"{data_dir}/uvp.npy", uvp)
