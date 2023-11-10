@@ -7,6 +7,21 @@ from scipy.interpolate import UnivariateSpline
 from scipy.ndimage import affine_transform, rotate
 import cv2
 
+from load_data import LoadData
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scienceplots
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import FancyArrowPatch
+
+
+plt.style.use(["science"])
+plt.rcParams["font.size"] = "10.5"
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+
+
 def plot_vort_cascade(cases, bodies, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
     fig.text(0.5, 0.07, r"$x$", ha='center', va='center')
@@ -242,14 +257,14 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
 
 
 def load_save_data():
-    cases = [0]#, 128, 64, 32, 16]
+    cases = [0, 128, 64]#, 32, 16]
     bodies = []
     for idxc, case in enumerate(cases):
-        dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/data", dt=0.005)
+        dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/unmasked", dt=0.005)
         body = dl.body
-        np.save(f"data/0.001/{case}/data/body.npy", body)
+        np.save(f"data/0.001/{case}/unmasked/body.npy", body)
         unwarped = dl.unwarped_body
-        np.save(f"data/0.001/{case}/data/body_unwarped.npy", unwarped)
+        np.save(f"data/0.001/{case}/unmasked/body_unwarped.npy", unwarped)
         vorts_unwarped(unwarped, case)
 
 
@@ -373,24 +388,11 @@ def cascade_contours():
     plt.savefig(f"figures/power-recovery/vorticity_tail.pdf")
     plt.savefig(f"figures/power-recovery/vorticity_tail.png", dpi=600)
 
-cascade_contours()
+# cascade_contours()
 
 if __name__ == "__main__":
-    import os
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import scienceplots
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    from matplotlib.patches import FancyArrowPatch
-
-
-    plt.style.use(["science"])
-    plt.rcParams["font.size"] = "10.5"
-    plt.rc('text', usetex=True)
-    plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
-
+    load_save_data()
     # vorts_and_all()
-    # load_save_data()
     
     # cases = [0, 64, 128]
     # # vorts = []
