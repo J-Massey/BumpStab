@@ -141,13 +141,12 @@ def plot_thrust():
 
 
 def plot_power(ax=None):
-    lams = [16, 32, 64, 128]
-    order = [0, 3, 4, 1]
+    lams = [0, 16, 32, 64, 128]
+    order = [2, 0, 3, 4, 1]
 
     cases = [f"0.001/{lam}" for lam in lams]
 
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
-    labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
     t_sample = np.linspace(0.001, 0.999, 400)
@@ -160,7 +159,7 @@ def plot_power(ax=None):
     ax.set_xlabel(r"$\varphi$")
 
     for idx, case in enumerate(cases):
-        path = f"data/{case}/lotus-data/fort.9"
+        path = f"data/{case}/spressure/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         print(case, force.mean())
         t_new = t % 1
@@ -205,23 +204,6 @@ def plot_power(ax=None):
         #     edgecolor="none",
         # )
 
-    path = f"data/test/span64/lotus-data/fort.9"
-    t, force = read_forces(path, interest="cp", direction="")
-    t, force = t[((t > 12) & (t < 16))], force[((t > 12) & (t < 16))]
-    t = t % 1
-    f = interp1d(t, force, fill_value="extrapolate")
-    force_av_s = f(t_sample)
-    print(f"{force_av_s.mean():.4f}")
-
-    ax.plot(
-        t_sample,
-        force_av_s,
-        color=colours[2],
-        label="Smooth",
-        alpha=0.8,
-        linewidth=0.7,
-    )
-
     plt.savefig(f"figures/power.png", dpi=700)
     plt.savefig(f"figures/power.pdf")
     # plt.close()
@@ -229,8 +211,8 @@ def plot_power(ax=None):
 
 
 def plot_power_fft(ax=None):
-    lams = [64, 128]
-    order = [4, 1]
+    lams = [0, 128]
+    order = [2, 3, 2]
     cases = [f"0.001/{lam}" for lam in lams]
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
@@ -243,27 +225,14 @@ def plot_power_fft(ax=None):
     ax.set_xlim(0.1, 200)
 
     for idx, case in enumerate(cases):
-        path = f"data/{case}/lotus-data/fort.9"
+        path = f"data/{case}/spressure/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         dt = 4/len(t)
 
         freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
         # Pxx = savgol_filter(Pxx, 4, 1)
         
-
-
         ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
-
-    # Adding the 'Smooth' curve
-    path = f"data/test/up/lotus-data/fort.9"
-    t, force = read_forces(path, interest="cp", direction="")
-    t, force = t[((t > 8) & (t < 12))], force[((t > 8) & (t < 12))]
-    dt = np.mean(np.diff(t))
-
-    freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
-    # Applay savgiol filter
-    # Pxx = savgol_filter(Pxx, 4, 1)
-    ax.loglog(freq, Pxx, color=colours[2], label="Smooth", alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
     
@@ -355,7 +324,7 @@ def plot_combined():
     latex_table = generate_latex_table()
     fig.text(0.5, 0.97, f'${latex_table}$', horizontalalignment='center', verticalalignment='bottom', usetex=True)
 
-    plt.tight_layout()
+    fig.tight_layout()
     save_path = "figures/power.pdf"
     plt.savefig(save_path, dpi=700)
 
@@ -586,18 +555,18 @@ def span(lam):
 def generate_latex_table():
     return r'\begin{tabular}{lccccc}' + \
         r'$\lambda$ & $1/16$ & $1/32$ & $1/64$ &  $1/128$ &  $1/0$ \\' + \
-        r'$\overline{C_P}$ & 0.1383 & 0.1366 & 0.1247 & 0.1213 & 0.1276 \\' + \
+        r'$\overline{C_P}$ & 0.1383 & 0.1366 & 0.1247 & 0.1213 & 0.1249 \\' + \
         r'\end{tabular}'
 
 
 if __name__ == "__main__":
     # test_E_scaling()
-    plot_power()
-    plot_power_diff_fft()
+    # plot_power()
+    # plot_power_diff_fft()
     
     # plot_E()
     # plot_E_fft()
-    # plot_combined()
+    plot_combined()
     # test_E_span_scaling()
     # save_legend()
 

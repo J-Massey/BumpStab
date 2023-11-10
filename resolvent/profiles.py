@@ -6,6 +6,7 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import UnivariateSpline
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
 
 import os
 import matplotlib.pyplot as plt
@@ -185,7 +186,7 @@ def plot_profile_ident(cases):
     axs[0].set_ylim([0, prof_dist])
     for idax, case in enumerate(cases):
         ax = axs[idax]
-        ax.title
+        ax.set_title(f"$\lambda=1/{case}$", fontsize=9)
         ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
 
         normal_dis = np.linspace(0, prof_dist, num_points)
@@ -196,18 +197,18 @@ def plot_profile_ident(cases):
         for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
             for idxp in range(n_profs):
                 profile  = s_profile[idt, closest_index[idxp]]-s_profile[idt, closest_index[idxp], 0]  # Subtract the body velocity
-                ax.plot(profile/10+x_samples[idxp], normal_dis, color='grey', linewidth=0.1, alpha=0.02)
+                ax.plot(profile/10+x_samples[idxp], normal_dis, color='grey', linewidth=0.15, alpha=0.025)
 
                 # range_omega = np.ptp(omega_profile[idt, closest_index[idxp]])
                 # ax.plot(0.1*omega_profile[idt, closest_index[idxp]]/range_omega+x_samples[idxp], normal_dis, color='blue', linewidth=0.1, alpha=0.02)
 
-                delt = delta_tilde(s_profile[idt], normal_dis)[closest_index[idxp]]
-                nrst_x = np.argmin(abs(normal_dis-delt))
-                ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='green', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+                # delt = delta_tilde(s_profile[idt], normal_dis)[closest_index[idxp]]
+                # nrst_x = np.argmin(abs(normal_dis-delt))
+                # ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='green', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
 
-                delt = delta_shear(s_profile[idt], normal_dis)[closest_index[idxp]]
-                nrst_x = np.argmin(abs(normal_dis-delt))
-                ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='yellow', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
+                # delt = delta_shear(s_profile[idt], normal_dis)[closest_index[idxp]]
+                # nrst_x = np.argmin(abs(normal_dis-delt))
+                # ax.plot(profile[nrst_x]/10+x_samples[idxp], delt, color='yellow', marker='o', markersize=2, alpha=0.5, markeredgewidth=0)
         
                 delt = delta_yomega(omega_profile[idt], normal_dis)[closest_index[idxp]]
                 nrst_x = np.argmin(abs(normal_dis-delt))
@@ -223,10 +224,10 @@ def plot_profile_ident(cases):
 
     leg_elements = [plt.Line2D([0], [0], color='grey', linewidth=0.5, alpha=0.6, label=r"$ u_s $"),
                     plt.Line2D([0], [0], color='red', linewidth=0.5, alpha=0.6, ls='-.', label=r"$\langle u_s \rangle$"),
-                    plt.Line2D([0], [0], color='green', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\tilde{u_s}}$"),
-                    plt.Line2D([0], [0], color='yellow', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\partial u_s/\partial dn}$"),
-                    plt.Line2D([0], [0], color='purple', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\omega_z}$")]
-    axs[0].legend(handles=leg_elements, loc='upper left', ncol=1, frameon=False, fontsize=8)
+                    # plt.Line2D([0], [0], color='green', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\tilde{u_s}}$"),
+                    # plt.Line2D([0], [0], color='yellow', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta_{\partial u_s/\partial dn}$"),
+                    plt.Line2D([0], [0], color='purple', marker='o', markersize=3, alpha=0.5, markeredgewidth=0, linestyle='None', label=r"$\delta$")]
+    axs[0].legend(handles=leg_elements, loc='upper left', ncol=1, frameon=False, fontsize=9)
 
     fig.tight_layout()
     plt.savefig(f"figures/profiles/time_profile_ident.pdf")
@@ -281,7 +282,7 @@ def plot_smooth_profiles():
 
 
 def plot_deltas(cases):
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3), sharex=True)
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3))
     ax = axs[0]
     # fig.text(0.5, 0.01, r"$x_{n=0}+u_s/10$", ha='center')
     # fig.text(0.01, 0.5, r"$n$", va='center', rotation='vertical')
@@ -295,7 +296,7 @@ def plot_deltas(cases):
     ax.set_xlim([0, 1])
 
     colours = sns.color_palette("colorblind", 5)
-    c_order = [2, 1, 0, 3, 4, 1]
+    c_order = [2, 0, 3, 4, 1]
     
     for idcase, case in enumerate(cases):
         ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
@@ -311,17 +312,21 @@ def plot_deltas(cases):
         # Plot fluctuations
         ax.plot(pxs, np.std(delta_omega, axis=0), color=colours[c_order[idcase]], linewidth=1, ls='--')
         # Plot autocorrelation
-        axs[1].plot(pxs, [auto_corr(delta_omega[:, idx]) for idx in range(pxs.size)], color=colours[c_order[idcase]], linewidth=0.5, ls='-.')
+        autoco = [auto_corr(delta_omega[:, idx]) for idx in range(pxs.size)]
+        savgoled = savgol_filter(autoco, 7, 3)
+        axs[1].plot(pxs, savgoled, color=colours[c_order[idcase]], linewidth=0.5, ls='-.')
 
-    mean_lines = [Line2D([0], [0], color=colours[c_order[idcase]], linewidth=0.5) for idcase, case in enumerate(cases)]
-    color_legend = axs[1].legend(mean_lines, [fr"$\lambda=1/{case}$" for case in cases], loc='lower left', frameon=False, fontsize=10)
-    style_legend_lines = [Line2D([0], [0], color='black', linewidth=0.5),Line2D([0], [0], color='black', linewidth=0.5, ls='--'),Line2D([0], [0], color='black', linewidth=0.5, ls='-.')]
+    axs[1].set_xlim([0.5, 1])
+    mean_lines = [Line2D([0], [0], color=colours[c_order[idcase]], linewidth=1) for idcase, case in enumerate(cases)]
+    color_legend = axs[1].legend(mean_lines, [fr"$\lambda=1/{case}$" for case in cases], loc='lower left', frameon=False, fontsize=9)
+    style_legend_lines = [Line2D([0], [0], color='black', linewidth=0.5),Line2D([0], [0], color='black', linewidth=0.5, ls='--'),
+                          Line2D([0], [0], color='black', linewidth=0.5, ls='-.')]
     ax.legend(style_legend_lines, [r'$\overline{\delta}$', r'$\sigma_{\delta}$'], loc='upper left', frameon=False, fontsize=10)
 
 
     fig.tight_layout()
-    plt.savefig(f"figures/profiles/delta_x_128.pdf")
-    plt.savefig(f"figures/profiles/delta_x_128.png", dpi=800)
+    plt.savefig(f"figures/profiles/delta_x.pdf")
+    plt.savefig(f"figures/profiles/delta_x.png", dpi=800)
 
     
 def auto_corr(x):
@@ -335,14 +340,14 @@ def auto_corr(x):
     cor = np.sum(x1*x2)
     var1 = np.sum((x1)**2)
     var2 = np.sum((x2)**2)
-    r = cor/np.sqrt(var1*var2)
+    r = cor/(np.sqrt(var1*var2))
     return r
 
 
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
-    cases = [0, 128]
+    # cases = [0, 128]
     case = cases[0]
-    # plot_profile_ident(cases)
+    plot_profile_ident(cases)
     # plot_smooth_profiles()
     plot_deltas(cases)

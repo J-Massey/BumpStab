@@ -61,9 +61,7 @@ class ResolventAnalysis:
 # Sample usage
 if __name__ == "__main__":
     import os
-    case = sys.argv[1]
-    doms = ["body", "wake"]
-    for dom in doms:
-        ra = ResolventAnalysis(f"{os.getcwd()}/data/{case}/data", dom, omega_span=np.logspace(0.1, 150*2*np.pi, 1000))
-        ra.save_gain()
-        ra.save_omega_peaks()
+    case = 0
+    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/data", "body", omega_span=np.logspace(0.1, 150*2*np.pi, 1000))
+    ra.save_gain()
+    ra.save_omega_peaks()
