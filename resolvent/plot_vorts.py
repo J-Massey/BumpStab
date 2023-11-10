@@ -251,10 +251,10 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
     pys = np.linspace(-0.25, 0.25, ny)
     tail_mask = pxs > 0.6
 
-    bodt = np.array([naca_warp(xp) for xp in pxs])
-    ax.plot(pxs[tail_mask], bodt[tail_mask], color='k', linewidth=0.7, label=r"Body")
-    bodb = np.array([-naca_warp(xp) for xp in pxs])
-    ax.plot(pxs[tail_mask], bodb[tail_mask], color='k', linewidth=0.7)
+    # bodt = np.array([naca_warp(xp) for xp in pxs])
+    # ax.plot(pxs[tail_mask], bodt[tail_mask], color='k', linewidth=0.7, label=r"Body")
+    # bodb = np.array([-naca_warp(xp) for xp in pxs])
+    # ax.plot(pxs[tail_mask], bodb[tail_mask], color='k', linewidth=0.7)
 
     avg_vort = vorticity[:, :, tidx]#.mean(axis=2)
     cs = ax.contourf(
@@ -267,9 +267,9 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
         cmap=_cmap,
         extend="both",
     )
-    ax.set_ylim([-0.075, 0.075])
+    ax.set_ylim([0, 0.005])
     ax.set_xlim([0.6, 1])
-    ax.set_aspect(1)
+    # ax.set_aspect(1)
 
     # cbar on top of the plot spanning the whole width
     cax = fig.add_axes([0.175, 0.95, 0.7, 0.06])
@@ -339,6 +339,81 @@ def rotate_field(field, angle):
     rotated_field = cv2.warpAffine(field, rotation_matrix, (field.shape[1], field.shape[0]))
 
     return rotated_field
+
+
+def apply_shift_interpolation(ushift, dshift, alpha, slc, s=0):
+    """
+    Applies a shift to an array using spline interpolation based on the rounding error (alpha).
+    
+    Parameters:
+    - ushift: The rounded shift value rounded up
+    - dshift: The rounded shift value rounded down
+    - alpha: The rounding error used for interpolation
+    - slc: The slice of the array to be shifted
+    - s: Smoothing factor for spline interpolation
+    
+    Returns:
+    - interped: The shifted array after spline interpolation
+    """
+    y_indices = np.arange(len(slc))
+    
+    # Interpolate using spline for both up and down shifts
+    spline_up = UnivariateSpline(y_indices, np.roll(slc, ushift), s=s)
+    spline_down = UnivariateSpline(y_indices, np.roll(slc, dshift), s=s)
+    
+    interped_up = spline_up(y_indices)
+    interped_down = spline_down(y_indices)
+    
+    # Combine both interpolations using alpha
+    interped = interped_up * alpha + interped_down * (1 - alpha)
+    
+    return interped
+
+
+def flatten_field(field):
+    """Unwarp the velocity field in the body region."""
+    unwarped = np.full(field.shape, np.nan)
+    nx, ny, nt = field.shape
+    pxs = np.linspace(0, 1, nx)
+    dt = 0.005
+
+    ts = np.arange(0, dt*nt, dt)
+    dy = 1 / (4*nx) # Hard coded grid spacing
+
+    t0 = time.time()
+    print("\n----- Unwarping body data -----")
+
+    for idt, t in tqdm(enumerate(ts[:1]), total=len(ts)):
+        # Calculate the shifts for each x-coordinate
+        fw = fwarp(t, pxs)-[naca_warp(xp) for xp in pxs]
+        real_shift = fw / dy
+        shifts = np.round(real_shift).astype(int)
+        shift_up = np.ceil(fw / dy).astype(int)
+        shift_down = np.floor(fw / dy).astype(int)
+        
+        for i in range(field.shape[0]):
+            shift = shifts[i]
+            ushift = shift_up[i]
+            dshift = shift_down[i]
+            alpha = shift-real_shift[i]
+            unwarped[i, :, idt] = apply_shift_interpolation(ushift, dshift, alpha, field[i, :, idt])
+
+    # replace NaN with 0
+    unwarped = np.nan_to_num(unwarped)
+
+    # del _body_data_cache
+    # unwarped = gaussian_filter1d(unwarped, sigma=2, axis=1)
+    # unwarped = gaussian_filter1d(unwarped, sigma=2, axis=2)
+
+    print(f"Body data unwarped in {time.time() - t0:.2f} seconds.")
+    print("\n----- Clipping in y -----")
+    t0 = time.time()
+    pys = np.linspace(-0.35, 0.35, ny)
+    ylims = [-0.25, 0.25]
+    mask = ((pys > ylims[0]) & (pys < ylims[1]))
+    unwarped = unwarped[:, mask, :]
+    print(f"Clipped in y in {time.time() - t0:.2f} seconds, ny went from {ny} to {unwarped.shape[2]}.")
+    return unwarped
 
 
 def cascade_contours():
@@ -419,7 +494,7 @@ def cascade_contours():
 
 if __name__ == "__main__":
     # load_save_data()
-    # cases = [0]#, 32, 16]
+    # cases = [64, 128]
     # bodies = []
     # for case in cases:
     #     dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/unmasked", dt=0.005)
@@ -432,15 +507,16 @@ if __name__ == "__main__":
     #     body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
     #     vorts_unwarped(unwarped, case)
 
-    cases = [0]#, 128, 64, 32]
-    for idx, case in enumerate(cases):
-        body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
-        _, nx, ny, nt = body.shape
-        pxs = np.linspace(0, 1, nx)
-        pys = np.linspace(-0.35, 0.35, ny)
-        vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+    # cases = [0]#, 128, 64, 32]
+    case = 0
+    # for idx, case in enumerate(cases):
+    body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
+    _, nx, ny, nt = body.shape
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.35, 0.35, ny)
+    vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+    unwarped = flatten_field(vorticity)
+    # np.save(f"data/0.001/{case}/unmasked/vort_unwarped.npy", unwarped)
 
-        time_values = np.arange(0., 1, 0.02)
-        tidxs = (time_values * 200).astype(int)
-        for tidx in tqdm(tidxs, desc="Plot loop"):
-            plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
+    plot_unwarped_vort(unwarped, 0, 0, 0)
+    #     plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)

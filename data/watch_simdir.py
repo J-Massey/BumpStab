@@ -45,7 +45,6 @@ def main(directory_to_watch):
                 os.remove(file_path)
                 delete_count += 1
 
-
     print(f"Total files deleted: {delete_count}")
 
 

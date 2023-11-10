@@ -301,11 +301,11 @@ def plot_deltas(cases):
     for idcase, case in enumerate(cases):
         ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
         normal_dis = np.linspace(0, prof_dist, num_points)
-        # delta_omega = np.empty((ts.size, pxs.size))
-        # for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="Plot Loop"):
-        #     delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
-        # np.save(f"data/0.001/{case}/data/delta_omega.npy", delta_omega)
-        delta_omega = np.load(f"data/0.001/{case}/data/delta_omega.npy")
+        delta_omega = np.empty((ts.size, pxs.size))
+        for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="delta_omega Loop"):
+            delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
+        np.save(f"data/0.001/{case}/unmasked/delta_omega.npy", delta_omega)
+        delta_omega = np.load(f"data/0.001/{case}/unmasked/delta_omega.npy")
 
         avg_delta = np.mean(delta_omega, axis=0)
         ax.plot(pxs, avg_delta, color=colours[c_order[idcase]], linewidth=1, label=fr"$\lambda=1/{case}$")
