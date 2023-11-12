@@ -100,8 +100,8 @@ def point_at_distance(x1, y1, nx, ny, s=0.1):
 
 def tangental_profiles(case, prof_dist=0.05):
     if os.path.isfile(f"data/0.001/{case}/unmasked/s_profile.npy") and os.path.isfile(f"data/0.001/{case}/unmasked/omega_profile.npy"):
-        omega_profile = np.load(f"data/0.001/{case}/data/omega_profile.npy")
-        s_profile = np.load(f"data/0.001/{case}/data/s_profile.npy")
+        omega_profile = np.load(f"data/0.001/{case}/unmasked/omega_profile.npy")
+        s_profile = np.load(f"data/0.001/{case}/unmasked/s_profile.npy")
         ts = np.arange(0, s_profile.shape[0], 1)
         pxs = np.linspace(0, 1, s_profile.shape[1])
         return ts, pxs, s_profile, omega_profile
@@ -140,7 +140,7 @@ def tangental_profiles(case, prof_dist=0.05):
         omega_profile = omega_profile[:, bod_mask[0], :]
         np.save(f"data/0.001/{case}/unmasked/s_profile.npy", s_profile)
         np.save(f"data/0.001/{case}/unmasked/omega_profile.npy", omega_profile)
-        return ts, pxs, s_profile, omega_profile
+        return ts, pxs[bod_mask[0]], s_profile, omega_profile
 
 
 def delta_tilde(profile, normal_dis):
@@ -297,20 +297,22 @@ def plot_deltas(cases):
 
     colours = sns.color_palette("colorblind", 5)
     c_order = [2, 0, 3, 4, 1]
+    # c_order = [2, 4, 1]
     
     for idcase, case in enumerate(cases):
         ts, pxs, s_profile, omega_profile = tangental_profiles(case, prof_dist=prof_dist)
+        print(omega_profile.shape)
         normal_dis = np.linspace(0, prof_dist, num_points)
-        delta_omega = np.empty((ts.size, pxs.size))
-        for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="delta_omega Loop"):
-            delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
-        np.save(f"data/0.001/{case}/unmasked/delta_omega.npy", delta_omega)
+        # delta_omega = np.empty((ts.size, pxs.size))
+        # for idt, t_idx in tqdm(enumerate(ts), total=ts.size, desc="delta_omega Loop"):
+        #     delta_omega[idt] = delta_yomega(omega_profile[idt], normal_dis)
+        # np.save(f"data/0.001/{case}/unmasked/delta_omega.npy", delta_omega)
         delta_omega = np.load(f"data/0.001/{case}/unmasked/delta_omega.npy")
 
         avg_delta = np.mean(delta_omega, axis=0)
-        ax.plot(pxs, avg_delta, color=colours[c_order[idcase]], linewidth=1, label=fr"$\lambda=1/{case}$")
+        ax.plot(pxs, avg_delta, color=colours[c_order[idcase]], linewidth=0.5, label=fr"$\lambda=1/{case}$")
         # Plot fluctuations
-        ax.plot(pxs, np.std(delta_omega, axis=0), color=colours[c_order[idcase]], linewidth=1, ls='--')
+        ax.plot(pxs, np.std(delta_omega, axis=0), color=colours[c_order[idcase]], linewidth=0.5, ls='--')
         # Plot autocorrelation
         autoco = [auto_corr(delta_omega[:, idx]) for idx in range(pxs.size)]
         savgoled = savgol_filter(autoco, 7, 3)
@@ -346,8 +348,8 @@ def auto_corr(x):
 
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
-    cases = [0, 128]
     case = cases[0]
-    plot_profile_ident(cases)
+    # plot_profile_ident(cases)
     # plot_smooth_profiles()
+    # cases = [0, 64, 128]
     plot_deltas(cases)

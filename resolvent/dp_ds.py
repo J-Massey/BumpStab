@@ -87,8 +87,13 @@ def naca_warp(x):
             f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
 
 
-def fwarp(t: float, pxs: np.ndarray):
-    return 0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+def fwarp(t: float, pxs):
+    if isinstance(pxs, float):
+        x = pxs
+        xp = min(max(x, 0.0), 1.0)
+        return -0.5*(0.28 * xp**2 - 0.13 * xp + 0.05) * np.sin(2*np.pi*(t - (1.42* xp)))
+    else:
+        return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
 def velocity(t, pxs):
@@ -240,50 +245,76 @@ def mid_body_recovery(lams, cases):
         plt.savefig(f"figures/phase-info/surface/mid_body_recovery_{int(1/lams[idx])}.png", dpi=450, transparent=True)
         plt.close()
 
-def plot_body_velocity(case):
-    fig, ax = plt.subplots(figsize=(3, 3))
-    divider = make_axes_locatable(ax)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(r"$\varphi$")
+def plot_body_velocity():
+    fig, ax = plt.subplots(1, 2, figsize=(6, 3), sharex=True, sharey=True)
+    [a.set_xlabel(r"$x$") for a in ax]
+    ax[0].set_ylabel(r"$\varphi$")
+    ax[0].set_ylim(0, 1)
+    ax[0].set_xlim(0, 1)
+
+    pxs = np.linspace(0, 1, 1024)
+    ts = np.arange(0, 0.005*201, 0.005)
+    y = np.empty((len(pxs), len(ts)))
+    for idx, t in enumerate(ts):
+        y[:, idx] = np.array([naca_warp(xp) - fwarp(t, xp) for xp in pxs])
+    dy_dt = np.gradient(y, ts, axis=1)
+    d2y_dx2 = np.gradient(np.gradient(y, pxs, axis=0), pxs, axis=0)
 
     lim = 0.6
     levels = np.linspace(-lim, lim, 22)
-
-    p_n = np.load(f"data/{case}/data/p_n.npy")
-    nt = p_n.shape[0]
-    pxs = np.linspace(0, 1, p_n.shape[1])
-    ts = np.arange(0, 0.005*nt, 0.005)
-
-    phi = ts[:nt//4]
-    cs = ax.contourf(
-    pxs,
-    phi,
-    [velocity(t, pxs) for t in phi],
-    levels=levels,
-    vmin=-lim,
-    vmax=lim,
-    cmap=sns.color_palette("icefire", as_cmap=True),
-    extend="both",
+    cs = ax[0].contourf(
+            pxs,
+            ts,
+            dy_dt.T,
+            levels=levels,
+            vmin=-lim,
+            vmax=lim,
+            cmap=sns.color_palette("icefire", as_cmap=True),
+            extend="both",
     )
 
-    cax = divider.append_axes("right", size="7%", pad=0.2)
+    divider = make_axes_locatable(ax[0])
+    cax = divider.append_axes("top", size="7%", pad=0.2)
     fig.add_axes(cax)
-    cb = plt.colorbar(cs, cax=cax, orientation="vertical", ticks=np.linspace(-lim, lim, 5))
-    # cb label
-    cb.set_label(r"$\vec{v}$", labelpad=-45, rotation=0)
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(-lim, lim, 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position("top")  # Move label to top
+    cb.set_label(r"$ \vec{v}_y $", labelpad=-33, rotation=0)
+
+
+    lim = 10
+    levels = np.linspace(-lim, lim, 22)
+    cs = ax[1].contourf(
+            pxs,
+            ts,
+            d2y_dx2.T,
+            levels=levels,
+            vmin=-lim,
+            vmax=lim,
+            cmap=sns.color_palette("inferno", as_cmap=True),
+            extend="both",
+    )
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes("top", size="7%", pad=0.2)
+    fig.add_axes(cax)
+    cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=(np.linspace(-lim, lim, 5)))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position("top")  # Move label to top
+    cb.set_label(r"$ \kappa $", labelpad=-33, rotation=0)
     
     plt.savefig(f"figures/phase-info/surface/velocity.pdf", dpi=450, transparent=True)
     plt.close()
+
 
 if __name__ == "__main__":
     colours = sns.color_palette("colorblind", 7)
     order = [2, 4, 1]
     lams = [1e9, 1/64, 1/128]
     labs = [f"$\lambda = 1/{int(1/lam)}$" for lam in lams]
-    cases = ["test/span64", "0.001/64", "0.001/128"]
+    cases = ["0.001/0", "0.001/64", "0.001/128"]
 
-    # plot_body_velocity("test/span64")
-    plot_pa_recovery(colours, order, cases)
+    plot_body_velocity()
+    # plot_pa_recovery(colours, order, cases)
     # mid_body_recovery(phase_average, lams, cases)
 
     # for idx, case in enumerate(cases):
