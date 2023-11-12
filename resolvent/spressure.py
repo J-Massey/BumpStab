@@ -11,17 +11,29 @@ import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import ScalarFormatter
+from matplotlib.colors import LinearSegmentedColormap
 
 from scipy.interpolate import interp1d
 from scipy.signal import welch, savgol_filter
 from scipy.interpolate import CubicSpline
 from scipy.ndimage import gaussian_filter1d
 
-
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
 plt.rc("text", usetex=True)
 plt.rc("text.latex", preamble=r"\usepackage{mathpazo}")
+
+
+def custom_cmap():
+    green_to_white = sns.color_palette("Greens_r", n_colors=128)
+    white_to_red = sns.color_palette("Reds_r", n_colors=128)
+
+    # Concatenate the palettes, placing white in the middle
+    full_palette = np.vstack((green_to_white, white_to_red[::-1]))
+
+    # Convert the concatenated palette to a colormap
+    cmap = LinearSegmentedColormap.from_list('GreenWhiteRed', full_palette)
+    return cmap
 
 
 def read_forces(force_file, interest="p", direction="x"):
@@ -108,7 +120,9 @@ def load_phase_avg_cp(cases):
 def straight_line(a, b):
     m = (b[1] - a[1]) / (b[0] - a[0])
     c = a[1] - m * a[0]
-    return [c, m + c]
+    points = [c, m + c]
+    print(m)
+    return points
 
 
 def plot_cp(ts, pxs, body):
@@ -193,13 +207,27 @@ def plot_cp(ts, pxs, body):
     plt.savefig(f"figures/phase-info/surface/spressure.png", dpi=450, transparent=True)
     plt.close()
 
+def plot_lines():
+    coords = [
+        [0.8356890459363957, 0.034615384615384936],
+        [0.8851590106007066, 0.18653846153846176],
+        [0.8657243816254414, 0.02499999999999991],
+        [0.9204946996466432, 0.18269230769230838],
+        [0.9540636042402826, 0.20000000000000018],
+        [0.9770318021201414, 0.2692307692307696],
+    ]
+    for i in range(0, len(coords), 2):
+        ap, bp = coords[i], coords[i+1]
+        points = straight_line(ap, bp)
+
+
 
 def vertical_integral(fig, divider, t_ints):
     vax = divider.append_axes("right", size="20%", pad=0.05)
     fig.add_axes(vax)
     for t_int in t_ints:
         vax.plot(t_int[t_int>0], ts[t_int>0], color='red', marker='o', linestyle='none', markersize=.1)
-        vax.plot(t_int[t_int<0], ts[t_int<0], color='blue', marker='o', linestyle='none', markersize=.1)
+        vax.plot(t_int[t_int<0], ts[t_int<0], color='green', marker='o', linestyle='none', markersize=.1)
     vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     vax.set_ylim(0, 1)
     vax.set_xlim(-0.03, 0.03)
@@ -216,7 +244,7 @@ def horizontal_integral(fig, divider, x_ints):
     fig.add_axes(hax)
     for x_int in x_ints:
         hax.plot(pxs[x_int>0], x_int[x_int>0], color='red', marker='o', linestyle='none', markersize=.05)
-        hax.plot(pxs[x_int<0], x_int[x_int<0], color='blue', marker='o', linestyle='none', markersize=.05)
+        hax.plot(pxs[x_int<0], x_int[x_int<0], color='green', marker='o', linestyle='none', markersize=.05)
     hax.plot(pxs, x_ints.mean(axis=0), color='k', linewidth=0.5, linestyle='--', alpha=0.8)
     hax.set_xlim(0, 1)
     hax.set_ylim(-0.1, 0.1)
@@ -258,22 +286,23 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[0].set_yticks([0.25, 0.5, 0.75])
     ax[0].set_yticklabels([0.25, 0.5, 0.75])
 
-    lims = [-0.001, 0.001]
+    lims = [-0.0002, 0.0002]
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
+    _cmap = custom_cmap()
 
-    dp_64 = ph_avg[0] - ph_avg[1]
-    inst_64 = instant[0] - instant[1]
-    dp_128 = ph_avg[0] - ph_avg[2]
-    inst_128 = instant[0] - instant[2]
-    dp_16 = ph_avg[0] - ph_avg[3]
-    inst_16 = instant[0] - instant[3]
-    dp_32 = ph_avg[0] - ph_avg[4]
-    inst_32 = instant[0] - instant[4]
+    dp_64 = - ph_avg[0] + ph_avg[1]
+    inst_64 = - instant[0] + instant[1]
+    dp_128 = - ph_avg[0] + ph_avg[2]
+    inst_128 = - instant[0] + instant[2]
+    dp_16 = - ph_avg[0] + ph_avg[3]
+    inst_16 = - instant[0] + instant[3]
+    dp_32 = - ph_avg[0] + ph_avg[4]
+    inst_32 = - instant[0] + instant[4]
 
     ax[0].imshow(
         dp_16,
         extent=[0, 1, 0, 1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
+        cmap=_cmap,
         aspect="auto",
         origin="lower",
         norm=norm,
@@ -290,7 +319,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[1].imshow(
         dp_32,
         extent=[0, 1, 0, 1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
+        cmap=_cmap,
         aspect="auto",
         origin="lower",
         norm=norm,
@@ -305,7 +334,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[2].imshow(
         dp_64,
         extent=[0, 1, 0, 1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
+        cmap=_cmap,
         aspect="auto",
         origin="lower",
         norm=norm,
@@ -320,7 +349,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     im128 = ax[3].imshow(
         dp_128,
         extent=[0, 1, 0, 1],
-        cmap=sns.color_palette("seismic", as_cmap=True),
+        cmap=_cmap,
         aspect="auto",
         origin="lower",
         norm=norm,
@@ -335,11 +364,11 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     # plot colorbar
     cax = fig.add_axes([0.15, 0.95, 0.7, 0.04])
     cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
-    tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e3]  # Adjust the format as needed
+    tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e4]  # Adjust the format as needed
     cb.set_ticklabels(tick_labels)
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$ \Delta c_P  \quad \times 10^{3}$", labelpad=-25, rotation=0, fontsize=9)
+    cb.set_label(r"$ \Delta c_P  \quad \times 10^{4}$", labelpad=-25, rotation=0, fontsize=9)
 
     plt.savefig(f"figures/phase-info/surface/diff_ps.pdf")
     plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450)
@@ -426,7 +455,8 @@ if __name__ == "__main__":
     cases = [0, 64, 128, 16, 32]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
-    ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
-    plot_cp(ts, pxs, ph_avg)
-    plot_cp_diff(ts, pxs, ph_avg, instant)
+    # ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
+    plot_lines()
+    # plot_cp(ts, pxs, ph_avg)
+    # plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, ph_avg)

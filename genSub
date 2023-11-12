@@ -10,5 +10,5 @@ module load texlive
 module load conda
 source activate an
 
-python resolvent/fbDMD.py
+python resolvent/plot_vorts.py
 

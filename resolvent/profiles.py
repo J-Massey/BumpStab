@@ -346,7 +346,7 @@ def auto_corr(x):
 
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
-    # cases = [0, 128]
+    cases = [0, 128]
     case = cases[0]
     plot_profile_ident(cases)
     # plot_smooth_profiles()

@@ -212,7 +212,7 @@ def plot_power(ax=None):
 
 def plot_power_fft(ax=None):
     lams = [0, 128]
-    order = [2, 3, 2]
+    order = [2, 1, 2]
     cases = [f"0.001/{lam}" for lam in lams]
     labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     labels.append("Smooth")
@@ -312,6 +312,8 @@ def plot_combined():
     Plot the power and fft next to each other
     """
     fig, axs = plt.subplots(1, 2, figsize=(6, 3))
+    axs[0].text(-0.15, 0.98, r"(a)", transform=axs[0].transAxes)
+    axs[1].text(-0.15, 0.98, r"(b)", transform=axs[1].transAxes)
 
     # First plot
     ax1 = axs[0]

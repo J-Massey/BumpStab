@@ -10,6 +10,7 @@ import cv2
 from load_data import LoadData
 import os
 import matplotlib.pyplot as plt
+from matplotlib.colors import TwoSlopeNorm
 import seaborn as sns
 import scienceplots
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -49,10 +50,10 @@ def fwarp(t: float, pxs):
         return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
-def plot_vort_cascade(cases, bodies, time_values, idxs):
+def plot_vort_cascade(cases, vorts, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
-    fig.text(0.5, 0.07, r"$x$", ha='center', va='center')
-    fig.text(0.08, 0.5, r"$y$", ha='center', va='center', rotation='vertical')
+    fig.text(0.5, 0.07, r"$s$", ha='center', va='center')
+    fig.text(0.0, 0.5, r"$n$", ha='center', va='center', rotation='vertical')
     fig.text(0.915, 0.844, r'$\varphi$', horizontalalignment='center', verticalalignment='center')
 
     arrow_ax = fig.add_axes([0.92, 0.054, 0.02, 0.79])
@@ -69,53 +70,56 @@ def plot_vort_cascade(cases, bodies, time_values, idxs):
         y_pos = 0.89 - (idx + 0.5) * row_height  # Center of each row
         fig.text(0.945, y_pos, f"{time:.2f}", verticalalignment='center')
 
-    lims = [-400, 400]
-    levels = np.linspace(lims[0], lims[1], 44)
-    _cmap = sns.color_palette("seismic", as_cmap=True)
+    lims = [-300, 0]
+    norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[0]-lims[1])/2, vmax=lims[1])
+    levels = np.linspace(lims[0], lims[1], 22)
+    _cmap = sns.color_palette("inferno", as_cmap=True)
 
     # Column Labels
     for idxc, lab in enumerate([r"Smooth", r"$\lambda = 1/64$", r"$\lambda = 1/128$"]):
         axs[0, idxc].set_title(lab, fontsize=10.5)
 
     for idxc, case in enumerate(cases):
-        body = bodies[idxc]
-        _, nx, ny, nt = body.shape
+        vorticity = vorts[idxc]
+        nx, ny, nt = vorticity.shape
         pxs = np.linspace(0, 1, nx)
-        pys = np.linspace(-0.35, 0.35, ny)
-
-        vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+        pxs_mask = pxs >= 0.6
+        pys = np.linspace(-0.25, 0.25, ny)
+        pys_mask = np.logical_and(pys >= 0, pys <= 0.01)
 
         for idx, n in enumerate(idxs):
-            avg_vort = (vorticity[:, :, n]+vorticity[:, :, n+199]+vorticity[:, :, n+399]+vorticity[:, :, n+599])/4
+            avg_vort = vorticity[:, :, n]
+            avg_vort = avg_vort[pxs_mask, :]
+            avg_vort = avg_vort[:, pys_mask]
+            avg_vort = gaussian_filter1d(avg_vort, sigma=3, axis=0)
+            avg_vort = gaussian_filter1d(avg_vort, sigma=3, axis=1)
             cs = axs[idx, idxc].contourf(
-                pxs,
-                pys,
+                pxs[pxs_mask],
+                pys[pys_mask],
                 avg_vort.T,
                 levels=levels,
-                vmin=lims[0],
-                vmax=lims[1],
+                norm=norm,
                 cmap=_cmap,
-                extend="both",
+                extend='min',
+
             )
-            axs[idx, idxc].set_ylim([-0.2, 0.2])
-            axs[idx, idxc].set_xlim([0.8, 1])
-            axs[idx, idxc].set_aspect(1)
+            axs[idx, idxc].set_ylim([0, 0.005])
+            axs[idx, idxc].set_xlim([0.6, 1])
 
     # cbar on top of the plot spanning the whole width
-    cax = fig.add_axes([0.175, 0.92, 0.7, 0.04])
+    cax = fig.add_axes([0.175, 0.92, 0.7, 0.03])
     cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-25, rotation=0)
+    cb.set_label(r"$ \omega_z $", labelpad=-25, rotation=0)
 
-    fig_width, fig_height = fig.get_size_inches()
-    new_width = 8
-    scale_factor = new_width / fig_width
-    new_height = fig_height * scale_factor
-    fig.set_size_inches(7, 16)
+    fig.set_size_inches(6, 9)
 
-    plt.savefig(f"figures/power-recovery/vorticity_tail.pdf", dpi=800)
-    plt.savefig(f"figures/power-recovery/vorticity_tail.png", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity_tail_other.pdf", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity_tail_other.png", dpi=800)
+    plt.close()
+
+# plot_vort_cascade(cases, unwarpeds, time_values, tidxs)
 
 
 def plot_du_dy(cases, bodies, time_values, idxs):
@@ -232,17 +236,17 @@ def plot_vort(vorticity, tidx, time_value, case=0):
     cb.set_label(r"$\langle \omega_z \rangle$", labelpad=-22, rotation=0, fontsize=9)
 
     plt.savefig(f"figures/phase-info/tail-strucs/warped/{case}_vort_{time_value:.2f}.pdf", dpi=800)
-    plt.savefig(f"figures/phase-info/tail-strucs/{case}_vort_{time_value:.2f}.png", dpi=800)
+    plt.savefig(f"figures/phase-info/tail-strucs/warped/{case}_vort_{time_value:.2f}.png", dpi=800)
     plt.close()
 
 
 def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
     fig, ax = plt.subplots(figsize=(5,3), sharex=True, sharey=True)
-    ax.set_xlabel(r"$x$")
-    ax.set_ylabel(r"$y$")
+    ax.set_xlabel(r"$n$")
+    ax.set_ylabel(r"$s$")
     ax.set_title(f"$t = {time_value:.2f}$", fontsize=9)
 
-    lims = [-200, 200]
+    lims = [-300, 300]
     levels = np.linspace(lims[0], lims[1], 44)
     _cmap = sns.color_palette("seismic", as_cmap=True)
 
@@ -251,12 +255,8 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
     pys = np.linspace(-0.25, 0.25, ny)
     tail_mask = pxs > 0.6
 
-    # bodt = np.array([naca_warp(xp) for xp in pxs])
-    # ax.plot(pxs[tail_mask], bodt[tail_mask], color='k', linewidth=0.7, label=r"Body")
-    # bodb = np.array([-naca_warp(xp) for xp in pxs])
-    # ax.plot(pxs[tail_mask], bodb[tail_mask], color='k', linewidth=0.7)
-
     avg_vort = vorticity[:, :, tidx]#.mean(axis=2)
+    avg_vort = gaussian_filter1d(avg_vort, sigma=2, axis=0)
     cs = ax.contourf(
         pxs,
         pys,
@@ -267,7 +267,7 @@ def plot_unwarped_vort(vorticity, tidx, time_value, case=0):
         cmap=_cmap,
         extend="both",
     )
-    ax.set_ylim([0, 0.005])
+    ax.set_ylim([0, 0.025])
     ax.set_xlim([0.6, 1])
     # ax.set_aspect(1)
 
@@ -296,7 +296,7 @@ def load_save_data():
 
 
 def vorts_and_all():
-    cases = [0]#, 128, 64, 32]
+    cases = [0, 128, 64, 16]
     for idx, case in enumerate(cases):
         body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
         _, nx, ny, nt = body.shape
@@ -304,7 +304,7 @@ def vorts_and_all():
         pys = np.linspace(-0.35, 0.35, ny)
         vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
 
-        time_values = np.arange(0., 1, 0.02)
+        time_values = np.arange(0., 1, 0.01)
         tidxs = (time_values * 200).astype(int)
         for tidx in tqdm(tidxs, desc="Plot loop"):
             plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
@@ -383,7 +383,7 @@ def flatten_field(field):
     t0 = time.time()
     print("\n----- Unwarping body data -----")
 
-    for idt, t in tqdm(enumerate(ts[:1]), total=len(ts)):
+    for idt, t in tqdm(enumerate(ts[:200]), total=len(ts)):
         # Calculate the shifts for each x-coordinate
         fw = fwarp(t, pxs)-[naca_warp(xp) for xp in pxs]
         real_shift = fw / dy
@@ -416,7 +416,7 @@ def flatten_field(field):
     return unwarped
 
 
-def cascade_contours():
+def cascade_contours(unwarpeds):
     time_values = np.array([0.2, 0.225, 0.25, 0.275, 0.3,0.325, 0.35])
     tidxs = (time_values * 200).astype(int)
     fig, axs = plt.subplots(tidxs.size, 1, sharex=True, sharey=True)
@@ -448,7 +448,7 @@ def cascade_contours():
     #     axs[0, idxc].set_title(lab, fontsize=10.5)
 
     for idxc, case in enumerate(cases):
-        vorticity = vorts[idxc]
+        vorticity = unwarpeds[idxc]
         nx, ny, nt = vorticity.shape
         pxs = np.linspace(0, 1, nx)
         px_mask = pxs > 0.5
@@ -461,13 +461,12 @@ def cascade_contours():
             # clip the vorticity to the tail
             avg_vort = avg_vort[px_mask, :]
             avg_vort = avg_vort[:, py_mask]
-            rotated_field = rotate_field(avg_vort, 4*rot*180/np.pi)
 
 
             co = axs[idx].contour(
                 pxs[px_mask],
                 pys[py_mask],
-                -rotated_field.T,
+                -avg_vort.T,
                 levels=levels,
                 colors=[colours[order[idxc]]],
                 linewidths=0.25,
@@ -485,38 +484,31 @@ def cascade_contours():
     new_height = fig_height * scale_factor
     fig.set_size_inches(6, 9)
 
-    fig.tight_layout()
+    # fig.tight_layout()
 
-    plt.savefig(f"figures/power-recovery/vorticity_tail.pdf")
-    plt.savefig(f"figures/power-recovery/vorticity_tail.png", dpi=600)
+    plt.savefig(f"figures/power-recovery/flat_vorticity_tail.pdf")
+    plt.savefig(f"figures/power-recovery/flat_vorticity_tail.png", dpi=600)
 
-# cascade_contours()
 
 if __name__ == "__main__":
     # load_save_data()
-    # cases = [64, 128]
-    # bodies = []
-    # for case in cases:
-    #     dl = LoadData(f"{os.getcwd()}/data/0.001/{case}/unmasked", dt=0.005)
-    #     body = dl.body
-    #     np.save(f"data/0.001/{case}/unmasked/body.npy", body)
-    #     unwarped = dl.unwarped_body
-    #     np.save(f"data/0.001/{case}/unmasked/body_unwarped.npy", unwarped)
 
-    # for case in cases:
-    #     body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
-    #     vorts_unwarped(unwarped, case)
+    cases = [0, 64, 128]
+    unwarpeds = []
+    for idx, case in enumerate(cases):
+        # body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
+        # _, nx, ny, nt = body.shape
+        # pxs = np.linspace(0, 1, nx)
+        # pys = np.linspace(-0.35, 0.35, ny)
+        # vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+        # unwarped = flatten_field(vorticity)
+        # np.save(f"data/0.001/{case}/unmasked/vort_unwarped.npy", unwarped)
+        unwarped = np.load(f"data/0.001/{case}/unmasked/vort_unwarped.npy")
+        unwarpeds.append(unwarped)
+    
 
-    # cases = [0]#, 128, 64, 32]
-    case = 0
-    # for idx, case in enumerate(cases):
-    body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
-    _, nx, ny, nt = body.shape
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.35, 0.35, ny)
-    vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
-    unwarped = flatten_field(vorticity)
-    # np.save(f"data/0.001/{case}/unmasked/vort_unwarped.npy", unwarped)
+    time_values = np.array([0.2, 0.25, 0.3, 0.35])+0.5
+    tidxs = (time_values * 200).astype(int)
 
-    plot_unwarped_vort(unwarped, 0, 0, 0)
-    #     plot_vort(vorticity, tidx, time_values[tidxs==tidx][0], case)
+    # cascade_contours(unwarpeds)
+    # vorts_and_all()
