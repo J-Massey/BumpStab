@@ -143,10 +143,6 @@ def plot_thrust():
 def plot_power(ax=None):
     lams = [0, 16, 32, 64, 128]
     order = [2, 0, 3, 4, 1]
-
-    cases = [f"0.001/{lam}" for lam in lams]
-
-    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
     colours = sns.color_palette("colorblind", 7)
 
     t_sample = np.linspace(0.001, 0.999, 400)
@@ -155,54 +151,41 @@ def plot_power(ax=None):
         fig, ax = plt.subplots(figsize=(3, 3))
 
     ax.set_xlim(0, 1)
-    ax.set_ylabel(r"$\langle C_P \rangle $")
+    ax.set_ylabel(r"$ C_P  $")
     ax.set_xlabel(r"$\varphi$")
 
-    for idx, case in enumerate(cases):
-        path = f"data/{case}/spressure/fort.9"
+    for idx, case in enumerate(lams):
+        path = f"data/0.001/{case}/{case}/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
-        print(case, force.mean())
+        t_mask = t > 6
         t_new = t % 1
-        f = interp1d(t_new, force, fill_value="extrapolate")
-        force_av = f(t_sample)
-        # print(f"{force_av.mean():.4f} &")
-
-
-        wrap_indices = np.where(np.diff(t_new) < 0)[0] + 1
-        wrap_indices = np.insert(wrap_indices, 0, 0)  # Include the start index
-        wrap_indices = np.append(wrap_indices, len(t_new))  # Include the end index
-
-
-        # force_bins = [force_av[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-        # t_bins = [t_new[i:j] for i, j in zip(wrap_indices[:-1], wrap_indices[1:])]
-
-
-        # # Calculate the standard deviation of each bin
-        # force_diff = np.empty((4, t_sample.size))
-        # for id in range(len(force_bins)):
-        #     f_bins = interp1d(t_bins[id], force_bins[id], fill_value="extrapolate")
-        #     force_bins[id] = f_bins(t_sample)
-        #     force_diff[id] = force_bins[id] - force_av
-
-        ax.plot(
-            t_sample,
-            force_av,
+        ax.scatter(
+            t_new[t_mask],
+            force[t_mask],
             color=colours[order[idx]],
-            label=labels[idx],
             alpha=0.8,
-            linewidth=0.7,
+            marker=".",
+            s=0.2,
+            edgecolor="none",
+        )
+        print(case, force[t_mask].mean())
+
+        path = f"data/0.001/{case}/spressure/fort.9"
+        t, force = read_forces(path, interest="cp", direction="")
+        t_new = t % 1
+
+        ax.scatter(
+            t_new,
+            force,
+            color=colours[order[idx]],
+            alpha=0.8,
+            marker=".",
+            s=0.2,
+            edgecolor="none",
         )
 
-        # ax.axhline(np.mean(force), color=colours[idx], alpha=0.8, linewidth=0.7)
+        print(case, force.mean())
 
-        # ax.fill_between(
-        #     t_sample,
-        #     force + np.min(force_diff, axis=0),
-        #     force + np.max(force_diff, axis=0),
-        #     color=colours[idx],
-        #     alpha=0.3,
-        #     edgecolor="none",
-        # )
 
     plt.savefig(f"figures/power.png", dpi=700)
     plt.savefig(f"figures/power.pdf")
@@ -214,8 +197,6 @@ def plot_power_fft(ax=None):
     lams = [0, 128]
     order = [2, 1, 2]
     cases = [f"0.001/{lam}" for lam in lams]
-    labels = [f"$\lambda = 1/{lam}$" for lam in lams]
-    labels.append("Smooth")
     colours = sns.color_palette("colorblind", 7)
 
     if ax is None:
@@ -227,12 +208,14 @@ def plot_power_fft(ax=None):
     for idx, case in enumerate(cases):
         path = f"data/{case}/spressure/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
-        dt = 4/len(t)
+        dt = 2/len(t)
 
-        freq, Pxx = welch(force, 1/dt, nperseg=len(t//2))
+        # Pxx = np.fft.fft(force)
+        # freq = np.fft.fftfreq(len(force), dt)
+        freq, Pxx = welch(force, 1/dt, nperseg=len(t//1))
         # Pxx = savgol_filter(Pxx, 4, 1)
         
-        ax.loglog(freq, Pxx, color=colours[order[idx]], label=labels[idx], alpha=0.8, linewidth=0.7)
+        ax.loglog(freq, Pxx, color=colours[order[idx]], alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
     
@@ -557,7 +540,7 @@ def span(lam):
 def generate_latex_table():
     return r'\begin{tabular}{lccccc}' + \
         r'$\lambda$ & $1/16$ & $1/32$ & $1/64$ &  $1/128$ &  $1/0$ \\' + \
-        r'$\overline{C_P}$ & 0.1383 & 0.1366 & 0.1247 & 0.1213 & 0.1249 \\' + \
+        r'$\overline{C_P}$ & 0.139 & 0.138 & 0.125 & 0.122 & 0.124 \\' + \
         r'\end{tabular}'
 
 

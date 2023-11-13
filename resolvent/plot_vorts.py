@@ -50,7 +50,7 @@ def fwarp(t: float, pxs):
         return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
 
 
-def plot_vort_cascade(cases, vorts, time_values, idxs):
+def plot_vort_cascade(cases, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
     fig.text(0.5, 0.07, r"$s$", ha='center', va='center')
     fig.text(0.0, 0.5, r"$n$", ha='center', va='center', rotation='vertical')
@@ -80,12 +80,13 @@ def plot_vort_cascade(cases, vorts, time_values, idxs):
         axs[0, idxc].set_title(lab, fontsize=10.5)
 
     for idxc, case in enumerate(cases):
-        vorticity = vorts[idxc]
+        omega_profile = np.load(f"data/0.001/{case}/unmasked/omega_profile.npy")
+        vorticity = np.einsum("ijk->jki", omega_profile)
         nx, ny, nt = vorticity.shape
         pxs = np.linspace(0, 1, nx)
         pxs_mask = pxs >= 0.6
-        pys = np.linspace(-0.25, 0.25, ny)
-        pys_mask = np.logical_and(pys >= 0, pys <= 0.01)
+        pys = np.linspace(0, 0.05, ny)
+        pys_mask = pys <= 0.04
 
         for idx, n in enumerate(idxs):
             avg_vort = vorticity[:, :, n]
@@ -115,11 +116,10 @@ def plot_vort_cascade(cases, vorts, time_values, idxs):
 
     fig.set_size_inches(6, 9)
 
-    plt.savefig(f"figures/power-recovery/vorticity_tail_other.pdf", dpi=800)
-    plt.savefig(f"figures/power-recovery/vorticity_tail_other.png", dpi=800)
+    plt.savefig(f"figures/power-recovery/vorticity_tail.pdf")
+    plt.savefig(f"figures/power-recovery/vorticity_tail.png", dpi=800)
     plt.close()
 
-# plot_vort_cascade(cases, unwarpeds, time_values, tidxs)
 
 
 def plot_du_dy(cases, bodies, time_values, idxs):
@@ -494,21 +494,20 @@ if __name__ == "__main__":
     # load_save_data()
 
     cases = [0, 64, 128]
-    unwarpeds = []
-    for idx, case in enumerate(cases):
-        # body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
-        # _, nx, ny, nt = body.shape
-        # pxs = np.linspace(0, 1, nx)
-        # pys = np.linspace(-0.35, 0.35, ny)
-        # vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
-        # unwarped = flatten_field(vorticity)
-        # np.save(f"data/0.001/{case}/unmasked/vort_unwarped.npy", unwarped)
-        unwarped = np.load(f"data/0.001/{case}/unmasked/vort_unwarped.npy")
-        unwarpeds.append(unwarped)
+    # unwarpeds = []
+    # for idx, case in enumerate(cases):
+    #     # body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)
+    #     # _, nx, ny, nt = body.shape
+    #     # pxs = np.linspace(0, 1, nx)
+    #     # pys = np.linspace(-0.35, 0.35, ny)
+    #     # vorticity = np.gradient(body[1, :, :, :], pxs, axis=0) - np.gradient(body[0, :, :, :], pys, axis=1)
+    #     # unwarped = flatten_field(vorticity)
+    #     # np.save(f"data/0.001/{case}/unmasked/vort_unwarped.npy", unwarped)
+    #     unwarped = np.load(f"data/0.001/{case}/unmasked/vort_unwarped.npy")
+    #     unwarpeds.append(unwarped)
     
 
-    time_values = np.array([0.2, 0.25, 0.3, 0.35])+0.5
+    time_values = np.array([0.2, 0.25, 0.3, 0.35])
     tidxs = (time_values * 200).astype(int)
 
-    # cascade_contours(unwarpeds)
-    # vorts_and_all()
+    plot_vort_cascade(cases, time_values, tidxs)

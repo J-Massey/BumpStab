@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=10
+    real, parameter    :: finish=14
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
@@ -88,7 +88,7 @@ program swimming_plate
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
 
-        if(t>(finish-2)/f) then
+        if(t>(finish-6)/f) then
           call geom%surfacePressureTop(flow%pressure)
           call geom%surfacePressureBot(flow%pressure)
           ! if(mod(t,0.005/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
