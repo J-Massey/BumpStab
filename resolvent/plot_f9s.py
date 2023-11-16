@@ -185,10 +185,26 @@ def plot_power(ax=None):
         )
 
         print(case, force.mean())
+    
+    path = f"data/variable-roughness/test_surface/fort.9"
+    t, force = read_forces(path, interest="cp", direction="")
+    t_mask = t > 4
+    t_new = t % 1
+
+    ax.scatter(
+        t_new[t_mask],
+        force[t_mask],
+        color=colours[5],
+        alpha=0.8,
+        marker=".",
+        s=0.2,
+        edgecolor="none",
+    )
+    print("Var", force[t_mask].mean())
 
 
-    plt.savefig(f"figures/power.png", dpi=700)
-    plt.savefig(f"figures/power.pdf")
+    plt.savefig(f"figures/power_scat.png", dpi=700)
+    plt.savefig(f"figures/power_scat.pdf")
     # plt.close()
     return ax
 
@@ -546,12 +562,12 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    # plot_power()
+    plot_power()
     # plot_power_diff_fft()
     
     # plot_E()
     # plot_E_fft()
-    plot_combined()
+    # plot_combined()
     # test_E_span_scaling()
     # save_legend()
 

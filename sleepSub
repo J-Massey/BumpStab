@@ -1,17 +1,16 @@
 #!/bin/bash
-#SBATCH --ntasks=4
+#SBATCH --ntasks=64
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-# SBATCH --mem=243200
-#SBATCH --partition=highmem
+#SBATCH --ntasks-per-node=64
+#SBATCH --partition=amd
 #SBATCH --job-name=interactive
 #SBATCH --time=19:00:00
 
 echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
 
-module load conda
-source activate an
+# module load conda
+# source activate an
 
 # python resolvent/SVD_save.py
 sleep 720000

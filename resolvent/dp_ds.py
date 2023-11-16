@@ -252,13 +252,16 @@ def plot_body_velocity():
     ax[0].set_ylim(0, 1)
     ax[0].set_xlim(0, 1)
 
-    pxs = np.linspace(0, 1, 1024)
+    pxs = np.linspace(0, 1, 512)
     ts = np.arange(0, 0.005*201, 0.005)
     y = np.empty((len(pxs), len(ts)))
     for idx, t in enumerate(ts):
-        y[:, idx] = np.array([naca_warp(xp) - fwarp(t, xp) for xp in pxs])
+        y[:, idx] = np.array([-fwarp(t, xp) for xp in pxs])
     dy_dt = np.gradient(y, ts, axis=1)
-    d2y_dx2 = np.gradient(np.gradient(y, pxs, axis=0), pxs, axis=0)
+    d2y_d2t = np.gradient(np.gradient(y, ts, axis=1), ts, axis=1)
+    dy_dx = np.gradient(y, pxs, axis=0)
+    d2y_dx2 = np.gradient(dy_dx, pxs, axis=0)
+    print(np.gradient(np.gradient(y, axis=0), axis=0).max())
 
     lim = 0.6
     levels = np.linspace(-lim, lim, 22)
@@ -269,7 +272,7 @@ def plot_body_velocity():
             levels=levels,
             vmin=-lim,
             vmax=lim,
-            cmap=sns.color_palette("icefire", as_cmap=True),
+            cmap=sns.color_palette("inferno", as_cmap=True),
             extend="both",
     )
 
@@ -282,7 +285,7 @@ def plot_body_velocity():
     cb.set_label(r"$ \vec{v}_y $", labelpad=-33, rotation=0)
 
 
-    lim = 10
+    lim = 2.5
     levels = np.linspace(-lim, lim, 22)
     cs = ax[1].contourf(
             pxs,
@@ -291,7 +294,7 @@ def plot_body_velocity():
             levels=levels,
             vmin=-lim,
             vmax=lim,
-            cmap=sns.color_palette("inferno", as_cmap=True),
+            cmap=sns.color_palette("icefire", as_cmap=True),
             extend="both",
     )
     divider = make_axes_locatable(ax[1])
@@ -303,6 +306,7 @@ def plot_body_velocity():
     cb.set_label(r"$ \kappa $", labelpad=-33, rotation=0)
     
     plt.savefig(f"figures/phase-info/surface/velocity.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/phase-info/surface/velocity.png", dpi=450, transparent=True)
     plt.close()
 
 
