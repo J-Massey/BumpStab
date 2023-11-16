@@ -188,7 +188,7 @@ def plot_power(ax=None):
     
     path = f"data/variable-roughness/test_surface/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t_mask = t > 4
+    t_mask = t > 5
     t_new = t % 1
 
     ax.scatter(

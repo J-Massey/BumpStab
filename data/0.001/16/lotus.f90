@@ -12,7 +12,7 @@ program swimming_plate
     real,parameter     :: Re = 100000
   !
     real,parameter     :: L=4096, nu=L/Re
-    real, parameter    :: finish=10
+    real, parameter    :: finish=14
     integer            :: b(3) = [32,32,1]
   !
   ! -- Hyperparameters
@@ -88,7 +88,7 @@ program swimming_plate
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
 
-        if(t>(finish-2)/f) then
+        if(t>(finish-6)/f) then
           call geom%surfacePressureTop(flow%pressure)
           call geom%surfacePressureBot(flow%pressure)
           ! if(mod(t,0.005/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
@@ -168,8 +168,8 @@ program swimming_plate
     real            :: degg_top(3)
     degg_top = 0
     degg_top(1) = (h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-pi/2)&
-                                  *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
-    degg_top(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-pi/2)&
+                                  *cos((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
+    degg_top(3) = -(h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-pi/2)&
                                   *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
   end function degg_top
   real pure function dotegg_top(x)
@@ -187,8 +187,8 @@ program swimming_plate
     real            :: degg_bottom(3)
     degg_bottom = 0
     degg_bottom(1) = (h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-3*pi/2)&
-                                     *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
-    degg_bottom(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-3*pi/2)&
+                                     *cos((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
+    degg_bottom(3) = -(h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-3*pi/2)&
                                       *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
   end function degg_bottom
   real pure function dotegg_bottom(x)

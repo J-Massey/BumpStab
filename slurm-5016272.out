@@ -1,0 +1,37 @@
+Running SLURM prolog script on gold55.cluster.local
+===============================================================================
+Job started on Wed Nov 15 18:14:24 GMT 2023
+Job ID          : 5016272
+Job name        : interactive
+WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
+Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
+Partition       : highmem
+Num hosts       : 1
+Num cores       : 6
+Num of tasks    : 6
+Hosts allocated : gold55
+Job Output Follows ...
+===============================================================================
+Starting calculation at Wed Nov 15 18:14:24 GMT 2023
+---------------------------------------------------------------
+slurmstepd-gold55: error: *** JOB 5016272 ON gold55 CANCELLED AT 2023-11-16T00:14:42 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on gold55.
+
+Submit time  : 2023-11-15T18:14:04
+Start time   : 2023-11-15T18:14:23
+End time     : 2023-11-16T00:14:42
+Elapsed time : 06:00:19 (Timelimit=06:00:00)
+
+Job ID: 5016272
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 6
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 1-12:01:54 core-walltime
+Job Wall-clock time: 06:00:19
+Memory Utilized: 2.53 MB
+Memory Efficiency: 0.00% of 138.43 GB
+

@@ -305,8 +305,8 @@ def plot_body_velocity():
     cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ \kappa $", labelpad=-33, rotation=0)
     
-    plt.savefig(f"figures/phase-info/surface/velocity.pdf", dpi=450, transparent=True)
-    plt.savefig(f"figures/phase-info/surface/velocity.png", dpi=450, transparent=True)
+    plt.savefig(f"figures/variable-roughness/velocity.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/variable-roughness/velocity.png", dpi=450, transparent=True)
     plt.close()
 
 

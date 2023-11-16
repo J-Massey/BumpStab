@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --ntasks=64
+#SBATCH --ntasks=6
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=64
-#SBATCH --partition=amd
+#SBATCH --ntasks-per-node=6
+#SBATCH --partition=highmem
 #SBATCH --job-name=interactive
-#SBATCH --time=19:00:00
+#SBATCH --time=6:00:00
 
 echo "Starting calculation at $(date)"
 echo "---------------------------------------------------------------"
