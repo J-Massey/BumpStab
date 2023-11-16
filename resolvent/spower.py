@@ -125,6 +125,40 @@ def straight_line(a, b):
     return points
 
 
+def plot_cp_smooth():
+    fig, ax = plt.subplots(figsize=(6, 6), sharex=True, sharey=True)
+    ax.set_xlabel(r"$x$")
+    ax.set_ylabel(r"$\varphi$")
+
+    lims = [-0.002, 0.002]
+    norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
+
+    phase_avg = np.load("data/cp_phase_map.npy")
+
+    cs = ax.imshow(
+        phase_avg[0],
+        extent=[0, 1, 0, 1],
+        # vmin=lims[0],
+        # vmax=lims[1],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        aspect='auto',
+        origin='lower',
+        norm=norm,
+    )
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="7%", pad=0.05)
+    cb = plt.colorbar(
+        cs, cax=cax, orientation="vertical", ticks=np.linspace(lims[0], lims[1], 5)
+    )
+    # cb.ax.xaxis.tick_top()  # Move ticks to top
+    # cb.ax.xaxis.set_label_position("top")  # Move label to top
+    cb.set_label(r"$ c_P $", labelpad=-49, rotation=90)
+
+    plt.savefig(f"figures/variable-roughness/spressure.pdf", dpi=450, transparent=True)
+    plt.savefig(f"figures/variable-roughness/spressure.png", dpi=450, transparent=True)
+    plt.close()
+
+
 def plot_cp(ts, pxs, body):
     fig, ax = plt.subplots(2, 2, figsize=(6, 6), sharex=True, sharey=True)
     fig.text(0.5, 0.05, r"$x$", ha="center", va="center")
@@ -455,8 +489,9 @@ if __name__ == "__main__":
     cases = [0, 64, 128, 16, 32]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
+    plot_cp_smooth()
     # ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
-    plot_lines()
+    # plot_lines()
     # plot_cp(ts, pxs, ph_avg)
     # plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, ph_avg)
