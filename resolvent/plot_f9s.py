@@ -157,7 +157,7 @@ def plot_power(ax=None):
     for idx, case in enumerate(lams):
         path = f"data/0.001/{case}/{case}/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
-        t_mask = (t > 6)
+        t_mask = (t > 0.05)
         t_new = t % 1
         ax.scatter(
             t_new[t_mask],
@@ -186,19 +186,19 @@ def plot_power(ax=None):
 
         print(case, force.mean())
     
-    path = f"data/variable-roughness/test_surface/fort.9"
-    t, force = read_forces(path, interest="cp", direction="")
-    t_mask = np.logical_and(t > 4, t < 6)
+    path = f"data/variable-roughness/full-scale/var_surface/fort.9"
+    t, force = read_forces(path, interest="p", direction="x")
+    t_mask = np.logical_and(t > 0.05, t < 8)
     t_new = t % 1
 
-    ax.scatter(
+    ax.plot(
         t_new[t_mask],
         force[t_mask],
         color=colours[5],
-        alpha=0.8,
-        marker=".",
-        s=0.2,
-        edgecolor="none",
+        # alpha=0.8,
+        # marker=".",
+        # s=0.2,
+        # edgecolor="none",
     )
     print("Var", force[t_mask].mean())
 

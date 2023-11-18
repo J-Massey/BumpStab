@@ -53,7 +53,7 @@ def fwarp(t: float, pxs):
 def plot_vort_cascade(cases, time_values, idxs):
     fig, axs = plt.subplots(idxs.size, len(cases), sharex=True, sharey=True)
     fig.text(0.5, 0.07, r"$s$", ha='center', va='center')
-    fig.text(0.0, 0.5, r"$n$", ha='center', va='center', rotation='vertical')
+    # fig.text(0.0, 0.5, r"$n$", ha='center', va='center', rotation='vertical')
     fig.text(0.915, 0.844, r'$\varphi$', horizontalalignment='center', verticalalignment='center')
 
     arrow_ax = fig.add_axes([0.92, 0.054, 0.02, 0.79])
@@ -69,6 +69,7 @@ def plot_vort_cascade(cases, time_values, idxs):
     for idx, time in enumerate(time_values):
         y_pos = 0.89 - (idx + 0.5) * row_height  # Center of each row
         fig.text(0.945, y_pos, f"{time:.2f}", verticalalignment='center')
+        axs[idx, 0].set_ylabel(r"$n/h$")
 
     lims = [-300, 0]
     norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[0]-lims[1])/2, vmax=lims[1])
@@ -96,7 +97,7 @@ def plot_vort_cascade(cases, time_values, idxs):
             avg_vort = gaussian_filter1d(avg_vort, sigma=3, axis=1)
             cs = axs[idx, idxc].contourf(
                 pxs[pxs_mask],
-                pys[pys_mask],
+                pys[pys_mask]/0.001,
                 avg_vort.T,
                 levels=levels,
                 norm=norm,
@@ -104,8 +105,9 @@ def plot_vort_cascade(cases, time_values, idxs):
                 extend='min',
 
             )
-            axs[idx, idxc].set_ylim([0, 0.005])
+            axs[idx, idxc].set_ylim([0, 5])
             axs[idx, idxc].set_xlim([0.6, 1])
+            axs[idx, idxc].axhline(1, color='grey', ls="--", linewidth=0.5)
 
     # cbar on top of the plot spanning the whole width
     cax = fig.add_axes([0.175, 0.92, 0.7, 0.03])
@@ -492,8 +494,8 @@ def cascade_contours(unwarpeds):
 
 if __name__ == "__main__":
     # load_save_data()
-
     cases = [0, 64, 128]
+
     # unwarpeds = []
     # for idx, case in enumerate(cases):
     #     # body = np.load(f"data/0.001/{case}/unmasked/body.npy", allow_pickle=True)

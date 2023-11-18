@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --ntasks=64
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=64
+#SBATCH --partition=amd
+#SBATCH --job-name=amd
+#SBATCH --time=6:00:00
+
+echo "Starting calculation at $(date)"
+echo "---------------------------------------------------------------"
+
+module load openmpi/4.0.5/amd
+module load conda
+source activate rlotus
+
+# python resolvent/SVD_save.py
+sleep 720000

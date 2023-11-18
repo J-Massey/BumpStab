@@ -252,6 +252,7 @@ def plot_body_velocity():
     ax[0].set_ylim(0, 1)
     ax[0].set_xlim(0, 1)
 
+
     pxs = np.linspace(0, 1, 512)
     ts = np.arange(0, 0.005*201, 0.005)
     y = np.empty((len(pxs), len(ts)))
@@ -261,9 +262,8 @@ def plot_body_velocity():
     d2y_d2t = np.gradient(np.gradient(y, ts, axis=1), ts, axis=1)
     dy_dx = np.gradient(y, pxs, axis=0)
     d2y_dx2 = np.gradient(dy_dx, pxs, axis=0)
-    print(np.gradient(np.gradient(y, axis=0), axis=0).max())
 
-    lim = 0.6
+    lim = 0.64
     levels = np.linspace(-lim, lim, 22)
     cs = ax[0].contourf(
             pxs,
@@ -273,7 +273,6 @@ def plot_body_velocity():
             vmin=-lim,
             vmax=lim,
             cmap=sns.color_palette("inferno", as_cmap=True),
-            extend="both",
     )
 
     divider = make_axes_locatable(ax[0])
@@ -284,8 +283,11 @@ def plot_body_velocity():
     cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ \vec{v}_y $", labelpad=-33, rotation=0)
 
-
-    lim = 2.5
+    v_max = ts[np.argmax(dy_dt[-1, :])]
+    kap_max = ts[np.argsort(d2y_dx2[-1, :])]
+    print(np.max(dy_dt))
+    
+    lim = 10
     levels = np.linspace(-lim, lim, 22)
     cs = ax[1].contourf(
             pxs,
@@ -295,7 +297,6 @@ def plot_body_velocity():
             vmin=-lim,
             vmax=lim,
             cmap=sns.color_palette("icefire", as_cmap=True),
-            extend="both",
     )
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes("top", size="7%", pad=0.2)
@@ -305,6 +306,10 @@ def plot_body_velocity():
     cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ \kappa $", labelpad=-33, rotation=0)
     
+    ax[0].text(-0.22, 0.98, r"(a)", fontsize=10)
+    ax[1].text(-0.15, 0.98, r"(b)", fontsize=10)
+
+
     plt.savefig(f"figures/variable-roughness/velocity.pdf", dpi=450, transparent=True)
     plt.savefig(f"figures/variable-roughness/velocity.png", dpi=450, transparent=True)
     plt.close()

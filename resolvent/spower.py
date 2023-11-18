@@ -126,7 +126,7 @@ def straight_line(a, b):
 
 
 def plot_cp_smooth():
-    fig, ax = plt.subplots(figsize=(6, 6), sharex=True, sharey=True)
+    fig, ax = plt.subplots(figsize=(4, 4), sharex=True, sharey=True)
     ax.set_xlabel(r"$x$")
     ax.set_ylabel(r"$\varphi$")
 
@@ -263,10 +263,10 @@ def vertical_integral(fig, divider, t_ints):
         vax.plot(t_int[t_int>0], ts[t_int>0], color='red', marker='o', linestyle='none', markersize=.1)
         vax.plot(t_int[t_int<0], ts[t_int<0], color='green', marker='o', linestyle='none', markersize=.1)
     vax.plot(t_ints.mean(axis=0), ts, color='k', linewidth=0.5, linestyle='--', alpha=0.8)
-    vax.set_ylim(0, 1)
-    vax.set_xlim(-0.03, 0.03)
     vax.text(1.3, 0.5, r"$ \Delta C_P $", transform=vax.transAxes, ha='center', va='center', fontsize=8, rotation=270)
     vax.yaxis.set_visible(False)
+    vax.set_ylim(0, 1)
+    vax.set_xlim(-0.03, 0.03)
     vax.set_xticks([-0.03, 0.03])
     vax.set_xticklabels([-0.03, 0.03], fontsize=8)
     vax.xaxis.tick_top()
@@ -283,12 +283,14 @@ def horizontal_integral(fig, divider, x_ints):
     hax.set_xlim(0, 1)
     hax.set_ylim(-0.1, 0.1)
     hax.xaxis.set_visible(False)
+    hax.set_yticks([-0.1, 0, 0.1])
+    hax.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
     hax.text(0.5, -.3, r"$\overline{\Delta c_P}$", transform=hax.transAxes, ha='center', va='center', fontsize=8)
     return hax
         
 
 def plot_cp_diff(ts, pxs, ph_avg, instant):
-    fig, axs = plt.subplots(2, 2, figsize=(6.5, 6), sharex=True, sharey=True)
+    fig, axs = plt.subplots(2, 2, figsize=(6.5, 6), sharey=True)
     ax = axs.ravel()
     ax[0].text(-0.15, 0.98, r"(a)", transform=ax[0].transAxes)
     ax[1].text(-0.15, 0.98, r"(b)", transform=ax[1].transAxes)
@@ -304,7 +306,7 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
     ax[2].text(0.1, 0.85, r"$\lambda = 1/64$", fontsize=10)
     ax[3].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
 
-    for ax_id in ax[1:]:
+    for ax_id in ax[:-2]:
         ax_id.xaxis.tick_top()
         ax_id.xaxis.set_label_position('top')
 
@@ -315,6 +317,9 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
         # Set ticks at both top and bottom but no labels at the bottom
         ax_id.xaxis.set_tick_params(which='both', top=True, bottom=True)
         ax_id.xaxis.set_tick_params(which='both', labelbottom=False)
+
+    for ax_id in ax[2:]:
+        ax_id.set_xticklabels([])
 
     
     ax[0].set_yticks([0.25, 0.5, 0.75])
@@ -342,12 +347,8 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
         norm=norm,
         
     )
-    ax[0].set_aspect(1)
-
     divider = make_axes_locatable(ax[0])
     hax1 = horizontal_integral(fig, divider, inst_16.sum(axis=1))
-    hax1.set_yticks([-0.1, 0, 0.1])
-    hax1.set_yticklabels([-0.1, 0, 0.1], fontsize=8)
     vax1 = vertical_integral(fig, divider, inst_16.sum(axis=2))
     
     ax[1].imshow(
@@ -358,11 +359,8 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
         origin="lower",
         norm=norm,
     )
-    ax[1].set_aspect(1)
-
     divider = make_axes_locatable(ax[1])    
     hax2 = horizontal_integral(fig, divider, inst_32.sum(axis=1))
-    hax2.set_yticklabels([])
     vax2 = vertical_integral(fig, divider, inst_32.sum(axis=2))
 
     ax[2].imshow(
@@ -373,11 +371,8 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
         origin="lower",
         norm=norm,
     )
-    ax[1].set_aspect(1)
-
     divider = make_axes_locatable(ax[2])    
     hax3 = horizontal_integral(fig, divider, inst_64.sum(axis=1))
-    hax3.set_yticklabels([])
     vax3 = vertical_integral(fig, divider, inst_64.sum(axis=2))
 
     im128 = ax[3].imshow(
@@ -388,12 +383,15 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
         origin="lower",
         norm=norm,
     )
-    ax[1].set_aspect(1)
-
     divider = make_axes_locatable(ax[3])    
     hax4 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
-    hax4.set_yticklabels([])
     vax4 = vertical_integral(fig, divider, inst_128.sum(axis=2))
+
+    # Grey box where we visualise vorticity
+    # ax[3].plot([0.6, 0.6], [0.2, 0.45], color='grey', linewidth=0.5, linestyle='--', alpha=0.7)
+    # ax[3].plot([0.6, 1], [0.2, 0.2], color='grey', linewidth=0.5, linestyle='--', alpha=0.7)
+    # ax[3].plot([0.6, 1], [0.45, 0.45], color='grey', linewidth=0.5, linestyle='--', alpha=0.7)
+
 
     # plot colorbar
     cax = fig.add_axes([0.15, 0.95, 0.7, 0.04])
@@ -489,9 +487,8 @@ if __name__ == "__main__":
     cases = [0, 64, 128, 16, 32]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
-    plot_cp_smooth()
-    # ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
+    ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
     # plot_lines()
     # plot_cp(ts, pxs, ph_avg)
-    # plot_cp_diff(ts, pxs, ph_avg, instant)
+    plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, ph_avg)

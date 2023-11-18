@@ -488,7 +488,12 @@ def plot_Delta_deltas(cases):
     # fig.text(0.01, 0.5, r"$\varphi$", va='center', rotation='vertical')
     ax[0].set_ylabel(r"$\varphi$")
     ax[2].set_ylabel(r"$\varphi$")
-
+    
+    ax[0].text(-0.22, 0.98, r"(a)", transform=ax[0].transAxes)
+    ax[1].text(-0.15, 0.98, r"(b)", transform=ax[1].transAxes)
+    ax[2].text(-0.22, 0.98, r"(c)", transform=ax[2].transAxes)
+    ax[3].text(-0.15, 0.98, r"(d)", transform=ax[3].transAxes)
+    
     prof_dist = 0.05
     num_points = int(prof_dist * 4096)
 
@@ -515,6 +520,9 @@ def plot_Delta_deltas(cases):
     for idx in range(4):
         smooth = delta_omegas[0]
         diff = delta_omegas[1 + idx] - smooth
+        pxs = np.linspace(0, 1, diff.shape[1])
+        off_mask = np.logical_and(pxs > 0.15, pxs < 0.5)
+        print(diff[:, off_mask].mean()*1000)
         ax[idx].set_title(rf"$\lambda=1/{cases[1+idx]}$", fontsize=9)
         cs = ax[idx].imshow(
             diff*1e3,
@@ -543,8 +551,8 @@ def plot_Delta_deltas(cases):
 
 
 def custom_cmap():
-    green_to_white = sns.color_palette("Purples_r", n_colors=128)
-    white_to_red = sns.color_palette("Blues_r", n_colors=128)
+    green_to_white = sns.color_palette("Oranges_r", n_colors=128)
+    white_to_red = sns.color_palette("Purples_r", n_colors=128)
 
     # Concatenate the palettes, placing white in the middle
     full_palette = np.vstack((green_to_white, white_to_red[::-1]))
@@ -554,38 +562,40 @@ def custom_cmap():
     return cmap
 
 
-def plot_Delta_delta_128():
-    fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+def plot_delta_smooth():
+    fig, ax = plt.subplots(1, 1, figsize=(4, 4))
     ax.set_xlabel(r"$x$")
     ax.set_ylabel(r"$\varphi$")
 
     dos = np.load(f"data/0.001/0/unmasked/delta_omega.npy")[:200]
-    do128 = np.load(f"data/0.001/128/unmasked/delta_omega.npy")[:200]
-    lims = [-0.001, 0.001]
-    norm = TwoSlopeNorm(vmin=lims[0], vcenter=0, vmax=lims[1])
-    _cmap = custom_cmap()
-    diff = do128 - dos
+    lims = [0.0, 0.025]
+    levels = np.linspace(lims[0], lims[1], 22)
+    _cmap = sns.color_palette("winter", as_cmap=True)
+    diff = dos
     diff = gaussian_filter1d(diff, sigma=1, axis=0)
     diff = gaussian_filter1d(diff, sigma=1, axis=1)
-    cs = ax.imshow(
+    # print(diff.min(), diff.max())
+    # delta_max = np.linspace(0, 1, diff.shape[1])[np.argsort(diff[:, -1])]
+    # print(delta_max)
+    cs = ax.contourf(
+        np.linspace(0, 1, diff.shape[1]),
+        np.linspace(0, 1, diff.shape[0]),
         diff,
-        extent=[0, 1, 0, 1],
         cmap=_cmap,
-        aspect="auto",
-        origin="lower",
-        norm=norm,
-        # vmin=lims[0],
-        # vmax=lims[1],
+        levels=levels,
+        vmin=lims[0],
+        vmax=lims[1],
+        extend="both",
     ) 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.21)
     cb = plt.colorbar(
         cs, cax=cax, orientation="vertical", ticks=np.linspace(lims[0], lims[1], 5)
     )
-    cb.set_label(r"$ \Delta \delta $", labelpad=-56, rotation=0)
+    cb.set_label(r"$\delta $", labelpad=-45, rotation=0)
 
     # fig.tight_layout()
-    plt.savefig(f"figures/profiles/Delta_delta_128.pdf")
+    plt.savefig(f"figures/profiles/delta_smooth.pdf")
 
 
 def auto_corr(x):
@@ -610,5 +620,5 @@ if __name__ == "__main__":
     # cases = [0, 64, 128]
     # plot_deltas(cases)
     plot_Delta_deltas(cases)
-    plot_Delta_delta_128()
+    plot_delta_smooth()
     # plot_profile_ident(cases)
