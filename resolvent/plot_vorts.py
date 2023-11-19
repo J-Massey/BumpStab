@@ -107,7 +107,8 @@ def plot_vort_cascade(cases, time_values, idxs):
             )
             axs[idx, idxc].set_ylim([0, 5])
             axs[idx, idxc].set_xlim([0.6, 1])
-            axs[idx, idxc].axhline(1, color='grey', ls="--", linewidth=0.5)
+            if idxc>0:
+                axs[idx, idxc].axhline(1, color='grey', ls="--", linewidth=0.5)
 
     # cbar on top of the plot spanning the whole width
     cax = fig.add_axes([0.175, 0.92, 0.7, 0.03])

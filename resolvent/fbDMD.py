@@ -39,26 +39,30 @@ r=20
     
 dmds = []
 # -- Load the DMD into an accessible format -- #
-cases = ["0", "64", "128"]
+cases = ["0", "128"]
 for idx, case in enumerate(cases):
-    snapshots = np.load(f"data/0.001/{case}/data/body_unwarped.npy")
+    snapshots = np.load(f"data/0.001/{case}/unmasked/body_unwarped.npy")
     _, nx, ny, nt = snapshots.shape
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     vorticity =  np.gradient(snapshots[1, :, :, :], pxs, axis=0) - np.gradient(snapshots[0, :, :, :], pys, axis=1)
     vorticity = vorticity - np.mean(vorticity, axis=2, keepdims=True)
+    # for idx in range(nx):
+    #     bmask = np.logical_and(pys <= naca_warp(pxs[idx]) , pys >= -naca_warp(pxs[idx]))
+    #     vorticity[idx, bmask, :] = 0
+
 
     fbdmd = FbDMD(svd_rank=r)
     fbdmd.fit(vorticity.reshape(nx*ny, nt))
     dmds.append(fbdmd)
     Phi = fbdmd.modes
-    np.save(f"data/0.001/{case}/data/body_V_r.npy", Phi)
+    np.save(f"data/0.001/{case}/unmasked/body_V_r.npy", Phi)
 
     A_tilde = fbdmd.operator._Atilde
     rho, W = np.linalg.eig(A_tilde)
     # Find the eigenfunction from spectral expansion
     Lambda = np.log(rho) / 0.005
-    np.save(f"data/0.001/{case}/data/body_Lambda.npy", Lambda)
+    np.save(f"data/0.001/{case}/unmasked/body_Lambda.npy", Lambda)
     Phi.resize(nx, ny, Phi.shape[1])
 
 for idx, case in enumerate(cases):

@@ -488,7 +488,7 @@ if __name__ == "__main__":
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
     ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
-    # plot_lines()
+    plot_lines()
     # plot_cp(ts, pxs, ph_avg)
     plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, ph_avg)

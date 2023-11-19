@@ -2,9 +2,10 @@ import os
 from matplotlib import colors
 from matplotlib.lines import Line2D
 import numpy as np
-
 import matplotlib.pyplot as plt
 import scienceplots
+from matplotlib.ticker import NullFormatter
+
 from tqdm import tqdm
 import sys
 import seaborn as sns
@@ -202,9 +203,9 @@ def plot_power(ax=None):
     )
     print("Var", force[t_mask].mean())
 
-
-    plt.savefig(f"figures/variable-roughness/power_scat.png", dpi=700)
-    plt.savefig(f"figures/variable-roughness/power_scat.pdf")
+    if ax is None:
+        plt.savefig(f"figures/variable-roughness/power_scat.png", dpi=700)
+        plt.savefig(f"figures/variable-roughness/power_scat.pdf")
     # plt.close()
     return ax
 
@@ -220,22 +221,30 @@ def plot_power_fft(ax=None):
     ax.set_ylabel(r"PSD($C_P$)")
     ax.set_xlabel(r"$f^*$")
     ax.set_xlim(0.1, 200)
+    # ax.set_ylim(1e-16, 1e-2)
+    # axins = ax.inset_axes([0.1, 0.1, 0.5, 0.25], xlim=(10, 40), ylim=(1e-10, 1e-7), xticklabels=[], yticklabels=[])
+    # axins.set_xscale("log")
+    # axins.set_yscale("log")
 
     for idx, case in enumerate(cases):
         path = f"data/{case}/spressure/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
         dt = 2/len(t)
 
-        # Pxx = np.fft.fft(force)
-        # freq = np.fft.fftfreq(len(force), dt)
         freq, Pxx = welch(force, 1/dt, nperseg=len(t//1))
         # Pxx = savgol_filter(Pxx, 4, 1)
         
         ax.loglog(freq, Pxx, color=colours[order[idx]], alpha=0.8, linewidth=0.7)
+        # axins.plot(freq, Pxx, color=colours[order[idx]], alpha=0.8, linewidth=0.7)
 
     save_path = f"figures/fft_power.pdf"
+
+    # Add a box to annotate inset
+    # ax.indicate_inset_zoom(axins, edgecolor="k", alpha=0.8, linewidth=0.5)
+
     
-    plt.savefig(save_path, dpi=700)
+    if ax is None:
+        plt.savefig(save_path, dpi=700)
     # plt.close()
     return ax
 
@@ -562,12 +571,12 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    plot_power()
+    # plot_power()
     # plot_power_diff_fft()
     
     # plot_E()
     # plot_E_fft()
-    # plot_combined()
+    plot_combined()
     # test_E_span_scaling()
     # save_legend()
 
