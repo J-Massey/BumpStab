@@ -158,7 +158,7 @@ def plot_power(ax=None):
     for idx, case in enumerate(lams):
         path = f"data/0.001/{case}/{case}/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
-        t_mask = (t > 0.05)
+        t_mask = t > 5
         t_new = t % 1
         ax.scatter(
             t_new[t_mask],
@@ -187,25 +187,25 @@ def plot_power(ax=None):
 
         print(case, force.mean())
     
-    path = f"data/variable-roughness/full-scale/var_surface/fort.9"
-    t, force = read_forces(path, interest="p", direction="x")
-    t_mask = np.logical_and(t > 0.05, t < 8)
+    path = f"data/variable-roughness/half-scale/var_surface/fort.9"
+    t, force = read_forces(path, interest="cp", direction="")
+    t_mask = np.logical_and(t > 5, t < 6)
     t_new = t % 1
 
-    ax.plot(
+    ax.scatter(
         t_new[t_mask],
         force[t_mask],
-        color=colours[5],
-        # alpha=0.8,
-        # marker=".",
-        # s=0.2,
-        # edgecolor="none",
+        color="hotpink",
+        alpha=0.8,
+        marker=".",
+        s=.5,
+        edgecolor="none",
     )
     print("Var", force[t_mask].mean())
 
-    if ax is None:
-        plt.savefig(f"figures/variable-roughness/power_scat.png", dpi=700)
-        plt.savefig(f"figures/variable-roughness/power_scat.pdf")
+    # if ax is None:
+    plt.savefig(f"figures/variable-roughness/power_scat.png", dpi=700)
+    plt.savefig(f"figures/variable-roughness/power_scat.pdf")
     # plt.close()
     return ax
 
@@ -571,12 +571,12 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    # plot_power()
+    plot_power()
     # plot_power_diff_fft()
     
     # plot_E()
     # plot_E_fft()
-    plot_combined()
+    # plot_combined()
     # test_E_span_scaling()
     # save_legend()
 
