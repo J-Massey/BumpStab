@@ -36,6 +36,26 @@ def custom_cmap():
     return cmap
 
 
+def fwarp(t: float, pxs):
+    if isinstance(pxs, float):
+        x = pxs
+        xp = min(max(x, 0.0), 1.0)
+        return -0.5*(0.28 * xp**2 - 0.13 * xp + 0.05) * np.sin(2*np.pi*(t - (1.42* xp)))
+    else:
+        return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+
+
+def kappa(pxs, ts):
+    y = np.empty((len(pxs), len(ts)))
+    for idx, t in enumerate(ts):
+        y[:, idx] = np.array([-fwarp(t, xp) for xp in pxs])
+    dy_dt = np.gradient(y, ts, axis=1)
+    d2y_d2t = np.gradient(np.gradient(y, ts, axis=1), ts, axis=1)
+    dy_dx = np.gradient(y, pxs, axis=0)
+    d2y_dx2 = np.gradient(dy_dx, pxs, axis=0)
+    return d2y_dx2
+
+
 def read_forces(force_file, interest="p", direction="x"):
     names = [
         "t",
@@ -92,18 +112,20 @@ def load_phase_avg_cp_part():
     T = 2
     ts = np.linspace(0.001, 0.999, 5000)
     if os.path.isfile("data/variable-roughness/cp_phase_map.npy") and os.path.isfile("data/variable-roughness/cp_instantaneous.npy"):
-        phase_avg = np.load("data/cp_phase_map.npy")
-        instantaneous = np.load("data/cp_instantaneous.npy")
+        phase_avg = np.load("data/variable-roughness/cp_phase_map.npy")
+        instantaneous = np.load("data/variable-roughness/cp_instantaneous.npy")
     else:
         phase_avg = []; instantaneous = []
-        tr, _ = read_forces(f"data/variable-roughness/full-scale/var_surface/fort.9", "cp", "")
-        cyc_mask = np.logical_and(tr > 5, tr < 7)
+        tr, _ = read_forces(f"data/variable-roughness/half-scale/var_surface/fort.9", "cp", "")
+        tr = tr[tr > 4]
+        cyc_mask = np.logical_and((tr>6), (tr < 8))
 
-        cp = np.genfromtxt(f"data/variable-roughness/full-scale/var_surface/fort.1")  # Load the 1D array
+        cp = np.genfromtxt(f"data/variable-roughness/half-scale/var_surface/fort.1")[:-2]  # Load the 1D array
+        print(tr.shape, cp.shape)
         y_spline_top = splineit(tr[cyc_mask], cp[cyc_mask])/fnorm(128)
         onetop, twotop = y_spline_top[:int(len(y_spline_top)//2)], y_spline_top[int(len(y_spline_top)//2):]
 
-        cp = np.genfromtxt(f"data/variable-roughness/full-scale/var_surface/fort.2")  # Load the 1D array
+        cp = np.genfromtxt(f"data/variable-roughness/half-scale/var_surface/fort.2")[:-2]  # Load the 1D array
         y_spline_bot = splineit(tr[cyc_mask], cp[cyc_mask])/fnorm(128)
         y_spline_bot = np.roll(y_spline_bot, y_spline_bot.shape[0]//(2*T), axis=0)
         onebot, twobot = y_spline_bot[:int(len(y_spline_bot)//2)], y_spline_bot[int(len(y_spline_bot)//2):]
@@ -181,6 +203,9 @@ def plot_cp_smooth():
     # cb.ax.xaxis.tick_top()  # Move ticks to top
     # cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ c_P $", labelpad=-49, rotation=90)
+
+    pxs, ts = np.linspace(0, 1, phase_avg[0].shape[1]), np.linspace(0, 1, phase_avg[0].shape[0])
+    ax.contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.5, linestyles='--')
 
     plt.savefig(f"figures/variable-roughness/spressure.pdf", dpi=450, transparent=True)
     plt.savefig(f"figures/variable-roughness/spressure.png", dpi=450, transparent=True)
@@ -437,13 +462,12 @@ def plot_cp_diff(ts, pxs, ph_avg, instant):
 
 def plot_difference_spectra(ts, pxs, body):
     dx = 4 / 4096  # Spatial step
-    dt = 1 / body[0].shape[0]  # Temporal step
+    dt = 4 / body[0].shape[0]  # Temporal step
 
-    cc64 = np.fft.fft2(body[0] - body[1])
+    cc64 = np.fft.fft2(body[1]-body[0])
     cc64 = np.fft.fftshift(cc64)
-    cc128 = np.fft.fft2(body[0] - body[2])
+    cc128 = np.fft.fft2(body[2]-body[0])
     cc128 = np.fft.fftshift(cc128)
-    np.log(np.abs(cc64))
 
     num_rows, num_cols = body[0].shape
     freq_x = np.fft.fftshift(np.fft.fftfreq(num_cols, 4 / 4096))
@@ -473,7 +497,7 @@ def plot_difference_spectra(ts, pxs, body):
         origin="lower",
         # norm=norm,
     )
-    print(np.log(np.abs(cc128)).max())
+    # print(np.log(np.abs(cc128)).max())
     im128 = ax[1].imshow(
         np.log(np.abs(cc128)),
         extent=extent,
@@ -516,7 +540,6 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
     
     fig.text(0.5, 0.07, r"$x$", ha="center", va="center")
     ax[0].set_ylabel(r"$\varphi$")
-    ax[2].set_ylabel(r"$\varphi$")
 
     ax[0].text(0.1, 0.85, r"$\lambda = 1/0$", fontsize=10)
     ax[1].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
@@ -541,26 +564,31 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
     norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
     _cmap = custom_cmap()
 
-    diff_smooth = - ph_avg[0] + ph_avg[1]
-    inst_64 = - instant[0] + instant[1]
-    dp_128 = - ph_avg[0] + ph_avg[2]
-    inst_128 = - instant[0] + instant[2]
+    ts, pxs, ph_avg_var, instant_var = load_phase_avg_cp_part()
+
+    # print(ph_avg_var[0].shape, ph_avg_var[0].shape)
+
+    diff_smooth = - ph_avg[0] + ph_avg_var[0]
+    inst_smooth = - instant[0] + instant_var[0]
+    diff_128 = - ph_avg[2] + ph_avg_var[0]
+    inst_128 = - instant[2] + instant_var[0]
+
+    print(diff_smooth.mean(), diff_128.mean())
 
     ax[0].imshow(
-        dp_16,
+        diff_smooth,
         extent=[0, 1, 0, 1],
         cmap=_cmap,
         aspect="auto",
         origin="lower",
-        norm=norm,
-        
+        norm=norm,   
     )
     divider = make_axes_locatable(ax[0])
-    hax1 = horizontal_integral(fig, divider, inst_16.sum(axis=1))
-    vax1 = vertical_integral(fig, divider, inst_16.sum(axis=2))
+    hax1 = horizontal_integral(fig, divider, inst_smooth.sum(axis=1))
+    vax1 = vertical_integral(fig, divider, inst_smooth.sum(axis=2))
     
-    ax[1].imshow(
-        dp_32,
+    im128 = ax[1].imshow(
+        diff_128,
         extent=[0, 1, 0, 1],
         cmap=_cmap,
         aspect="auto",
@@ -568,11 +596,16 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
         norm=norm,
     )
     divider = make_axes_locatable(ax[1])    
-    hax2 = horizontal_integral(fig, divider, inst_32.sum(axis=1))
-    vax2 = vertical_integral(fig, divider, inst_32.sum(axis=2))
+    hax2 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
+    vax2 = vertical_integral(fig, divider, inst_128.sum(axis=2))
+    pxs, ts = np.linspace(0, 1, ph_avg[0].shape[1]), np.linspace(0, 1, ph_avg[0].shape[0])
+    # ax[0].contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.25, linestyles='--')
+    # ax[0].contourf(pxs, ts, kappa(pxs, ts).T, levels=[0, np.inf], colors='gray', alpha=0.2)
 
-    # plot colorbar
-    cax = fig.add_axes([0.15, 0.95, 0.7, 0.04])
+    # ax[1].contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.25, linestyles='--')
+    # ax[1].contourf(pxs, ts, kappa(pxs, ts).T, levels=[0, np.inf], colors='gray', alpha=0.2)
+
+    cax = fig.add_axes([0.15, 0.95, 0.7, 0.07])
     cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
     tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e4]  # Adjust the format as needed
     cb.set_ticklabels(tick_labels)
@@ -580,8 +613,8 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
     cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ \Delta c_P  \quad \times 10^{4}$", labelpad=-25, rotation=0, fontsize=9)
 
-    plt.savefig(f"figures/phase-info/surface/diff_ps.pdf")
-    plt.savefig(f"figures/phase-info/surface/diff_ps.png", dpi=450)
+    plt.savefig(f"figures/variable-roughness/diff_var.pdf")
+    plt.savefig(f"figures/variable-roughness/diff_var.png", dpi=450)
     plt.close()
 
 
@@ -592,11 +625,13 @@ if __name__ == "__main__":
     cases = [0, 64, 128, 16, 32]
     offsets = [0, 2, 4, 6, 8]
     colours = sns.color_palette("colorblind", 7)
-    # ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
-    load_phase_avg_cp_part()
+    ts, pxs, ph_avg, instant = load_phase_avg_cp(cases)
+    print(instant.shape)
+    # plot_cp_smooth()
     
     # plot_lines()
     # plot_cp(ts, pxs, ph_avg)
     # plot_cp_diff(ts, pxs, ph_avg, instant)
-    # plot_difference_spectra(ts, pxs, ph_avg)
+    plot_difference_spectra(ts, pxs, instant.reshape(len(cases), instant.shape[1]*instant.shape[2], instant.shape[3]))
+    plot_cp_diff_var(ts, pxs, ph_avg, instant)
                                

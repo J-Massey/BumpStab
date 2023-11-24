@@ -52,13 +52,25 @@ def naca_warp(x):
     )
 
 
-def fwarp(t, x):
-    xp = min(max(x, 0.0), 1.0)
-    return (
-        -0.5
-        * (0.28 * xp**2 - 0.13 * xp + 0.05)
-        * np.sin(2 * np.pi * (t - (1.42 * xp)))
-    )
+def fwarp(t: float, pxs):
+    if isinstance(pxs, float):
+        x = pxs
+        xp = min(max(x, 0.0), 1.0)
+        return -0.5*(0.28 * xp**2 - 0.13 * xp + 0.05) * np.sin(2*np.pi*(t - (1.42* xp)))
+    else:
+        return -0.5*(0.28 * pxs**2 - 0.13 * pxs + 0.05) * np.sin(2*np.pi*(t - (1.42* pxs)))
+
+
+def kappa(pxs, ts):
+    y = np.empty((len(pxs), len(ts)))
+    for idx, t in enumerate(ts):
+        y[:, idx] = np.array([naca_warp(xp) for xp in pxs])
+    dy_dt = np.gradient(y, ts, axis=1)
+    d2y_dt2 = np.gradient(dy_dt, ts, axis=1)
+    d2y_d2t = np.gradient(np.gradient(y, ts, axis=1), ts, axis=1)
+    dy_dx = np.gradient(y, pxs, axis=0)
+    d2y_dx2 = np.gradient(dy_dx, pxs, axis=0)
+    return -d2y_dx2
 
 
 def normal_to_surface(x: np.ndarray, t):
@@ -198,6 +210,51 @@ def plot_smooth_surface_pressure():
     #     origin="lower",
     #     norm=norm,
     # )
+
+    cs = ax.contourf(
+        pxs,
+        np.linspace(0, 1, 200),
+        pressure_profile[:200]/1024*1e4,
+        cmap=_cmap,
+        norm=norm,
+        levels=np.linspace(lims[0], lims[1], 22),
+        extend='both',
+    )
+
+    np.save(f"data/variable-roughness/pressure_profile.npy", pressure_profile[:200]/1024*1e4)
+
+    ax.set_aspect(1)
+    ax.set_ylim([0, 1])
+    ax.set_xlim([0, 1])
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="7%", pad=0.05)
+    cb = plt.colorbar(
+        cs, cax=cax, orientation="vertical", ticks=np.linspace(lims[0], lims[1], 5)
+    )
+    cb.set_label(r"$ |\vec{f}| \quad \times 10^4 $", labelpad=-49, rotation=90)
+
+    ts = np.linspace(0, 1, 200)
+    ax.contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.25, linestyles='--')
+    ax.contourf(pxs, ts, kappa(pxs, ts).T, levels=[0, np.inf], colors='gray', alpha=0.4)
+
+    # fig.tight_layout()
+    plt.savefig(f"figures/variable-roughness/pressure-n.pdf")
+    plt.savefig(f"figures/variable-roughness/pressure-n.png", dpi=800)
+
+
+def plot_smooth_dp_dn():
+    fig, ax = plt.subplots(figsize=(6, 6), sharex=True, sharey=True)
+    ax.set_xlabel(r"$x$")
+    # fig.text(0.01, 0.5, r"$\varphi$", va='center', rotation='vertical')
+    ax.set_ylabel(r"$\varphi$")
+
+    ts, pxs, pressure_profile = pressure_value(0)
+
+    lims = [-2.5, 2.5]
+    norm = TwoSlopeNorm(vmin=lims[0], vcenter=0, vmax=lims[1])
+    _cmap = custom_cmap()
+    ax.set_title(rf"$\lambda=1/0$", fontsize=9)
 
     cs = ax.contourf(
         pxs,

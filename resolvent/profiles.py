@@ -444,14 +444,18 @@ def plot_deltas(cases):
             linewidth=0.5,
             ls="--",
         )
+    for idcase, case in enumerate([0, 128]):
+        delta_omega = np.load(f"data/0.001/{case}/unmasked/delta_omega.npy")
         # Plot autocorrelation
         autoco = [auto_corr(delta_omega[:, idx]) for idx in range(pxs.size)]
         savgoled = savgol_filter(autoco, 7, 3)
         axs[1].plot(
-            pxs, savgoled, color=colours[c_order[idcase]], linewidth=0.5, ls="-."
+            pxs, savgoled, color=colours[[2, 1][idcase]], linewidth=0.5, ls="-."
         )
 
     axs[1].set_xlim([0.5, 1])
+    axs[1].set_ylim([0.99, 0.999])
+
     mean_lines = [
         Line2D([0], [0], color=colours[c_order[idcase]], linewidth=1)
         for idcase, case in enumerate(cases)
@@ -618,7 +622,7 @@ if __name__ == "__main__":
     case = cases[0]
     # plot_smooth_profiles()
     # cases = [0, 64, 128]
-    # plot_deltas(cases)
-    plot_Delta_deltas(cases)
-    plot_delta_smooth()
+    plot_deltas(cases)
+    # plot_Delta_deltas(cases)
+    # plot_delta_smooth()
     # plot_profile_ident(cases)

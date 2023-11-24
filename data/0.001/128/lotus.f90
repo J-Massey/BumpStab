@@ -88,10 +88,10 @@ program swimming_plate
         inquire(file='.kill', exist=there)
         if (there) exit time_loop
 
-        if(t>(finish-6)/f) then
+        if(t>(finish-4)/f) then
           call geom%surfacePressureTop(flow%pressure)
           call geom%surfacePressureBot(flow%pressure)
-          ! if(mod(t,0.005/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
+          if(mod(t,0.025/f)<dt) call flow%write(geom, average=.true., default=.false., write_vtr=.false.)
         end if
 
       end do time_loop
@@ -161,7 +161,9 @@ program swimming_plate
   real pure function egg_top(x)
     real,intent(in) :: x(3)
     egg_top = (h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-pi/2)&
-                             *cos((k_z)*(2*pi*x(3)/L))
+    *cos((k_z)*(2*pi*x(3)/L))
+    if(x(1)/L<0.25) egg_top = 0.
+    if(x(1)/L>0.925) egg_top = 0.
   end function egg_top
   pure function degg_top(x)
     real,intent(in) :: x(3)
@@ -171,6 +173,8 @@ program swimming_plate
                                   *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
     degg_top(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-pi/2)&
                                   *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
+    if(x(1)/L<0.25) degg_top = 0.
+    if(x(1)/L>0.925) degg_top = 0.
   end function degg_top
   real pure function dotegg_top(x)
     real,intent(in) :: x(3)
@@ -181,6 +185,8 @@ program swimming_plate
     real,intent(in) :: x(3)
     egg_bottom = (h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-3*pi/2)&
                                 *cos((k_z)*(2*pi*x(3)/L))
+    if(x(1)/L<0.25) egg_bottom = 0.
+    if(x(1)/L>0.925) egg_bottom = 0.
   end function egg_bottom
   pure function degg_bottom(x)
     real,intent(in) :: x(3)
@@ -190,6 +196,8 @@ program swimming_plate
                                      *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
     degg_bottom(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-3*pi/2)&
                                       *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
+    if(x(1)/L<0.25) degg_bottom = 0.
+    if(x(1)/L>0.925) degg_bottom = 0.
   end function degg_bottom
   real pure function dotegg_bottom(x)
     real,intent(in) :: x(3)

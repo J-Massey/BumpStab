@@ -43,7 +43,7 @@ def read_forces(force_file, interest="p", direction="x"):
 
     # u = ux * 0.2 / 2.12, uy * 0.2 / 2.12
 
-    return t, u
+    return t, u * 0.1
 
 
 def save_fig(save_path):
@@ -169,7 +169,7 @@ def plot_power(ax=None):
             s=0.2,
             edgecolor="none",
         )
-        print(case, force[t_mask].mean())
+        # print(case, force[t_mask].mean())
 
         path = f"data/0.001/{case}/spressure/fort.9"
         t, force = read_forces(path, interest="cp", direction="")
@@ -179,7 +179,7 @@ def plot_power(ax=None):
             t_new,
             force,
             color=colours[order[idx]],
-            alpha=0.8,
+            alpha=0.7,
             marker=".",
             s=0.2,
             edgecolor="none",
@@ -187,18 +187,18 @@ def plot_power(ax=None):
 
         print(case, force.mean())
     
-    path = f"data/variable-roughness/half-scale/var_surface/fort.9"
+    path = f"data/variable-roughness/all-rough/var_surface/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t_mask = np.logical_and(t > 5, t < 6)
+    t_mask = np.logical_and(t > 3, t < 9)
     t_new = t % 1
 
     ax.scatter(
         t_new[t_mask],
         force[t_mask],
-        color="hotpink",
+        color="red",
         alpha=0.8,
         marker=".",
-        s=.5,
+        s=.8,
         edgecolor="none",
     )
     print("Var", force[t_mask].mean())
