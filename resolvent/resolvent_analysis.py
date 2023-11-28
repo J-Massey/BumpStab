@@ -14,8 +14,12 @@ class ResolventAnalysis:
         self.gain_cache = None
 
     def _load(self, dom):
-        self.Lambda = np.load(f"{self.path}/{dom}_Lambda.npy")
-        self.V_r = np.load(f"{self.path}/{dom}_V_r.npy")
+        self.Lambda = np.load(f"{self.path}/{dom}_Lambda.npy", mmap_mode="r")
+        self.Lambda = self.Lambda[:12]
+        print(f"Lambda shape: {self.Lambda.shape}")
+        self.V_r = np.load(f"{self.path}/{dom}_V_r.npy", mmap_mode="r")
+        self.V_r = self.V_r[:, :12]
+        print(f"V_r shape: {self.V_r.shape}")
 
     @property
     def F_tilde(self):
@@ -62,6 +66,6 @@ class ResolventAnalysis:
 if __name__ == "__main__":
     import os
     case = 0
-    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/unmasked", "body", omega_span=np.logspace(np.log10(0.5*np.pi), np.log10(200*np.pi), 500))
+    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/unmasked", "sp", omega_span=np.logspace(np.log10(0.5*2*np.pi), np.log10(200*2*np.pi), 500))
     ra.save_gain()
     ra.save_omega_peaks()

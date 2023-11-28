@@ -22,9 +22,9 @@ class PlotPeaks:
         self._load()
     
     def _load(self):
-        self.Lambda = np.load(f"{self.path}/{self.dom}_Lambda100.npy")
-        self.V_r = np.load(f"{self.path}/{self.dom}_V_r100.npy")
-        self.nx, self.ny, self.nt = np.load(f"{self.path}/{self.dom}_nxyt.npy")
+        self.Lambda = np.load(f"{self.path}/{self.dom}_Lambda.npy")
+        self.V_r = np.load(f"{self.path}/{self.dom}_V_r.npy")
+        self.nx, self.ny, self.nt = np.load(f"{self.path}/body_nxyt.npy")
         print("----- Plotting modes -----")
         self.peak_omegas = np.load(f"{self.path}/{self.dom}_peak_omegas.npy")
         print(f"Peak omegas: {self.peak_omegas/(2*np.pi)}")
@@ -85,7 +85,7 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
         qi,
         extent=[0, 1, -0.25, 0.25],
         cmap=_cmap,
-        norm=TwoSlopeNorm(vmin=lim[0], vcenter=0, vmax=lim[1]),
+        norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
     )
     # cbar on top of the plot
     # divider = make_axes_locatable(ax)
@@ -99,7 +99,7 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
 
 
 def plot_vort():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "body")
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
     omegas = smooth.peak_omegas
     for omega in omegas:
         Psi, Sigma, Phi = svd(smooth.F_tilde@inv((-1j*omega)*np.eye(smooth.Lambda.shape[0])-np.diag(smooth.Lambda))@inv(smooth.F_tilde))
@@ -113,19 +113,17 @@ def plot_vort():
 
         pxs = np.linspace(0, 1, smooth.nx)
         pys = np.linspace(-0.25, 0.25, smooth.ny)
-        field = forcing[0, :, :, 0].real
         # angle = np.angle(field.astype(np.complex128))
-
 
         # vort = np.gradient(response[1, :, :, 0].real, pxs, axis=0) - np.gradient(response[0, :, :, 0].real, pys, axis=1)
         mag = np.sqrt(forcing[1, :, :, 0].real**2 +  forcing[0, :, :, 0].real**2)
-        lim = np.std(mag)*8
-        print(lim)
-        plot_field(mag.T, pxs, pys, f"figures/forcing-modes/forcing_{omega/(np.pi):.2f}.png", lim=[-lim, lim], _cmap="seismic")
+        lim = 0.1
+        print(mag.max(), mag.min())
+        plot_field(mag.T, pxs, pys, f"figures/forcing-modes/forcing_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
         mag = np.sqrt(response[1, :, :, 0].real**2 +  response[0, :, :, 0].real**2)
-        lim = np.std(mag)*8
-        print(lim)
-        plot_field(mag.T, pxs, pys, f"figures/response-modes/response_{omega/(np.pi):.2f}.png", lim=[-lim, lim], _cmap="seismic")
+        lim = 0.01
+        plot_field(mag.T, pxs, pys, f"figures/response-modes/response_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
+        
 
 
 if __name__ == "__main__":

@@ -14,3 +14,24 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Tue Nov 28 09:00:53 GMT 2023
 ---------------------------------------------------------------
+slurmstepd-gold61: error: *** JOB 5064400 ON gold61 CANCELLED AT 2023-11-28T19:01:21 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on gold61.
+
+Submit time  : 2023-11-28T09:00:41
+Start time   : 2023-11-28T09:00:52
+End time     : 2023-11-28T19:01:21
+Elapsed time : 10:00:29 (Timelimit=10:00:00)
+
+Job ID: 5064400
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 16
+CPU Utilized: 08:21:14
+CPU Efficiency: 5.22% of 6-16:07:44 core-walltime
+Job Wall-clock time: 10:00:29
+Memory Utilized: 213.90 GB
+Memory Efficiency: 57.95% of 369.14 GB
+
