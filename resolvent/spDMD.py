@@ -42,7 +42,7 @@ def plot_eigs():
     theta = np.linspace(0, 2*np.pi, 200)
     ax.plot(np.cos(theta), np.sin(theta), color="k", linewidth=0.5)
 
-    eigs = np.exp(np.load(f"data/0.001/0/unmasked/sp_Lambda40.npy")*0.005)
+    eigs = np.exp(np.load(f"data/0.001/0/unmasked/sp_Lambda.npy")*0.005)
     ax.scatter(eigs.real, eigs.imag, s=2, color=colours[2])
 
     # ax.set_xlim(-1, 1)
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
 
     r=40
-    spdmd = SpDMD(svd_rank=r, gamma=20, rho=1.0e2)
+    spdmd = SpDMD(svd_rank=r, gamma=20, rho=1.0e3)
     spdmd.fit(snap_flucs.reshape(2*nx*ny, nt))
     # dmds.append(spDMD)
     Phi = spdmd.modes
@@ -164,8 +164,7 @@ if __name__ == "__main__":
     np.save(f"data/0.001/0/unmasked/sp_Lambda.npy", Lambda)
     plot_eigs()
 
-    # Extract the modes that lie on the unit circle
-
+    # Extract the modes that lie on the 
     
 
 
