@@ -62,6 +62,6 @@ class ResolventAnalysis:
 if __name__ == "__main__":
     import os
     case = 0
-    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/data", "body", omega_span=np.logspace(0.1, 150*2*np.pi, 1000))
+    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/unmasked", "body", omega_span=np.logspace(np.log10(0.5*np.pi), np.log10(200*np.pi), 500))
     ra.save_gain()
     ra.save_omega_peaks()

@@ -111,21 +111,21 @@ def load_phase_avg_cp_part():
     bodshape = 1024
     T = 2
     ts = np.linspace(0.001, 0.999, 5000)
-    if os.path.isfile("data/variable-roughness/cp_phase_map.npy") and os.path.isfile("data/variable-roughness/cp_instantaneous.npy"):
+    if os.path.isfile("data/variable-roughness/cp_phase_map.npy") and os.path.isfile("data/variable-roughness/cp_instantaneous.np"):
         phase_avg = np.load("data/variable-roughness/cp_phase_map.npy")
         instantaneous = np.load("data/variable-roughness/cp_instantaneous.npy")
     else:
         phase_avg = []; instantaneous = []
-        tr, _ = read_forces(f"data/variable-roughness/half-scale/var_surface/fort.9", "cp", "")
+        tr, _ = read_forces(f"data/variable-roughness/all-rough/var_surface/fort.9", "cp", "")
         tr = tr[tr > 4]
         cyc_mask = np.logical_and((tr>6), (tr < 8))
 
-        cp = np.genfromtxt(f"data/variable-roughness/half-scale/var_surface/fort.1")[:-2]  # Load the 1D array
+        cp = np.genfromtxt(f"data/variable-roughness/all-rough/var_surface/fort.1")  # Load the 1D array
         print(tr.shape, cp.shape)
         y_spline_top = splineit(tr[cyc_mask], cp[cyc_mask])/fnorm(128)
         onetop, twotop = y_spline_top[:int(len(y_spline_top)//2)], y_spline_top[int(len(y_spline_top)//2):]
 
-        cp = np.genfromtxt(f"data/variable-roughness/half-scale/var_surface/fort.2")[:-2]  # Load the 1D array
+        cp = np.genfromtxt(f"data/variable-roughness/all-rough/var_surface/fort.2")  # Load the 1D array
         y_spline_bot = splineit(tr[cyc_mask], cp[cyc_mask])/fnorm(128)
         y_spline_bot = np.roll(y_spline_bot, y_spline_bot.shape[0]//(2*T), axis=0)
         onebot, twobot = y_spline_bot[:int(len(y_spline_bot)//2)], y_spline_bot[int(len(y_spline_bot)//2):]
@@ -632,6 +632,6 @@ if __name__ == "__main__":
     # plot_lines()
     # plot_cp(ts, pxs, ph_avg)
     # plot_cp_diff(ts, pxs, ph_avg, instant)
-    plot_difference_spectra(ts, pxs, instant.reshape(len(cases), instant.shape[1]*instant.shape[2], instant.shape[3]))
+    # plot_difference_spectra(ts, pxs, instant.reshape(len(cases), instant.shape[1]*instant.shape[2], instant.shape[3]))
     plot_cp_diff_var(ts, pxs, ph_avg, instant)
                                
