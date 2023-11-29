@@ -1,16 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name=RA
-#SBATCH --ntasks=16
+#SBATCH --ntasks=64
 #SBATCH --nodes=1
-#SBATCH --partition=highmem
-#SBATCH --time=16:30:00
+#SBATCH --ntasks-per-node=64
+#SBATCH --partition=amd
+#SBATCH --time=4:30:00
 
 # module purge
 module load texlive
 module load conda
 source activate an
 
-python resolvent/fbDMD.py
+python resolvent/spDMD.py
 python resolvent/resolvent_analysis.py
 python resolvent/plot_gain.py
 python resolvent/plot_peaks.py
