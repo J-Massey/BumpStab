@@ -187,9 +187,9 @@ def plot_power(ax=None):
 
         print(case, force.mean())
     
-    path = f"data/variable-roughness/all-rough/var_surface/fort.9"
+    path = f"data/variable-roughness/noseless/var_surface/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t_mask = np.logical_and(t > 5, t < 10)
+    t_mask = np.logical_and(t > 4, t < 5)
     t_new = t % 1
 
     ax.scatter(
@@ -198,7 +198,7 @@ def plot_power(ax=None):
         color="red",
         alpha=0.8,
         marker=".",
-        s=.2,
+        s=.7,
         edgecolor="none",
     )
     print("Var", force[t_mask].mean())
