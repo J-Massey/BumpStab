@@ -52,8 +52,10 @@ def plot_mapped_unmapped(qim, qi):
     pysu = np.linspace(-0.25, 0.25, ny)
     y_masku = np.logical_and(pysu <= 0.15, pysu >= -0.15)
 
-
     fig, ax = plt.subplots(2, 1, figsize=(6, 6), sharey=True, sharex=True)
+    ax[0].text(-0.12, 0.98, r"(a)", transform=ax[0].transAxes)
+    ax[1].text(-0.12, 0.98, r"(b)", transform=ax[1].transAxes)
+
     ax[1].set_xlabel(r"$x$")
     ax[0].set_ylabel(r"$y$")
     ax[1].set_ylabel(r"$y$")
@@ -72,7 +74,6 @@ def plot_mapped_unmapped(qim, qi):
     )
     ax[0].set_aspect(1)
     ax[0].fill_between(pxs, [naca_warp(x)-fwarp(0, x) for x in pxs], [-naca_warp(x)-fwarp(0, x) for x in pxs], color="white")
-    ax[0].set_title("Mapped")
 
     co2 = ax[1].imshow(
         q_unmapped[:, y_masku].T,
@@ -83,20 +84,19 @@ def plot_mapped_unmapped(qim, qi):
     )
     ax[1].set_aspect(1)
     ax[1].fill_between(pxs, [naca_warp(x) for x in pxs], [-naca_warp(x) for x in pxs], color="white")
-    ax[1].set_title("Unmapped")
 
     # Add space for arrow
     fig.subplots_adjust(top=0.85)
 
     # Add colorbar
-    cax = fig.add_axes([0.15, 0.9, 0.7, 0.03])
+    cax = fig.add_axes([0.15, 0.85, 0.7, 0.03])
     cb = plt.colorbar(co1, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position('top')  # Move label to top
     cb.set_label(r"$\left|\vec{u}\right|$", labelpad=-40, rotation=0)
 
-    plt.savefig(f"figures/mapping/stacked.pdf")
-    plt.savefig(f"figures/mapping/stacked.png", dpi=600)
+    plt.savefig(f"figures/mapping/unmapping.pdf")
+    plt.savefig(f"figures/mapping/unmapping.png", dpi=600)
     plt.close()
 
 

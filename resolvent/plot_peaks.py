@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import scienceplots
 import sys
 import os
+from tqdm import tqdm
+
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
 
@@ -98,53 +100,103 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     plt.close()
 
 
-def plot_vort():
+def save_f_r():
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
     omegas = smooth.peak_omegas
-    for omega in omegas:
+    f_r_modes = np.empty((2, len(omegas), smooth.nx, smooth.ny))
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Saving modes"):
         Psi, Sigma, Phi = svd(smooth.F_tilde@inv((-1j*omega)*np.eye(smooth.Lambda.shape[0])-np.diag(smooth.Lambda))@inv(smooth.F_tilde))
-        for i in range(len(Sigma)):
-            Psi[:, i] /= np.sqrt(np.dot(Psi[:, i].T, Psi[:, i]))
-            Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
-            Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
+        # for i in range(len(Sigma)):
+        #     Psi[:, i] /= np.sqrt(np.dot(Psi[:, i].T, Psi[:, i]))
+        #     Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
+        #     Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
 
         forcing = (smooth.V_r @ inv(smooth.F_tilde)@Psi).reshape(2, smooth.nx, smooth.ny, len(Sigma))
         response = (smooth.V_r @ inv(smooth.F_tilde)@Phi).reshape(2, smooth.nx, smooth.ny, len(Sigma))
+        mag = np.sqrt(forcing[1, :, :, 0].real**2 +  forcing[0, :, :, 0].real**2)
+        f_r_modes[0, ido] = mag
+        mag = np.sqrt(response[1, :, :, 0].real**2 +  response[0, :, :, 0].real**2)
+        f_r_modes[1, ido] = mag
+    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy", f_r_modes)
 
+
+def plot_f_r():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting modes"):
         pxs = np.linspace(0, 1, smooth.nx)
         pys = np.linspace(-0.25, 0.25, smooth.ny)
-        # angle = np.angle(field.astype(np.complex128))
-
-        # vort = np.gradient(response[1, :, :, 0].real, pxs, axis=0) - np.gradient(response[0, :, :, 0].real, pys, axis=1)
-        mag = np.sqrt(forcing[1, :, :, 0].real**2 +  forcing[0, :, :, 0].real**2)
-        lim = 0.1
-        print(mag.max(), mag.min())
+        mag = f_r_modes[0, ido]
+        lim = 0.005
+        print(mag.std(), mag.max())
         plot_field(mag.T, pxs, pys, f"figures/forcing-modes/forcing_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
-        mag = np.sqrt(response[1, :, :, 0].real**2 +  response[0, :, :, 0].real**2)
-        lim = 0.01
+        mag = f_r_modes[1, ido]
+        print(mag.std(), mag.max())
         plot_field(mag.T, pxs, pys, f"figures/response-modes/response_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
-        
+    
 
+def plot_spectra():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting spectra"):
+        forcing = f_r_modes[0, ido]
+        response = f_r_modes[1, ido]
+        fs = np.fft.fft2(forcing)
+        fs = np.fft.fftshift(fs)
+        rs = np.fft.fft2(response)
+        rs = np.fft.fftshift(rs)
+        rows, cols = forcing.shape
+        kx = np.fft.fftshift(np.fft.fftfreq(cols, d=1/cols))
+        ky = np.fft.fftshift(np.fft.fftfreq(rows, d=1/rows))
+
+        extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+        lim = 6
+
+        fig, ax = plt.subplots(figsize=(3, 3))
+        ax.set_xlabel(r"$k_x$")
+        ax.set_ylabel(r"$k_y$")
+
+        ax.imshow(
+                np.log(np.abs(fs)),
+                extent=extent,
+                vmin=0,
+                vmax=lim,
+                cmap=sns.color_palette("icefire", as_cmap=True),
+                aspect="auto",
+                origin="lower",
+                # norm=norm,
+            )
+        ax.set_xscale("symlog")
+        ax.set_yscale("symlog")
+
+        plt.savefig(f"figures/spectra/forcing_{omega/(2*np.pi):.2f}.png", dpi=700)
+        plt.close()
+
+        fig, ax = plt.subplots(figsize=(3, 3))
+        ax.set_xlabel(r"$k_x$")
+        ax.set_ylabel(r"$k_y$")
+
+        ax.imshow(
+                np.log(np.abs(rs)),
+                extent=extent,
+                vmin=0,
+                vmax=lim,
+                cmap=sns.color_palette("icefire", as_cmap=True),
+                aspect="auto",
+                origin="lower",
+                # norm=norm,
+            )
+        ax.set_xscale("symlog")
+        ax.set_yscale("symlog")
+    
+        plt.savefig(f"figures/spectra/response_{omega/(2*np.pi):.2f}.png", dpi=700)
+        plt.close()
+
+    
 
 if __name__ == "__main__":
-    plot_vort()
-
-#         # Perform 2D FFT to transform to frequency (wavenumber) domain
-
-#         field_fft = np.fft.fft2(field)
-#         # Shift zero frequency component to center
-#         field_fft_shifted = np.fft.fftshift(field_fft)
-#         # Compute amplitude spectrum
-#         amplitude_spectrum = np.abs(field_fft_shifted)
-#         # Find dominant wavenumbers
-#         dominant_wavenumber_indices = np.unravel_index(np.argmax(amplitude_spectrum), amplitude_spectrum.shape)
-#         dominant_wavenumbers = np.array(dominant_wavenumber_indices) - np.array([case.nx//2, case.ny//2])
-#         # Plot amplitude spectrum for visualization
-#         plt.imshow(np.log1p(amplitude_spectrum), extent=[-case.ny//2, case.ny//2, -case.nx//2, case.nx//2], cmap='gray')
-#         plt.xlabel('kx')
-#         plt.ylabel('ky')
-#         plt.savefig(f"figures/mode-comparison/kx_{case_label[idx]}_response_{omega/(2*np.pi):.2f}.png", dpi=700)
-#         plt.close()
-
-#         dominant_wavenumbers
+    # plot_f_r()
+    plot_spectra()
 

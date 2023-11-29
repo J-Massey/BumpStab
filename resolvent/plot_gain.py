@@ -76,6 +76,6 @@ def plot_gain(omega_span):
 # Sample usage
 if __name__ == "__main__":
     lss = ["-", "-.", "--"]
-    omega_span = np.logspace(np.log10(0.5*np.pi), np.log10(300*np.pi), 500)
+    omega_span = np.logspace(np.log10(0.25*2*np.pi), np.log10(200*2*np.pi), 500)
     plot_gain(omega_span)
     
