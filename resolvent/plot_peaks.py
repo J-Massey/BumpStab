@@ -225,8 +225,9 @@ def plot_large_forcing():
     py_mask = np.logical_and(pys > -0.25, pys < 0.25)
     omegas = smooth.peak_omegas
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]
 
-    fig, axs = plt.subplots(6,2, figsize=(6, 9))
+    fig, axs = plt.subplots(6,2, figsize=(6, 8.5))
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting bigun"):
         mag = f_r_modes[0, ido, :, py_mask]
         nx, ny = mag.shape
@@ -241,7 +242,8 @@ def plot_large_forcing():
         )
         axs[ido, 0].set_xticks([])
         axs[ido, 0].set_yticks([-.2, -.1, 0, .1, .2])
-        axs[ido, 0].set_ylabel(r"$y$") 
+        axs[ido, 0].set_ylabel(r"$y$")
+        axs[ido, 0].text(-0.2, 0.92, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
 
         fs = np.fft.fft2(mag)
         fs = np.fft.fftshift(fs)
@@ -262,7 +264,7 @@ def plot_large_forcing():
                 extent=extent,
                 vmin=0,
                 vmax=4,
-                cmap=sns.color_palette("inferno", as_cmap=True),
+                cmap=sns.color_palette("inferno_r", as_cmap=True),
                 aspect=0.6,
                 origin="lower",
                 # norm=norm,
@@ -273,6 +275,8 @@ def plot_large_forcing():
         axs[ido, 1].set_xticks([])
         axs[ido, 1].set_yticks([-1000, -10, 0, 10, 1000])
         axs[ido, 1].set_ylabel(r"$k_y$")
+        axs[ido, 1].text(-0.3, 0.92, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+
 
     axs[-1, 0].set_xticks([0, 0.25, 0.5, 0.75, 1])
     axs[-1, 0].set_xlabel(r"$x$")
@@ -280,6 +284,7 @@ def plot_large_forcing():
     axs[-1, 1].set_xlabel(r"$k_x$")
 
     fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
 
     cax1 = fig.add_axes([0.1, 1.01, 0.4, 0.02])
     cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
@@ -291,13 +296,98 @@ def plot_large_forcing():
     cb = plt.colorbar(im, cax=cax2, orientation="horizontal", ticks=np.linspace(0, 4, 5))
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$\log_{10}|\hat{\vec{u}}|$", labelpad=-40, rotation=0)
+    cb.set_label(r"$\ln\big(1+|\mathcal{F}(|\mathbf{U}|)|\big)$", labelpad=-40, rotation=0)
+
+    plt.savefig(f"figures/RA_forcing.pdf")
+    plt.close()
 
 
-    plt.savefig(f"figures/RA.pdf")
+def plot_large_response():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny = smooth.nx, smooth.ny
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    py_mask = np.logical_and(pys > -0.25, pys < 0.25)
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]
+
+    fig, axs = plt.subplots(6,2, figsize=(6, 8.5))
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting bigun"):
+        mag = f_r_modes[1, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[0, 5]
+        cs = axs[ido, 0].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("icefire", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect=1,
+        )
+        axs[ido, 0].set_xticks([])
+        axs[ido, 0].set_yticks([-.2, -.1, 0, .1, .2])
+        axs[ido, 0].set_ylabel(r"$y$")
+        axs[ido, 0].text(-0.2, 0.92, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+        ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
+
+        extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+        cutoff = 1
+        kx_mask = np.logical_and(kx > -cutoff, kx < cutoff)
+        ky_mask = np.logical_and(ky > -cutoff, ky < cutoff)
+
+        fmag = np.abs(fs)
+        fmag[kx_mask, :] = 0
+        fmag[:, ky_mask] = 0
+
+        im = axs[ido, 1].imshow(
+                np.log1p(fmag).T,
+                extent=extent,
+                vmin=0,
+                vmax=4,
+                cmap=sns.color_palette("inferno_r", as_cmap=True),
+                aspect=0.6,
+                origin="lower",
+                # norm=norm,
+            )
+
+        axs[ido, 1].set_xscale("symlog")
+        axs[ido, 1].set_yscale("symlog")
+        axs[ido, 1].set_xticks([])
+        axs[ido, 1].set_yticks([-1000, -10, 0, 10, 1000])
+        axs[ido, 1].set_ylabel(r"$k_y$")
+        axs[ido, 1].text(-0.3, 0.92, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+
+
+    axs[-1, 0].set_xticks([0, 0.25, 0.5, 0.75, 1])
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xticks([-100, -1, 1, 100])
+    axs[-1, 1].set_xlabel(r"$k_x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.1, 1.01, 0.4, 0.02])
+    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$|\vec{u}| \quad \times 10^3$", labelpad=-40, rotation=0)
+
+    cax2 = fig.add_axes([0.55, 1.01, 0.4, 0.02])
+    cb = plt.colorbar(im, cax=cax2, orientation="horizontal", ticks=np.linspace(0, 4, 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\ln\big(1+|\mathcal{F}(|\mathbf{U}|)|\big)$", labelpad=-40, rotation=0)
+
+    plt.savefig(f"figures/RA_response.pdf")
     plt.close()
 
 
 if __name__ == "__main__":
     plot_large_forcing()
+    plot_large_response()
 
