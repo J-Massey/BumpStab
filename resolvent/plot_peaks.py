@@ -78,14 +78,14 @@ class PlotPeaks:
                 print(f"ValueError, {omega/(2*np.pi):.2f} dodgy")
 
 
-def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
+def plot_field(qi, pxs, pys, path=None, _cmap="seismic", lim=None, ax=None):
     # Test plot
-    fig, ax = plt.subplots(figsize=(5, 3))
-    levels = np.linspace(lim[0], lim[1], 44)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(5, 3))
     _cmap = sns.color_palette(_cmap, as_cmap=True)
     cs = ax.imshow(
         qi,
-        extent=[0, 1, -0.25, 0.25],
+        extent=[0, 1, pys.min(), pys.max()],
         cmap=_cmap,
         norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
     )
@@ -96,8 +96,9 @@ def plot_field(qi, pxs, pys, path, _cmap="seismic", lim=None):
     # cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
     # cb.set_label(r"$p$", labelpad=-35, rotation=0)
     ax.set_aspect(1)
-    plt.savefig(path, dpi=600)
-    plt.close()
+    if path is not None:
+        plt.savefig(path, dpi=600)
+        plt.close()
 
 
 def save_f_r():
@@ -120,19 +121,18 @@ def save_f_r():
     np.save(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy", f_r_modes)
 
 
-def plot_f_r():
+def plot_f_r(axs):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    pxs = np.linspace(0, 1, smooth.nx)
+    pys = np.linspace(-0.25, 0.25, smooth.ny)
+    py_mask = np.logical_and(pys > -0.1, pys < 0.1)
     omegas = smooth.peak_omegas
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting modes"):
-        pxs = np.linspace(0, 1, smooth.nx)
-        pys = np.linspace(-0.25, 0.25, smooth.ny)
-        mag = f_r_modes[0, ido]
+        mag = f_r_modes[0, ido, :, py_mask]
         lim = 0.005
-        print(mag.std(), mag.max())
         plot_field(mag.T, pxs, pys, f"figures/forcing-modes/forcing_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
-        mag = f_r_modes[1, ido]
-        print(mag.std(), mag.max())
+        mag = f_r_modes[1, ido, :, py_mask]
         plot_field(mag.T, pxs, pys, f"figures/response-modes/response_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
     
 
@@ -141,25 +141,42 @@ def plot_spectra():
     omegas = smooth.peak_omegas
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting spectra"):
-        forcing = f_r_modes[0, ido]
-        response = f_r_modes[1, ido]
+        forcing = f_r_modes[0, ido, :, :-1]
+        response = f_r_modes[1, ido, :, :-1]
+        nx, ny = forcing.shape
+        pys = np.linspace(-0.25, 0.25, ny)
+        zoom_mask = np.logical_and(pys > -0.1, pys < 0.1)
+        forcing = forcing[:, zoom_mask]
+        response = response[:, zoom_mask]
+        nx, ny = forcing.shape
+
         fs = np.fft.fft2(forcing)
         fs = np.fft.fftshift(fs)
         rs = np.fft.fft2(response)
         rs = np.fft.fftshift(rs)
-        rows, cols = forcing.shape
-        kx = np.fft.fftshift(np.fft.fftfreq(cols, d=1/cols))
-        ky = np.fft.fftshift(np.fft.fftfreq(rows, d=1/rows))
+        kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+        ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
 
         extent = [kx.min(), kx.max(), ky.min(), ky.max()]
-        lim = 6
+        cutoff = 1
+        kx_mask = np.logical_and(kx > -cutoff, kx < cutoff)
+        ky_mask = np.logical_and(ky > -cutoff, ky < cutoff)
+
+        fmag = np.abs(fs)
+        fmag[kx_mask, :] = 0
+        fmag[:, ky_mask] = 0
+        rmag = np.abs(rs)
+        rmag[kx_mask, :] = 0
+        rmag[:, ky_mask] = 0
+
+        lim = 4
 
         fig, ax = plt.subplots(figsize=(3, 3))
         ax.set_xlabel(r"$k_x$")
         ax.set_ylabel(r"$k_y$")
 
         ax.imshow(
-                np.log(np.abs(fs)),
+                np.log1p(fmag).T,
                 extent=extent,
                 vmin=0,
                 vmax=lim,
@@ -168,8 +185,11 @@ def plot_spectra():
                 origin="lower",
                 # norm=norm,
             )
+
         ax.set_xscale("symlog")
         ax.set_yscale("symlog")
+        ax.set_xticks([-100, -1, 1, 100])
+        ax.set_yticks([-100, -1, 1, 100])
 
         plt.savefig(f"figures/spectra/forcing_{omega/(2*np.pi):.2f}.png", dpi=700)
         plt.close()
@@ -179,7 +199,7 @@ def plot_spectra():
         ax.set_ylabel(r"$k_y$")
 
         ax.imshow(
-                np.log(np.abs(rs)),
+                np.log1p(rmag).T,
                 extent=extent,
                 vmin=0,
                 vmax=lim,
@@ -190,13 +210,94 @@ def plot_spectra():
             )
         ax.set_xscale("symlog")
         ax.set_yscale("symlog")
+        ax.set_xticks([-100, -1, 1, 100])
+        ax.set_yticks([-100, -1, 1, 100])
     
-        plt.savefig(f"figures/spectra/response_{omega/(2*np.pi):.2f}.png", dpi=700)
+        plt.savefig(f"figures/spectra/response_{omega/(2*np.pi):.2f}.png", dpi=300)
         plt.close()
 
-    
+
+def plot_large_forcing():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny = smooth.nx, smooth.ny
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(-0.25, 0.25, ny)
+    py_mask = np.logical_and(pys > -0.25, pys < 0.25)
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+
+    fig, axs = plt.subplots(6,2, figsize=(6, 9))
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[0, 5]
+        cs = axs[ido, 0].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("icefire", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect=1,
+        )
+        axs[ido, 0].set_xticks([])
+        axs[ido, 0].set_yticks([-.2, -.1, 0, .1, .2])
+        axs[ido, 0].set_ylabel(r"$y$") 
+
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+        ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
+
+        extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+        cutoff = 1
+        kx_mask = np.logical_and(kx > -cutoff, kx < cutoff)
+        ky_mask = np.logical_and(ky > -cutoff, ky < cutoff)
+
+        fmag = np.abs(fs)
+        fmag[kx_mask, :] = 0
+        fmag[:, ky_mask] = 0
+
+        im = axs[ido, 1].imshow(
+                np.log1p(fmag).T,
+                extent=extent,
+                vmin=0,
+                vmax=4,
+                cmap=sns.color_palette("inferno", as_cmap=True),
+                aspect=0.6,
+                origin="lower",
+                # norm=norm,
+            )
+
+        axs[ido, 1].set_xscale("symlog")
+        axs[ido, 1].set_yscale("symlog")
+        axs[ido, 1].set_xticks([])
+        axs[ido, 1].set_yticks([-1000, -10, 0, 10, 1000])
+        axs[ido, 1].set_ylabel(r"$k_y$")
+
+    axs[-1, 0].set_xticks([0, 0.25, 0.5, 0.75, 1])
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xticks([-100, -1, 1, 100])
+    axs[-1, 1].set_xlabel(r"$k_x$")
+
+    fig.tight_layout()
+
+    cax1 = fig.add_axes([0.1, 1.01, 0.4, 0.02])
+    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$|\vec{u}| \quad \times 10^3$", labelpad=-40, rotation=0)
+
+    cax2 = fig.add_axes([0.55, 1.01, 0.4, 0.02])
+    cb = plt.colorbar(im, cax=cax2, orientation="horizontal", ticks=np.linspace(0, 4, 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\log_{10}|\hat{\vec{u}}|$", labelpad=-40, rotation=0)
+
+
+    plt.savefig(f"figures/RA.pdf")
+    plt.close()
+
 
 if __name__ == "__main__":
-    # plot_f_r()
-    plot_spectra()
+    plot_large_forcing()
 
