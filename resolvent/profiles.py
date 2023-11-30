@@ -115,7 +115,7 @@ def point_at_distance(x1, y1, nx, ny, s=0.1):
 
 def tangental_profiles(case, prof_dist=0.05):
     if os.path.isfile(f"data/0.001/{case}/unmasked/s_profile.npy") and os.path.isfile(
-        f"data/0.001/{case}/unmasked/omega_profile.npy"
+        f"data/0.001/{case}/unmasked/omega_profile.np"
     ):
         omega_profile = np.load(f"data/0.001/{case}/unmasked/omega_profile.npy")
         s_profile = np.load(f"data/0.001/{case}/unmasked/s_profile.npy")
@@ -620,9 +620,10 @@ def auto_corr(x):
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
     case = cases[0]
+    tangental_profiles(0, prof_dist=0.2)
     # plot_smooth_profiles()
     # cases = [0, 64, 128]
-    plot_deltas(cases)
+    # plot_deltas(cases)
     # plot_Delta_deltas(cases)
     # plot_delta_smooth()
     # plot_profile_ident(cases)

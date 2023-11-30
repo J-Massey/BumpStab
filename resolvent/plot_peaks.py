@@ -299,6 +299,7 @@ def plot_large_forcing():
     cb.set_label(r"$\ln\big(1+|\mathcal{F}(|\mathbf{U}|)|\big)$", labelpad=-40, rotation=0)
 
     plt.savefig(f"figures/RA_forcing.pdf")
+    plt.savefig(f"figures/RA_forcing.png", dpi=700)
     plt.close()
 
 
@@ -384,7 +385,11 @@ def plot_large_response():
     cb.set_label(r"$\ln\big(1+|\mathcal{F}(|\mathbf{U}|)|\big)$", labelpad=-40, rotation=0)
 
     plt.savefig(f"figures/RA_response.pdf")
+    plt.savefig(f"figures/RA_response.png", dpi=700)
+
     plt.close()
+
+    
 
 
 if __name__ == "__main__":

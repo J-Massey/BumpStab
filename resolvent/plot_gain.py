@@ -15,9 +15,9 @@ plt.rc('text.latex', preamble=r'\usepackage{txfonts}')
 
 
 def plot_ax():
-    fig, ax = plt.subplots(figsize=(3, 3))
+    fig, ax = plt.subplots(figsize=(5, 3))
     ax.set_xlabel(r"$f^*$")
-    ax.set_ylabel(r"$\sigma_i$")
+    ax.set_ylabel(r"$\sigma_1$")
     # ax.set_ylim(0, 10)
     return ax
 
@@ -66,10 +66,9 @@ def plot_gain(omega_span):
     #         markersize=3,
     #         linewidth=0.7,
     #     )
-
-    save_path = f"figures/body_gain.pdf"
     # ax.legend(loc="upper right")
-    save_fig(save_path)
+    plt.savefig(f"figures/body_gain.pdf")
+    plt.savefig(f"figures/body_gain.png", dpi=400)
     plt.close()
 
 
