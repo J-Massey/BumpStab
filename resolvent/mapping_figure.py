@@ -1,20 +1,20 @@
-# import os
-# import numpy as np
-# from pydmd import SpDMD
-# from scipy.ndimage import gaussian_filter1d
+import os
+import numpy as np
+from pydmd import SpDMD
+from scipy.ndimage import gaussian_filter1d
 
-# import matplotlib.pyplot as plt
-# import scienceplots
-# from tqdm import tqdm
-# import sys
-# import seaborn as sns
-# from matplotlib.colors import TwoSlopeNorm
+import matplotlib.pyplot as plt
+import scienceplots
+from tqdm import tqdm
+import sys
+import seaborn as sns
+from matplotlib.colors import TwoSlopeNorm
 
-# plt.style.use(["science"])
-# plt.rcParams["font.size"] = "10.5"
-# plt.rc('text', usetex=True)
-# plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
-# colours = sns.color_palette("colorblind", 7)
+plt.style.use(["science"])
+plt.rcParams["font.size"] = "10.5"
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r'\usepackage{mathpazo}')
+colours = sns.color_palette("colorblind", 7)
 
 def naca_warp(x):
     a = 0.6128808410319363
@@ -29,9 +29,11 @@ def naca_warp(x):
     j = 186.80721148226274
 
     xp = min(max(x, 0.0), 1.0)
-    
-    return (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
+    warp = (a * xp + b * xp**2 + c * xp**3 + d * xp**4 + e * xp**5 + 
             f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
+    
+    return warp
+
 
 def fwarp(t: float, pxs):
     if isinstance(pxs, float):
@@ -51,14 +53,14 @@ def plot_mapped_unmapped(qim, qi):
     _, nx, ny, nt = qi.shape
     pysu = np.linspace(-0.25, 0.25, ny)
     y_masku = np.logical_and(pysu <= 0.15, pysu >= -0.15)
-
-    fig, ax = plt.subplots(2, 1, figsize=(6, 6), sharey=True, sharex=True)
+    fig, ax = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
     ax[0].text(-0.12, 0.98, r"(a)", transform=ax[0].transAxes)
     ax[1].text(-0.12, 0.98, r"(b)", transform=ax[1].transAxes)
 
+    # ax[0].set_xlabel(r"$x$")
     ax[1].set_xlabel(r"$x$")
     ax[0].set_ylabel(r"$y$")
-    ax[1].set_ylabel(r"$y$")
+    ax[1].set_ylabel(r"$n$")
     q_mapped = np.sqrt(qim[0, :, :, n]**2 + qim[1, :, :, n]**2)
     q_unmapped = np.sqrt(qi[0, :, :, n]**2 + qi[1, :, :, n]**2)
     lims = [0, 1.4]
@@ -76,14 +78,12 @@ def plot_mapped_unmapped(qim, qi):
     ax[0].fill_between(pxs, [naca_warp(x)-fwarp(0, x) for x in pxs], [-naca_warp(x)-fwarp(0, x) for x in pxs], color="white")
 
     co2 = ax[1].imshow(
-        q_unmapped[:, y_masku].T,
-        extent=[0, 1, -0.15, 0.15],
+        q_unmapped.T,
+        extent=[0, 1, 0, 0.25],
         cmap=_cmap,
         norm=norm,
         origin="lower",
     )
-    ax[1].set_aspect(1)
-    ax[1].fill_between(pxs, [naca_warp(x) for x in pxs], [-naca_warp(x) for x in pxs], color="white")
 
     # Add space for arrow
     fig.subplots_adjust(top=0.85)
@@ -100,8 +100,10 @@ def plot_mapped_unmapped(qim, qi):
     plt.close()
 
 
-
 if __name__ == "__main__":
-    # qim = np.load(f"data/0.001/0/unmasked/body.npy")
-    # qi = np.load(f"data/0.001/0/unmasked/body_unwarped.npy")
+    qim = np.load(f"data/0.001/0/unmasked/body.npy")
+    s = np.load(f"data/0.001/0/unmasked/s_profile.npy")
+    n = np.load(f"data/0.001/0/unmasked/n_profile.npy")
+    qi = np.stack((s, n), axis=0)
+    qi = np.einsum("ijkl->iklj", qi)
     plot_mapped_unmapped(qim, qi)

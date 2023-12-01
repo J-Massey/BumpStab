@@ -15,10 +15,10 @@ class ResolventAnalysis:
 
     def _load(self, dom):
         self.Lambda = np.load(f"{self.path}/{dom}_Lambda.npy", mmap_mode="r")
-        self.Lambda = self.Lambda[:12]
+        self.Lambda = self.Lambda # [:12]
         print(f"Lambda shape: {self.Lambda.shape}")
         self.V_r = np.load(f"{self.path}/{dom}_V_r.npy", mmap_mode="r")
-        self.V_r = self.V_r[:, :12]
+        self.V_r = self.V_r # [:, :12]
         print(f"V_r shape: {self.V_r.shape}")
 
     @property

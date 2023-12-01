@@ -35,8 +35,8 @@ def naca_warp(x):
 
 def plot_eigs():
     fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_xlabel(r"$\Re(\lambda)$")
-    ax.set_ylabel(r"$\Im(\lambda)$")
+    ax.set_xlabel(r"$\Re(\varsigma)$")
+    ax.set_ylabel(r"$\Im(\varsigma)$")
 
     # plot unit circle
     theta = np.linspace(0, 2*np.pi, 200)
@@ -59,12 +59,10 @@ def plot_eigs():
 
 def plot_unmapped(qi, nx, ny, nt):
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
     for n in tqdm(range(nt), desc="Plotting modes", total=nt):
         fig, ax = plt.subplots(figsize=(6, 3))
-        # y_mask = np.logical_and(pys >= -0.1, pys <= 0.1)
         q = np.sqrt(qi[0, :, :, n]**2 + qi[1, :, :, n]**2)
-        lims = [-0.01, .1]
+        lims = [0, .1]
         norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[1]-lims[0])/2, vmax=lims[1])
         _cmap = sns.color_palette("icefire", as_cmap=True)
 
@@ -73,7 +71,7 @@ def plot_unmapped(qi, nx, ny, nt):
 
         co = ax.imshow(
             q.T,
-            extent=[0, 1, -0.25, 0.25],
+            extent=[0, 1, 0, 0.25],
             cmap=_cmap,
             norm=norm,
             origin="lower",
@@ -89,31 +87,24 @@ def plot_unmapped(qi, nx, ny, nt):
 def plot_modes(dmd, Phi, nx, ny, r):
     Phi = Phi.reshape(2, nx, ny, r)
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
     for axid, n in tqdm(enumerate(range(r)), desc="Plotting modes"):
         fig, ax = plt.subplots(figsize=(6, 3))
         qi = np.real(Phi[:, :, :, n])
-        # y_mask = np.logical_and(pys >= -0.1, pys <= 0.1)
         qi = np.sqrt(qi[0]**2 + qi[1]**2)
-        # qi = gaussian_filter1d(qi, sigma=1, axis=0)
-        # print(qi.max()/np.pi, qi.min()/np.pi)
-        lims = [0, 0.01]
+        lims = [0, 0.001]
         norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[1]-lims[0])/2, vmax=lims[1])
         _cmap = sns.color_palette("icefire", as_cmap=True)
-
-        # ax.plot(pxs, [naca_warp(x) for x in pxs], color="k", linewidth=0.7)
-        # ax.plot(pxs, [-naca_warp(x) for x in pxs], color="k", linewidth=0.7)
 
         ax.set_title(f"$f^*={dmd.frequency[axid]/0.005:.2f}$")
         co = ax.imshow(
             qi.T,
-            extent=[0, 1, -0.25, 0.25],
+            extent=[0, 1, 0, 0.25],
             cmap=_cmap,
             norm=norm,
             origin="lower",
         )
 
-        ax.set_aspect(1)
+        # ax.set_aspect(1)
         ax.set_xlabel(r"$x$")
         ax.set_ylabel(r"$y$")
         plt.savefig(f"figures/DMD/sp_mode_{n}.png", dpi=600)
@@ -121,39 +112,31 @@ def plot_modes(dmd, Phi, nx, ny, r):
 
 
 def load(case="0"):
-    snapshots = np.load(f"data/0.001/{case}/unmasked/body_unwarped.npy")
+    u = np.load(f"data/0.001/{case}/unmasked/s_profile.npy")
+    v = np.load(f"data/0.001/{case}/unmasked/n_profile.npy")
+    snapshots = np.stack((u, v), axis=0)
+    snapshots = np.einsum("ijkl->iklj", snapshots)
     return snapshots
 
 
 def preprocess(snapshots):
-    snapshots = snapshots[:-1]
     snapshots = snapshots - np.mean(snapshots, axis=3, keepdims=True)
-    # snapshots = snapshots / np.std(snapshots, axis=3, keepdims=True)
     return snapshots
 
-
-def mask_snaps(snapshots):
-    _, nx, ny, nt = snapshots.shape
-    pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(-0.25, 0.25, ny)
-    for idx in tqdm(range(nx), desc="Masking"):
-        bmask = np.logical_and(pys < naca_warp(pxs[idx]) , pys > -naca_warp(pxs[idx]), )
-        snapshots[:, idx, bmask, :] = 0
-    return snapshots
 
 if __name__ == "__main__":
     snapshots = load()
     _, nx, ny, nt = snapshots.shape
-    snap_flucs = mask_snaps(snapshots)
-    snap_flucs = preprocess(snap_flucs)
+    np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
+    snap_flucs = preprocess(snapshots)
     # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
+    flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
-    r=40
-    spdmd = SpDMD(svd_rank=r, gamma=20, rho=1.0e3)
-    spdmd.fit(snap_flucs.reshape(2*nx*ny, nt))
+    r=100
+    spdmd = SpDMD(svd_rank=r, gamma=500, rho=1.0e4)
+    spdmd.fit(flat_snaps)
     # dmds.append(spDMD)
     Phi = spdmd.modes
-    print(Phi.max(), Phi.min())
     plot_modes(spdmd, Phi, nx, ny, r)
     np.save(f"data/0.001/0/unmasked/sp_V_r.npy", Phi)
 
@@ -163,27 +146,3 @@ if __name__ == "__main__":
     Lambda = np.log(rho) / 0.005
     np.save(f"data/0.001/0/unmasked/sp_Lambda.npy", Lambda)
     plot_eigs()
-
-    # Extract the modes that lie on the 
-    
-
-
-# def plot_Lambda():
-#     fig, ax = plt.subplots(figsize=(3, 3))
-#     ax.set_xlabel(r"$f^*$")
-#     ax.set_ylabel(r"$\Re (\lambda)$")
-#     ax.set_xlim(0.1, 200)
-#     markerstyles = ["o", "s", "^"]
-#     for idx, dmd in enumerate(dmds):
-#         Lambda = np.log(dmd.eigs)/0.005
-#         frequencies = (np.imag(Lambda) )/ ( np.pi )
-#         ax.semilogx(abs(frequencies), Lambda.real, label=labs[idx], linewidth=0.6, color=colours[order[idx]], marker=markerstyles[idx], markersize=3, ls='none', markerfacecolor="none", markeredgewidth=0.6) 
-
-#     # put legend outside plot
-#     box = ax.get_position()
-#     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-#     ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-#     plt.savefig(f"{dir}/Lambda.png", dpi=500)
-#     plt.close()
-
-# plot_Lambda()

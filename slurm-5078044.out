@@ -1,7 +1,7 @@
-Running SLURM prolog script on gold57.cluster.local
+Running SLURM prolog script on gold56.cluster.local
 ===============================================================================
-Job started on Thu Nov 30 10:55:13 GMT 2023
-Job ID          : 5075880
+Job started on Fri Dec  1 09:37:23 GMT 2023
+Job ID          : 5078044
 Job name        : interactive
 WorkDir         : /mainfs/scratch/jmom1n15/BumpStab
 Command         : /mainfs/scratch/jmom1n15/BumpStab/sleepSub
@@ -9,29 +9,29 @@ Partition       : highmem
 Num hosts       : 1
 Num cores       : 16
 Num of tasks    : 16
-Hosts allocated : gold57
+Hosts allocated : gold56
 Job Output Follows ...
 ===============================================================================
-Starting calculation at Thu Nov 30 10:55:13 GMT 2023
+Starting calculation at Fri Dec  1 09:37:23 GMT 2023
 ---------------------------------------------------------------
-slurmstepd-gold57: error: *** JOB 5075880 ON gold57 CANCELLED AT 2023-11-30T20:55:14 DUE TO TIME LIMIT ***
+slurmstepd-gold56: error: *** JOB 5078044 ON gold56 CANCELLED AT 2023-12-01T19:36:53 DUE TO TIME LIMIT ***
 ==============================================================================
-Running epilogue script on gold57.
+Running epilogue script on gold56.
 
-Submit time  : 2023-11-30T10:54:57
-Start time   : 2023-11-30T10:55:12
-End time     : 2023-11-30T20:55:14
+Submit time  : 2023-12-01T09:36:43
+Start time   : 2023-12-01T09:36:51
+End time     : 2023-12-01T19:36:53
 Elapsed time : 10:00:02 (Timelimit=10:00:00)
 
-Job ID: 5075880
+Job ID: 5078044
 Cluster: i5
 User/Group: jmom1n15/mm
 State: TIMEOUT (exit code 0)
 Nodes: 1
 Cores per node: 16
-CPU Utilized: 08:06:07
-CPU Efficiency: 5.06% of 6-16:00:32 core-walltime
+CPU Utilized: 07:43:06
+CPU Efficiency: 4.82% of 6-16:00:32 core-walltime
 Job Wall-clock time: 10:00:02
-Memory Utilized: 96.46 GB
-Memory Efficiency: 26.13% of 369.14 GB
+Memory Utilized: 60.29 GB
+Memory Efficiency: 16.33% of 369.14 GB
 

@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
+import string
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -26,7 +27,6 @@ class PlotPeaks:
     def _load(self):
         self.Lambda = np.load(f"{self.path}/{self.dom}_Lambda.npy")
         self.V_r = np.load(f"{self.path}/{self.dom}_V_r.npy")
-        self.nx, self.ny, self.nt = np.load(f"{self.path}/body_nxyt.npy")
         print("----- Plotting modes -----")
         self.peak_omegas = np.load(f"{self.path}/{self.dom}_peak_omegas.npy")
         print(f"Peak omegas: {self.peak_omegas/(2*np.pi)}")
@@ -88,23 +88,21 @@ def plot_field(qi, pxs, pys, path=None, _cmap="seismic", lim=None, ax=None):
         extent=[0, 1, pys.min(), pys.max()],
         cmap=_cmap,
         norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+        origin="lower",
+        aspect="auto",
     )
-    # cbar on top of the plot
-    # divider = make_axes_locatable(ax)
-    # cax = divider.append_axes("top", size="7%", pad=0.2)
-    # fig.add_axes(cax)
-    # cb = plt.colorbar(cs, cax=cax, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
-    # cb.set_label(r"$p$", labelpad=-35, rotation=0)
-    ax.set_aspect(1)
+    # ax.set_aspect(1)
     if path is not None:
         plt.savefig(path, dpi=600)
         plt.close()
 
 
-def save_f_r():
+def save_f_r(n):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     omegas = smooth.peak_omegas
-    f_r_modes = np.empty((2, len(omegas), smooth.nx, smooth.ny))
+    s_f_r_modes = np.empty((2, len(omegas), nx, ny))
+    n_f_r_modes = np.empty((2, len(omegas), nx, ny))
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Saving modes"):
         Psi, Sigma, Phi = svd(smooth.F_tilde@inv((-1j*omega)*np.eye(smooth.Lambda.shape[0])-np.diag(smooth.Lambda))@inv(smooth.F_tilde))
         # for i in range(len(Sigma)):
@@ -112,28 +110,32 @@ def save_f_r():
         #     Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
         #     Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
 
-        forcing = (smooth.V_r @ inv(smooth.F_tilde)@Psi).reshape(2, smooth.nx, smooth.ny, len(Sigma))
-        response = (smooth.V_r @ inv(smooth.F_tilde)@Phi).reshape(2, smooth.nx, smooth.ny, len(Sigma))
-        mag = np.sqrt(forcing[1, :, :, 0].real**2 +  forcing[0, :, :, 0].real**2)
-        f_r_modes[0, ido] = mag
-        mag = np.sqrt(response[1, :, :, 0].real**2 +  response[0, :, :, 0].real**2)
-        f_r_modes[1, ido] = mag
-    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy", f_r_modes)
+        forcing = (smooth.V_r @ inv(smooth.F_tilde)@Psi).reshape(2, nx, ny, len(Sigma))
+        response = (smooth.V_r @ inv(smooth.F_tilde)@Phi).reshape(2, nx, ny, len(Sigma))
+        # mag = np.sqrt(forcing[1, :, :, n].real**2 +  forcing[0, :, :, n].real**2)
+        s_f_r_modes[0, ido] = forcing[0, :, :, n].real
+        n_f_r_modes[0, ido] = forcing[1, :, :, n].real
+        # mag = np.sqrt(response[1, :, :, n].real**2 +  response[0, :, :, n].real**2)
+        s_f_r_modes[1, ido] = response[0, :, :, n].real
+        n_f_r_modes[1, ido] = response[1, :, :, n].real
+    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/s_f_r_mode{n}.npy", s_f_r_modes)
+    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy", n_f_r_modes)
 
 
-def plot_f_r(axs):
+def plot_f_r():
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    pxs = np.linspace(0, 1, smooth.nx)
-    pys = np.linspace(-0.25, 0.25, smooth.ny)
-    py_mask = np.logical_and(pys > -0.1, pys < 0.1)
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.1)
     omegas = smooth.peak_omegas
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting modes"):
         mag = f_r_modes[0, ido, :, py_mask]
         lim = 0.005
-        plot_field(mag.T, pxs, pys, f"figures/forcing-modes/forcing_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
+        plot_field(mag, pxs, pys[py_mask], f"figures/forcing-modes/forcing_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
         mag = f_r_modes[1, ido, :, py_mask]
-        plot_field(mag.T, pxs, pys, f"figures/response-modes/response_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
+        plot_field(mag, pxs, pys[py_mask], f"figures/response-modes/response_{omega/(2*np.pi):.2f}.png", lim=[0, lim], _cmap="icefire")
     
 
 def plot_spectra():
@@ -219,7 +221,7 @@ def plot_spectra():
 
 def plot_large_forcing():
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny = smooth.nx, smooth.ny
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     py_mask = np.logical_and(pys > -0.25, pys < 0.25)
@@ -305,7 +307,8 @@ def plot_large_forcing():
 
 def plot_large_response():
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny = smooth.nx, smooth.ny
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     py_mask = np.logical_and(pys > -0.25, pys < 0.25)
@@ -389,10 +392,188 @@ def plot_large_response():
 
     plt.close()
 
-    
+
+def plot_large_f_r():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.1)
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(len(omegas),2, figsize=(6, 8.5), sharex=True, sharey=True)
+    axs[0, 0].set_title("Forcing", fontsize=9)
+    axs[0, 1].set_title("Response", fontsize=9)
+    for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[0, 5]
+        cs = axs[ido, 0].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("icefire", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 0].set_ylabel(r"$n$")
+        axs[ido, 0].text(-0.3, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+
+        mag = f_r_modes[1, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[0, 5]
+        cs = axs[ido, 1].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("icefire", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 1].text(-0.1, 0.94, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+        # axs[ido, 1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 1].transAxes, fontsize=10)
+
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xlabel(r"$x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$|\vec{u}| \quad \times 10^3$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA_modes.pdf")
+    # plt.savefig(f"figures/RA_modes.png", dpi=700)
+    plt.close()
+
+
+def plot_large_s_f_r():
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.1)
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/s_f_r_modes.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(len(omegas),2, figsize=(6, 8.5), sharex=True, sharey=True)
+    axs[0, 0].set_title("Forcing", fontsize=9)
+    axs[0, 1].set_title("Response", fontsize=9)
+    for ido, omega in tqdm(enumerate(omegas), total=7, desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[-5, 5]
+        cs = axs[ido, 0].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("seismic", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 0].set_ylabel(r"$n$")
+        axs[ido, 0].text(-0.3, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+
+        mag = f_r_modes[1, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[-5, 5]
+        cs = axs[ido, 1].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("seismic", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 1].text(-0.1, 0.94, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+        # axs[ido, 1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 1].transAxes, fontsize=10)
+
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xlabel(r"$x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\vec{u_s} \quad \times 10^3$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA_s_modes.pdf")
+    plt.savefig(f"figures/RA_s_modes.png", dpi=700)
+    plt.close()
+
+
+def plot_large_n_f_r(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.1)
+    omegas = smooth.peak_omegas
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(len(omegas),2, figsize=(5.8, 8.5), sharex=True, sharey=True)
+    axs[0, 0].set_title("Forcing", fontsize=9)
+    axs[0, 1].set_title("Response", fontsize=9)
+    for ido, omega in tqdm(enumerate(omegas), total=7, desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        nx, ny = mag.shape
+        lim=[-5, 5]
+        cs = axs[ido, 0].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("seismic", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 0].set_ylabel(r"$n$")
+        axs[ido, 0].text(-0.3, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+
+        mag = f_r_modes[1, ido, :, py_mask]
+        nx, ny = mag.shape
+        cs = axs[ido, 1].imshow(
+            mag*1000,
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            cmap=sns.color_palette("seismic", as_cmap=True),
+            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            origin="lower",
+            aspect='auto',
+        )
+        axs[ido, 1].text(-0.1, 0.94, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+        # axs[ido, 1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 1].transAxes, fontsize=10)
+
+    axs[-1, 0].set_xlabel(r"$x$")
+    axs[-1, 1].set_xlabel(r"$x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\vec{u_n} \quad \times 10^3$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA/norm_mode{n}.pdf")
+    # plt.savefig(f"figures/RA_n_modes.png", dpi=700)
+    plt.close()
 
 
 if __name__ == "__main__":
-    plot_large_forcing()
-    plot_large_response()
+    for i in range(4):
+        save_f_r(i)
+        plot_large_n_f_r(i)
+
+    # plot_large_f_r()
+    # plot_large_s_f_r()
 

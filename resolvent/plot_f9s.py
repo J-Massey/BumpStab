@@ -189,7 +189,7 @@ def plot_power(ax=None):
     
     path = f"data/variable-roughness/noseless/var_surface/fort.9"
     t, force = read_forces(path, interest="cp", direction="")
-    t_mask = np.logical_and(t > 4, t < 5)
+    t_mask = np.logical_and(t > 5, t < 7)
     t_new = t % 1
 
     ax.scatter(

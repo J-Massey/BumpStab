@@ -611,7 +611,7 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
     cb.set_ticklabels(tick_labels)
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
-    cb.set_label(r"$ \Delta c_P  \quad \times 10^{4}$", labelpad=-25, rotation=0, fontsize=9)
+    cb.set_label(r"$ \Delta c_{P,variable}  \quad \times 10^{4}$", labelpad=-25, rotation=0, fontsize=9)
 
     plt.savefig(f"figures/variable-roughness/diff_var.pdf")
     plt.savefig(f"figures/variable-roughness/diff_var.png", dpi=450)

@@ -113,6 +113,105 @@ def point_at_distance(x1, y1, nx, ny, s=0.1):
     return p_new
 
 
+def uv_profiles(case, prof_dist=0.3):
+    bod = np.load(f"data/0.001/{case}/unmasked/uvp.npy")
+    pxs = np.linspace(-0.35, 2, bod.shape[1])
+    bod_mask = np.where((pxs > 0) & (pxs < 1))
+    pys = np.linspace(-0.35, 0.35, bod.shape[2])
+    num_points = int(prof_dist * 4096)
+
+    ts = np.arange(0, bod.shape[-1], 1)
+    u_profile = np.empty((ts.size, pxs.size, num_points))
+    v_profile = np.empty((ts.size, pxs.size, num_points))
+    for idt, t_idx in tqdm(enumerate(ts), total=ts.size):
+        t = (t_idx / 200) % 1
+        # Interpolation function for the body
+        f_u = RegularGridInterpolator(
+            (pxs, pys),
+            bod[0, :, :, t_idx].astype(np.float64),
+            bounds_error=False,
+            fill_value=1,
+        )
+        f_v = RegularGridInterpolator(
+            (pxs, pys),
+            bod[1, :, :, t_idx].astype(np.float64),
+            bounds_error=False,
+            fill_value=1,
+        )
+        
+        y_surface = np.array([naca_warp(xp) for xp in pxs]) - np.array(
+            [fwarp(t, xp) for xp in pxs]
+        )
+
+        nx, ny = normal_to_surface(pxs, t)
+        sx, sy = tangent_to_surface(pxs, t)
+
+        for pidx in range(pxs.size):
+            x1, y1 = pxs[pidx], y_surface[pidx]
+            x2, y2 = point_at_distance(x1, y1, nx[pidx], ny[pidx], s=prof_dist)
+            line_points = np.linspace(
+                np.array([x1, y1]), np.array([x2, y2]), num_points
+            )
+            u_profile[idt, pidx] = f_u(line_points)
+            v_profile[idt, pidx] = f_v(line_points)
+
+    u_profile = u_profile[:, bod_mask[0], :]
+    v_profile = v_profile[:, bod_mask[0], :]
+    np.save(f"data/0.001/{case}/unmasked/u_profile.npy", u_profile)
+    np.save(f"data/0.001/{case}/unmasked/v_profile.npy", v_profile)
+
+
+def sn_profiles(case, prof_dist=0.3):
+    bod = np.load(f"data/0.001/{case}/unmasked/uvp.npy")
+    pxs = np.linspace(-0.35, 2, bod.shape[1])
+    bod_mask = np.where((pxs > 0) & (pxs < 1))
+    pys = np.linspace(-0.35, 0.35, bod.shape[2])
+    num_points = int(prof_dist * 4096)
+
+    ts = np.arange(0, bod.shape[-1], 1)
+    s_profile = np.empty((ts.size, pxs.size, num_points))
+    n_profile = np.empty((ts.size, pxs.size, num_points))
+    for idt, t_idx in tqdm(enumerate(ts), total=ts.size):
+        t = (t_idx / 200) % 1
+        # Interpolation function for the body
+        f_u = RegularGridInterpolator(
+            (pxs, pys),
+            bod[0, :, :, t_idx].astype(np.float64),
+            bounds_error=False,
+            fill_value=1,
+        )
+        f_v = RegularGridInterpolator(
+            (pxs, pys),
+            bod[1, :, :, t_idx].astype(np.float64),
+            bounds_error=False,
+            fill_value=1,
+        )
+        
+        y_surface = np.array([naca_warp(xp) for xp in pxs]) - np.array(
+            [fwarp(t, xp) for xp in pxs]
+        )
+
+        nx, ny = normal_to_surface(pxs, t)
+        sx, sy = tangent_to_surface(pxs, t)
+
+        for pidx in range(pxs.size):
+            x1, y1 = pxs[pidx], y_surface[pidx]
+            x2, y2 = point_at_distance(x1, y1, nx[pidx], ny[pidx], s=prof_dist)
+            line_points = np.linspace(
+                np.array([x1, y1]), np.array([x2, y2]), num_points
+            )
+            u_profile = f_u(line_points)
+            v_profile = f_v(line_points)
+
+            s_profile[idt, pidx] = u_profile * sx[pidx] + v_profile * sy[pidx]
+            n_profile[idt, pidx] = u_profile * nx[pidx] + v_profile * ny[pidx]
+
+    s_profile = s_profile[:, bod_mask[0], :]
+    n_profile = n_profile[:, bod_mask[0], :]
+    np.save(f"data/0.001/{case}/unmasked/s_profile.npy", s_profile)
+    np.save(f"data/0.001/{case}/unmasked/n_profile.npy", n_profile)
+
+
 def tangental_profiles(case, prof_dist=0.05):
     if os.path.isfile(f"data/0.001/{case}/unmasked/s_profile.npy") and os.path.isfile(
         f"data/0.001/{case}/unmasked/omega_profile.np"
@@ -620,7 +719,8 @@ def auto_corr(x):
 if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
     case = cases[0]
-    tangental_profiles(0, prof_dist=0.2)
+    # uv_profiles(0, prof_dist=0.3)
+    sn_profiles(0, prof_dist=0.25)
     # plot_smooth_profiles()
     # cases = [0, 64, 128]
     # plot_deltas(cases)
