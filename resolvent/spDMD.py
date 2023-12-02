@@ -38,21 +38,18 @@ def plot_eigs():
     ax.set_xlabel(r"$\Re(\varsigma)$")
     ax.set_ylabel(r"$\Im(\varsigma)$")
 
-    # plot unit circle
     theta = np.linspace(0, 2*np.pi, 200)
-    ax.plot(np.cos(theta), np.sin(theta), color="k", linewidth=0.5)
+    ax.fill(np.cos(theta), np.sin(theta), color="green", alpha=0.15)
+    ax.fill(0.8*np.cos(theta), 0.8*np.sin(theta), color="white")
+    ax.plot(np.cos(theta), np.sin(theta), color="k", linewidth=0.4)
+    # ax.plot(0.8*np.cos(theta), 0.8*np.sin(theta), color="k", linewidth=0.5)
+
 
     eigs = np.exp(np.load(f"data/0.001/0/unmasked/sp_Lambda.npy")*0.005)
-    ax.scatter(eigs.real, eigs.imag, s=2, color=colours[2])
-
-    # ax.set_xlim(-1, 1)
-    # ax.set_ylim(-1, 1)
+    ax.scatter(eigs[:36].real, eigs[:36].imag, s=1, color=colours[2])
+    ax.scatter(eigs[36:].real, eigs[36:].imag, s=1, color='purple')
     ax.set_aspect(1)
 
-    # box = ax.get_position()
-    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-    
     plt.savefig(f"figures/eigs.pdf")
     plt.savefig(f"figures/eigs.png", dpi=600)
     plt.close()
@@ -125,24 +122,24 @@ def preprocess(snapshots):
 
 
 if __name__ == "__main__":
-    snapshots = load()
-    _, nx, ny, nt = snapshots.shape
-    np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
-    snap_flucs = preprocess(snapshots)
-    # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
-    flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
+    # snapshots = load()
+    # _, nx, ny, nt = snapshots.shape
+    # np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
+    # snap_flucs = preprocess(snapshots)
+    # # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
+    # flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
-    r=100
-    spdmd = SpDMD(svd_rank=r, gamma=500, rho=1.0e4)
-    spdmd.fit(flat_snaps)
-    # dmds.append(spDMD)
-    Phi = spdmd.modes
-    plot_modes(spdmd, Phi, nx, ny, r)
-    np.save(f"data/0.001/0/unmasked/sp_V_r.npy", Phi)
+    # r=100
+    # spdmd = SpDMD(svd_rank=r, gamma=300, rho=1.0e4)
+    # spdmd.fit(flat_snaps)
+    # # dmds.append(spDMD)
+    # Phi = spdmd.modes
+    # plot_modes(spdmd, Phi, nx, ny, r)
+    # np.save(f"data/0.001/0/unmasked/sp_V_r.npy", Phi)
 
-    A_tilde = spdmd.operator._Atilde
-    rho, W = np.linalg.eig(A_tilde)
-    # Find the eigenfunction from spectral expansion
-    Lambda = np.log(rho) / 0.005
-    np.save(f"data/0.001/0/unmasked/sp_Lambda.npy", Lambda)
+    # A_tilde = spdmd.operator._Atilde
+    # rho, W = np.linalg.eig(A_tilde)
+    # # Find the eigenfunction from spectral expansion
+    # Lambda = np.log(rho) / 0.005
+    # np.save(f"data/0.001/0/unmasked/sp_Lambda.npy", Lambda)
     plot_eigs()

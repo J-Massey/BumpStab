@@ -43,30 +43,19 @@ def plot_gain(omega_span):
     path = f"data/0.001/0/unmasked/sp_gain.npy"
     gain = np.load(path)
     # ax.set_xlim(0.1, 150)
-    ax.loglog(
-        omega_span / (2*np.pi),
-        np.sqrt(gain[:, 0]),
-        color=sns.color_palette("colorblind", 7)[2],
-        # label=labels[idx],
-        alpha=0.8,
-        linewidth=0.7,
-        linestyle="-",
-    )
+    lss = ["-", "-.", "--", ":"]
+    for i in range(4):
+        ax.loglog(
+            omega_span / (2*np.pi),
+            np.sqrt(gain[:, i]),
+            color=sns.color_palette("colorblind", 7)[2],
+            # label=labels[idx],
+            alpha=0.8,
+            linewidth=0.7,
+            linestyle=lss[i],
+        )
     # plot max value cross at each peak
     maxs = find_peaks(np.sqrt(gain[:, 0]), prominence=0.1)[0]
-
-    # for max in maxs:
-    #     print(omega_span[max] / (2*np.pi))
-    #     ax.plot(
-    #         omega_span[max] / (np.pi),
-    #         np.sqrt(gain[max, 0]),
-    #         color=colours[idx+2],
-    #         alpha=0.8,
-    #         marker="x",
-    #         markersize=3,
-    #         linewidth=0.7,
-    #     )
-    # ax.legend(loc="upper right")
     plt.savefig(f"figures/body_gain.pdf")
     plt.savefig(f"figures/body_gain.png", dpi=400)
     plt.close()
