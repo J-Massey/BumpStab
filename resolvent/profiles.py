@@ -720,7 +720,7 @@ if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
     case = cases[0]
     # uv_profiles(0, prof_dist=0.3)
-    sn_profiles(0, prof_dist=0.25)
+    sn_profiles(0, prof_dist=0.01)
     # plot_smooth_profiles()
     # cases = [0, 64, 128]
     # plot_deltas(cases)

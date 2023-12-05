@@ -15,10 +15,10 @@ class ResolventAnalysis:
 
     def _load(self, dom):
         self.Lambda = np.load(f"{self.path}/{dom}_Lambda.npy", mmap_mode="r")
-        self.Lambda = self.Lambda[:36]
+        self.Lambda = self.Lambda # [:36]
         print(f"Lambda shape: {self.Lambda.shape}")
         self.V_r = np.load(f"{self.path}/{dom}_V_r.npy", mmap_mode="r")
-        self.V_r = self.V_r[:, :36]
+        self.V_r = self.V_r # [:, :36]
         print(f"V_r shape: {self.V_r.shape}")
 
     @property
@@ -51,21 +51,21 @@ class ResolventAnalysis:
     
     @property
     def omega_peaks(self):
-        # Find peaks in the gain data
-        peak_indices, _ = find_peaks(self.gain[:,0])
-        # Extract the omega values corresponding to these peaks
-        peak_omegas = self.omega_span[peak_indices]
+        peak_omegas = []
+        for i in range(5):
+            peak_indices, _ = find_peaks(self.gain[:,i])
+            peak_omegas.append(self.omega_span[peak_indices])
         return peak_omegas
     
     def save_omega_peaks(self):
         peak_omegas = self.omega_peaks
-        np.save(f"{self.path}/{self.dom}_peak_omegas.npy", peak_omegas)
+        np.savez(f"{self.path}/{self.dom}_peak_omegas.npz", *peak_omegas)
 
 
 # Sample usage
 if __name__ == "__main__":
     import os
     case = 0
-    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/unmasked", "sp", omega_span=np.logspace(np.log10(0.25*2*np.pi), np.log10(200*2*np.pi), 500))
+    ra = ResolventAnalysis(f"{os.getcwd()}/data/0.001/{case}/unmasked", "fb", omega_span=np.logspace(np.log10(0.25*2*np.pi), np.log10(200*2*np.pi), 500))
     ra.save_gain()
     ra.save_omega_peaks()

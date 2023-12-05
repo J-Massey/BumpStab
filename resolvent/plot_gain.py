@@ -40,11 +40,11 @@ def load_plot(path, ax, omega_span, colour, label):
 
 def plot_gain(omega_span):
     ax = plot_ax()
-    path = f"data/0.001/0/unmasked/sp_gain.npy"
+    path = f"data/0.001/0/unmasked/fb_gain.npy"
     gain = np.load(path)
     # ax.set_xlim(0.1, 150)
     lss = ["-", "-.", "--", ":"]
-    for i in range(4):
+    for i in range(3):
         ax.loglog(
             omega_span / (2*np.pi),
             np.sqrt(gain[:, i]),

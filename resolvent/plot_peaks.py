@@ -6,6 +6,7 @@ import scienceplots
 import sys
 import os
 from tqdm import tqdm
+from scipy.fft import fft2, ifft2, fftshift
 
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
@@ -28,8 +29,8 @@ class PlotPeaks:
         self.Lambda = np.load(f"{self.path}/{self.dom}_Lambda.npy")
         self.V_r = np.load(f"{self.path}/{self.dom}_V_r.npy")
         print("----- Plotting modes -----")
-        self.peak_omegas = np.load(f"{self.path}/{self.dom}_peak_omegas.npy")
-        print(f"Peak omegas: {self.peak_omegas/(2*np.pi)}")
+        data = np.load(f"{self.path}/{self.dom}_peak_omegas.npz")
+        self.peak_omegas = [data[key] for key in data.files]
     
     @property
     def F_tilde(self):
@@ -98,17 +99,13 @@ def plot_field(qi, pxs, pys, path=None, _cmap="seismic", lim=None, ax=None):
 
 
 def save_f_r(n):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
-    omegas = smooth.peak_omegas
+    omegas = smooth.peak_omegas[n]
     s_f_r_modes = np.empty((2, len(omegas), nx, ny))
     n_f_r_modes = np.empty((2, len(omegas), nx, ny))
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Saving modes"):
         Psi, Sigma, Phi = svd(smooth.F_tilde@inv((-1j*omega)*np.eye(smooth.Lambda.shape[0])-np.diag(smooth.Lambda))@inv(smooth.F_tilde))
-        # for i in range(len(Sigma)):
-        #     Psi[:, i] /= np.sqrt(np.dot(Psi[:, i].T, Psi[:, i]))
-        #     Phi[:, i] /= np.sqrt(np.dot(Phi[:, i].T, Phi[:, i]))
-        #     Psi[:, i] /= np.dot(Phi[:, i].T, Psi[:, i])
 
         forcing = (smooth.V_r @ inv(smooth.F_tilde)@Psi).reshape(2, nx, ny, len(Sigma))
         response = (smooth.V_r @ inv(smooth.F_tilde)@Phi).reshape(2, nx, ny, len(Sigma))
@@ -512,18 +509,18 @@ def plot_large_s_f_r():
 
 
 def plot_large_n_f_r(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(0, 0.25, ny)
-    py_mask = np.logical_and(pys > 0, pys < 0.1)
-    omegas = smooth.peak_omegas
+    pys = np.linspace(0, 0.2, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.2)
+    omegas = smooth.peak_omegas[n]
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(len(omegas),2, figsize=(5.8, 8.5), sharex=True, sharey=True)
     axs[0, 0].set_title("Forcing", fontsize=9)
     axs[0, 1].set_title("Response", fontsize=9)
-    for ido, omega in tqdm(enumerate(omegas), total=7, desc="Plotting bigun"):
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting bigun"):
         mag = f_r_modes[0, ido, :, py_mask]
         nx, ny = mag.shape
         lim=[-5, 5]
@@ -565,14 +562,284 @@ def plot_large_n_f_r(n=0):
     cb.set_label(r"$\vec{u_n} \quad \times 10^3$", labelpad=-37, rotation=0)
 
     plt.savefig(f"figures/RA/norm_mode{n}.pdf")
-    # plt.savefig(f"figures/RA_n_modes.png", dpi=700)
+    plt.savefig(f"figures/RA/norm_mode{n}.png", dpi=700)
+    plt.close()
+
+
+def plot_large_n_f_r_specta(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.2, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.01)
+    omegas = smooth.peak_omegas[n]
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(len(omegas),2, figsize=(5.8, 8.5), sharex=True, sharey=True)
+    axs[0, 0].set_title("Forcing", fontsize=9)
+    axs[0, 1].set_title("Response", fontsize=9)
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+        ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
+
+        extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+        cutoff = 1
+        kx_mask = np.logical_and(kx > -cutoff, kx < cutoff)
+        ky_mask = np.logical_and(ky > -cutoff, ky < cutoff)
+
+        fmag = np.abs(fs)
+        # fmag[kx_mask, :] = 0
+        # fmag[:, ky_mask] = 0
+
+        im = axs[ido, 0].imshow(
+                np.log1p(fmag),
+                extent=extent,
+                vmin=0,
+                vmax=4,
+                cmap=sns.color_palette("inferno_r", as_cmap=True),
+                aspect='auto',
+                origin="lower",
+                # norm=norm,
+            )
+        
+        axs[ido, 0].set_xscale("symlog")
+        axs[ido, 0].set_yscale("symlog")
+        axs[ido, 0].set_ylabel(r"$k_y$")
+        axs[ido, 0].text(-0.3, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+
+        mag = f_r_modes[1, ido, :, py_mask]
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+        ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
+
+        extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+        cutoff = 1
+        kx_mask = np.logical_and(kx > -cutoff, kx < cutoff)
+        ky_mask = np.logical_and(ky > -cutoff, ky < cutoff)
+
+        fmag = np.abs(fs)
+        # fmag[kx_mask, :] = 0
+        # fmag[:, ky_mask] = 0
+
+        im = axs[ido, 1].imshow(
+                np.log1p(fmag),
+                extent=extent,
+                vmin=0,
+                vmax=4,
+                cmap=sns.color_palette("inferno_r", as_cmap=True),
+                aspect='auto',
+                origin="lower",
+                # norm=norm,
+            )
+        
+        axs[ido, 1].set_xscale("symlog")
+        axs[ido, 1].set_yscale("symlog")
+        axs[ido, 1].text(-0.1, 0.94, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
+        # axs[ido, 1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 1].transAxes, fontsize=10)
+
+    axs[-1, 0].set_xticks([-100, -1, 1, 100])
+    axs[-1, 0].set_yticks([-1000, -10, 0, 10, 1000])
+    axs[-1, 0].set_xlabel(r"$k_x$")
+    axs[-1, 1].set_xlabel(r"$k_x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(im, cax=cax1, orientation="horizontal", ticks=np.linspace(0, 4, 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\ln\big(1+|\mathcal{F}(|\mathbf{U}|)|\big)$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA/norm_mode_spectra{n}.pdf")
+    plt.savefig(f"figures/RA/norm_mode_spectra{n}.png", dpi=700)
+    plt.close()
+
+def plot_large_n_f_r_specta_convolution(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.2, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.01)
+    omegas = smooth.peak_omegas[n]
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(1,2, figsize=(5.9, 3), sharex=True, sharey=True)
+    axs[0].set_title("Forcing", fontsize=9)
+    axs[1].set_title("Response", fontsize=9)
+    force_convolution = np.ones_like(f_r_modes[0, 0, :, py_mask])
+    response_convolution = np.ones_like(f_r_modes[1, 0, :, py_mask])
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        force_convolution = force_convolution * fs
+        mag = f_r_modes[1, ido, :, py_mask]
+        fs = np.fft.fft2(mag)
+        fs = np.fft.fftshift(fs)
+        response_convolution = response_convolution * fs
+
+    kx = np.fft.fftshift(np.fft.fftfreq(nx, d=1/1024))
+    ky = np.fft.fftshift(np.fft.fftfreq(ny, d=1/4096))
+
+    extent = [kx.min(), kx.max(), ky.min(), ky.max()]
+    im = axs[0].imshow(
+            np.log1p(np.abs(force_convolution)),
+            extent=extent,
+            # vmin=0,
+            # vmax=4,
+            cmap=sns.color_palette("inferno_r", as_cmap=True),
+            aspect='auto',
+            origin="lower",
+            # norm=norm,
+        )
+    
+    im = axs[1].imshow(
+            np.log1p(np.abs(response_convolution)),
+            extent=extent,
+            # vmin=0,
+            # vmax=4,
+            cmap=sns.color_palette("inferno_r", as_cmap=True),
+            aspect='auto',
+            origin="lower",
+            # norm=norm,
+        )
+    
+    
+    axs[1].set_xscale("symlog")
+    axs[1].set_yscale("symlog")
+    axs[0].text(-0.1, 0.94, f"(a)", transform=axs[0].transAxes, fontsize=10)
+    axs[1].text(-0.1, 0.94, f"(b)", transform=axs[1].transAxes, fontsize=10)
+        # axs[1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[1].transAxes, fontsize=10)
+
+    axs[0].set_xticks([-100, -1, 1, 100])
+    axs[0].set_yticks([-1000, -10, 0, 10, 1000])
+    axs[0].set_xlabel(r"$k_x$")
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(im, cax=cax1, orientation="horizontal", ticks=np.linspace(0, 4, 5))
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\ln\big(1+|\mathcal{F}_r*\mathcal{F}_r|\big)$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA/norm_mode_spectra_convolution{n}.pdf")
+    plt.savefig(f"figures/RA/norm_mode_spectra_convolution{n}.png", dpi=700)
+    plt.close()
+
+
+def calculate_2dft(input):
+    ft = np.fft.ifftshift(input)
+    ft = np.fft.fft2(ft)
+    return np.fft.fftshift(ft)
+
+
+def calculate_2dift(input):
+    ift = np.fft.ifftshift(input)
+    ift = np.fft.ifft2(ift)
+    ift = np.fft.fftshift(ift)
+    return ift.real
+
+
+def plot_large_n_f_r_specta_convolution_max(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.2, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.025)
+    omegas = smooth.peak_omegas[n]
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    letters = [chr(97 + i) for i in range(len(omegas)*2)]
+    fig, axs = plt.subplots(1,2, figsize=(5.9, 3), sharex=True, sharey=True)
+    axs[0].set_title("Forcing", fontsize=9)
+    axs[1].set_title("Response", fontsize=9)
+    force_convolution = np.ones_like(f_r_modes[0, 0, :, py_mask], dtype=complex)
+    response_convolution = np.ones_like(f_r_modes[1, 0, :, py_mask], dtype=complex)
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting bigun"):
+        mag = f_r_modes[0, ido, :, py_mask]
+        ft = fft2(mag)
+        fs = fftshift(ft)
+        force_convolution *= fs
+        mag = f_r_modes[1, ido, :, py_mask]
+        ft = fft2(mag)
+        fs = fftshift(ft)
+        response_convolution *= fs
+
+    kx = (np.fft.fftfreq(nx, d=1/1024))
+    ky = (np.fft.fftfreq(ny, d=1/4096))
+
+    force_convolution = np.abs(force_convolution)
+    response_convolution = np.abs(response_convolution)
+    force_convolution[force_convolution > 0.8*np.max(force_convolution)] = 0
+    response_convolution[response_convolution > 0.8*np.max(response_convolution)] = 0
+
+    # inverse transform
+    fis = fftshift(force_convolution)
+    force_back = ifft2(fis)
+    fis = fftshift(response_convolution)
+    response_back = ifft2(fis)
+
+    im = axs[0].imshow(
+            np.abs(force_back),
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            # vmin=0,
+            # vmax=0.001,
+            cmap=sns.color_palette("inferno_r", as_cmap=True),
+            aspect='auto',
+            origin="lower",
+            # norm=norm,
+        )
+    
+    im = axs[1].imshow(
+            np.abs(response_back),
+            extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+            # vmin=0,
+            # vmax=0.001,
+            cmap=sns.color_palette("inferno_r", as_cmap=True),
+            aspect='auto',
+            origin="lower",
+            # norm=norm,
+        )
+    
+    # axs[1].set_xscale("symlog")
+    # axs[1].set_yscale("symlog")
+    axs[0].text(-0.1, 0.94, f"(a)", transform=axs[0].transAxes, fontsize=10)
+    axs[1].text(-0.1, 0.94, f"(b)", transform=axs[1].transAxes, fontsize=10)
+        # axs[1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[1].transAxes, fontsize=10)
+
+    # axs[0].set_xticks([-100, -1, 1, 100])
+    # axs[0].set_yticks([-1000, -10, 0, 10, 1000])
+    # axs[0].set_xlabel(r"$k_x$")
+
+    # fig.tight_layout()
+    # fig.subplots_adjust(hspace=0.05)
+
+    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    cb = plt.colorbar(im, cax=cax1, orientation="horizontal")
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position('top')  # Move label to top
+    cb.set_label(r"$\ln\big(1+|\mathcal{F}_r*\mathcal{F}_r|\big)$", labelpad=-37, rotation=0)
+
+    plt.savefig(f"figures/RA/norm_mode_spectra_convolution{n}.pdf")
+    plt.savefig(f"figures/RA/norm_mode_spectra_convolution{n}.png", dpi=700)
     plt.close()
 
 
 if __name__ == "__main__":
-    for i in range(5):
-        save_f_r(i)
+    for i in range(3):
+        # save_f_r(i)
         plot_large_n_f_r(i)
+        # plot_large_n_f_r_specta(i)
+        plot_large_n_f_r_specta_convolution(i)
+        # plot_large_n_f_r_specta_convolution_max(i)
 
     # plot_large_f_r()
     # plot_large_s_f_r()
