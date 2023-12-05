@@ -7,6 +7,7 @@ import sys
 import os
 from tqdm import tqdm
 from scipy.fft import fft2, ifft2, fftshift
+from scipy.signal import welch, find_peaks
 
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
@@ -512,8 +513,8 @@ def plot_large_n_f_r(n=0):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(0, 0.2, ny)
-    py_mask = np.logical_and(pys > 0, pys < 0.2)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.25)
     omegas = smooth.peak_omegas[n]
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
@@ -570,7 +571,7 @@ def plot_large_n_f_r_specta(n=0):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(0, 0.2, ny)
+    pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.01)
     omegas = smooth.peak_omegas[n]
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
@@ -661,11 +662,12 @@ def plot_large_n_f_r_specta(n=0):
     plt.savefig(f"figures/RA/norm_mode_spectra{n}.png", dpi=700)
     plt.close()
 
+
 def plot_large_n_f_r_specta_convolution(n=0):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(0, 0.2, ny)
+    pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.01)
     omegas = smooth.peak_omegas[n]
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
@@ -736,24 +738,11 @@ def plot_large_n_f_r_specta_convolution(n=0):
     plt.close()
 
 
-def calculate_2dft(input):
-    ft = np.fft.ifftshift(input)
-    ft = np.fft.fft2(ft)
-    return np.fft.fftshift(ft)
-
-
-def calculate_2dift(input):
-    ift = np.fft.ifftshift(input)
-    ift = np.fft.ifft2(ift)
-    ift = np.fft.fftshift(ift)
-    return ift.real
-
-
 def plot_large_n_f_r_specta_convolution_max(n=0):
     smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
     nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
-    pys = np.linspace(0, 0.2, ny)
+    pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.025)
     omegas = smooth.peak_omegas[n]
     f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
@@ -833,12 +822,92 @@ def plot_large_n_f_r_specta_convolution_max(n=0):
     plt.close()
 
 
+def plot_normal_mode_cut_conv(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    closest_idx = np.argmin(np.abs(pys - 0.005))
+    omegas = smooth.peak_omegas[n]
+    colours = sns.color_palette("winter", len(omegas))
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    fig, ax = plt.subplots(1,1, figsize=(4, 3), sharex=True, sharey=True)
+    # ax.set_title("Forcing", fontsize=9)
+    # ax.set_title("Response", fontsize=9)
+    f_conv = 1
+    r_conv = 1
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting fft cut"):
+        mag = f_r_modes[0, ido, :, closest_idx]
+        freqs, f_fs = welch(mag, nx, nperseg=nx//2)
+        print(f_fs.shape)
+        f_conv *= f_fs
+        
+        mag = f_r_modes[1, ido, :, closest_idx]
+        freqs, r_fs = welch(mag, nx, nperseg=nx//2)
+        r_conv *= r_fs
+
+    ax.loglog(freqs, f_conv, color='k', ls="-", label="Forcing")
+    peak_indices, _ = find_peaks(f_conv)
+    ax.scatter(freqs[peak_indices][1], f_conv[peak_indices][1], color='red', marker="x")
+    peak_idx = np.argmin(np.abs(freqs - 5))
+    ax.scatter(5, f_conv[peak_idx], color='red', marker="x")
+    ax.loglog(freqs, r_conv, color='k', ls="--", label="Response")
+    peak_indices, _ = find_peaks(r_conv)
+    ax.scatter(freqs[peak_indices][1:4], r_conv[peak_indices][1:4], color='red', marker="x")
+
+
+    ax.set_xlabel(r"$k_x$")
+    ax.set_ylabel(r"$\mathcal{F}_r * \mathcal{F}_r$")
+    ax.legend()
+
+    plt.savefig(f"figures/RA/cut_fft_conv{n}.pdf")
+    plt.savefig(f"figures/RA/cut_fft_conv{n}.png", dpi=700)
+    plt.close()
+
+
+def plot_normal_mode_cut(n=0):
+    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
+    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    closest_idx = np.argmin(np.abs(pys - 0.005))
+    omegas = smooth.peak_omegas[n]
+    colours = sns.color_palette("winter", len(omegas))
+    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    fig, ax = plt.subplots(1,2, figsize=(6, 3), sharex=True, sharey=True)
+    ax[0].set_title("Forcing", fontsize=9)
+    ax[1].set_title("Response", fontsize=9)
+    f_conv = 1
+    r_conv = 1
+    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting fft cut"):
+        mag = f_r_modes[0, ido, :, closest_idx]
+        freqs, f_fs = welch(mag, nx, nperseg=nx//2)
+        f_conv = f_fs
+        
+        mag = f_r_modes[1, ido, :, closest_idx]
+        freqs, r_fs = welch(mag, nx, nperseg=nx//2)
+        r_conv = r_fs
+
+        ax[0].loglog(freqs, np.abs(f_conv), color=colours[ido], ls="-")
+        ax[1].loglog(freqs, np.abs(r_conv), color=colours[ido], ls="-", label=f"$f^*={omega/(2*np.pi):.2f}$")
+
+
+    ax[0].set_xlabel(r"$k_x$")
+    ax[1].set_xlabel(r"$k_x$")
+    ax[0].set_ylabel(r"$|\mathcal{F}(\vec{u}_n)|$")
+    ax[1].legend(fontsize=8)
+
+    plt.savefig(f"figures/RA/cut_fft{n}.pdf")
+    plt.savefig(f"figures/RA/cut_fft{n}.png", dpi=700)
+    plt.close()
+
 if __name__ == "__main__":
-    for i in range(3):
+    for i in range(2):
         # save_f_r(i)
-        plot_large_n_f_r(i)
+        # plot_large_n_f_r(i)
+        plot_normal_mode_cut(i)
         # plot_large_n_f_r_specta(i)
-        plot_large_n_f_r_specta_convolution(i)
+        # plot_large_n_f_r_specta_convolution(i)
         # plot_large_n_f_r_specta_convolution_max(i)
 
     # plot_large_f_r()

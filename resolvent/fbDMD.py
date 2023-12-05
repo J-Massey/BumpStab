@@ -96,7 +96,7 @@ def plot_modes(freq, Phi, nx, ny, r):
         ax.set_title(f"$f^*={freq[axid]/0.005:.2f}$")
         co = ax.imshow(
             qi.T,
-            extent=[0, 1, 0, 0.01],
+            extent=[0, 1, 0, 0.25],
             cmap=_cmap,
             norm=norm,
             origin="lower",
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
     flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
-    r=50
+    r=40
     fbdmd = FbDMD(svd_rank=r)
     fbdmd.fit(flat_snaps)
     
@@ -144,4 +144,4 @@ if __name__ == "__main__":
     Phi = fbdmd.modes[:, keep_idx]
     np.save(f"data/0.001/0/unmasked/fb_V_r.npy", Phi)
     freq = fbdmd.frequency[keep_idx]
-    plot_modes(freq, Phi, nx, ny, len(Lambda))
+    # plot_modes(freq, Phi, nx, ny, len(Lambda))
