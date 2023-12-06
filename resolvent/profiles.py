@@ -63,7 +63,18 @@ def fwarp(t, x):
 
 def normal_to_surface(x: np.ndarray, t):
     y = np.array([naca_warp(xp) for xp in x]) - np.array([fwarp(t, xp) for xp in x])
-    y = y * 1  # Scale the y-coordinate to get away from the body
+
+    df_dx = np.gradient(y, x, edge_order=2)
+    df_dy = -1
+
+    # Calculate the normal vector to the surface
+    mag = np.sqrt(df_dx**2 + df_dy**2)
+    nx = -df_dx / mag
+    ny = -df_dy / mag
+    return nx, ny
+
+def normal_to_stationary_surface(x: np.ndarray, t):
+    y = np.array([naca_warp(xp) for xp in x])
 
     df_dx = np.gradient(y, x, edge_order=2)
     df_dy = -1
@@ -78,6 +89,20 @@ def normal_to_surface(x: np.ndarray, t):
 def tangent_to_surface(x: np.ndarray, t):
     # Evaluate the surface function y(x, t)
     y = np.array([naca_warp(xp) for xp in x]) - np.array([fwarp(t, xp) for xp in x])
+
+    # Calculate the gradient dy/dx
+    df_dx = np.gradient(y, x, edge_order=2)
+
+    # The tangent vector components are proportional to (1, dy/dx)
+    tangent_x = 1 / np.sqrt(1 + df_dx**2)
+    tangent_y = df_dx / np.sqrt(1 + df_dx**2)
+
+    return tangent_x, tangent_y
+
+
+def tangent_to_stationary_surface(x: np.ndarray, t):
+    # Evaluate the surface function y(x, t)
+    y = np.array([naca_warp(xp) for xp in x])
 
     # Calculate the gradient dy/dx
     df_dx = np.gradient(y, x, edge_order=2)
@@ -211,7 +236,7 @@ def sn_profiles(case, prof_dist=0.3):
     np.save(f"data/0.001/{case}/unmasked/s_profile.npy", s_profile)
     np.save(f"data/0.001/{case}/unmasked/n_profile.npy", n_profile)
 
-def stat_sn_profiles(case, prof_dist=0.25):
+def stat_sn_profiles(prof_dist=0.25):
     bod = np.load(f"data/stationary/uv.npy")
     pxs = np.linspace(-0.35, 2, bod.shape[1])
     bod_mask = np.where((pxs > 0) & (pxs < 1))
@@ -237,12 +262,9 @@ def stat_sn_profiles(case, prof_dist=0.25):
             fill_value=1,
         )
         
-        y_surface = np.array([naca_warp(xp) for xp in pxs]) - np.array(
-            [fwarp(t, xp) for xp in pxs]
-        )
-
-        nx, ny = normal_to_surface(pxs, t)
-        sx, sy = tangent_to_surface(pxs, t)
+        y_surface = np.array([naca_warp(xp) for xp in pxs])
+        nx, ny = normal_to_stationary_surface(pxs, t)
+        sx, sy = tangent_to_stationary_surface(pxs, t)
 
         for pidx in range(pxs.size):
             x1, y1 = pxs[pidx], y_surface[pidx]
@@ -258,8 +280,8 @@ def stat_sn_profiles(case, prof_dist=0.25):
 
     s_profile = s_profile[:, bod_mask[0], :]
     n_profile = n_profile[:, bod_mask[0], :]
-    np.save(f"data/0.001/{case}/unmasked/s_profile.npy", s_profile)
-    np.save(f"data/0.001/{case}/unmasked/n_profile.npy", n_profile)
+    np.save(f"data/stationary/s_profile.npy", s_profile)
+    np.save(f"data/stationary/n_profile.npy", n_profile)
 
 
 def tangental_profiles(case, prof_dist=0.05):
@@ -770,7 +792,8 @@ if __name__ == "__main__":
     cases = [0, 16, 32, 64, 128]
     case = cases[0]
     # uv_profiles(0, prof_dist=0.3)
-    sn_profiles(0, prof_dist=0.25)
+    # sn_profiles(0, prof_dist=0.25)
+    stat_sn_profiles(prof_dist=0.25)
     # plot_smooth_profiles()
     # cases = [0, 64, 128]
     # plot_deltas(cases)

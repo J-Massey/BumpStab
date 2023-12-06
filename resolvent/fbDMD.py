@@ -51,8 +51,8 @@ def plot_eigs(eigs, keep_idx):
     ax.scatter(eigs[keep_idx].real, eigs[keep_idx].imag, s=1, color=colours[2])
     ax.set_aspect(1)
 
-    plt.savefig(f"figures/eigs.pdf")
-    plt.savefig(f"figures/eigs.png", dpi=600)
+    plt.savefig(f"figures/eigs_stat.pdf")
+    plt.savefig(f"figures/eigs_stat.png", dpi=600)
     plt.close()
 
 
@@ -79,7 +79,7 @@ def plot_unmapped(qi, nx, ny, nt):
         ax.set_aspect(1)
         ax.set_xlabel(r"$x$")
         ax.set_ylabel(r"$y$")
-        plt.savefig(f"figures/mapping/unmapped/{n}.png", dpi=600)
+        plt.savefig(f"figures/mapping/stationary/{n}.png", dpi=600)
         plt.close()
 
 
@@ -110,8 +110,8 @@ def plot_modes(freq, Phi, nx, ny, r):
 
 
 def load(case="0"):
-    u = np.load(f"data/0.001/{case}/unmasked/s_profile.npy")
-    v = np.load(f"data/0.001/{case}/unmasked/n_profile.npy")
+    u = np.load(f"{d_dir}/s_profile.npy")
+    v = np.load(f"{d_dir}/n_profile.npy")
     snapshots = np.stack((u, v), axis=0)
     snapshots = np.einsum("ijkl->iklj", snapshots)
     return snapshots
@@ -123,11 +123,13 @@ def preprocess(snapshots):
 
 
 if __name__ == "__main__":
+    d_dir = "data/stationary"
     snapshots = load()
     _, nx, ny, nt = snapshots.shape
-    np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
+    # np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
+    np.save(f"data/stationary/nxyt.npy", np.array([nx, ny, nt]))
     snap_flucs = preprocess(snapshots)
-    # plot_unmapped(snap_flucs[:, :, :, :200], nx, ny, nt)
+    plot_unmapped(snap_flucs[:, :, :, :201], nx, ny, nt)
     flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
     r=40
@@ -139,9 +141,11 @@ if __name__ == "__main__":
     keep_idx = np.logical_and(np.abs(rho) < 15, np.abs(rho) > 0.)
     plot_eigs(rho, keep_idx)
     Lambda = np.log(rho[keep_idx]) / 0.005
-    np.save(f"data/0.001/0/unmasked/fb_Lambda.npy", Lambda)
+    # np.save(f"data/0.001/0/unmasked/fb_Lambda.npy", Lambda)
+    np.save(f"data/stationary/fb_Lambda.npy", Lambda)
 
     Phi = fbdmd.modes[:, keep_idx]
-    np.save(f"data/0.001/0/unmasked/fb_V_r.npy", Phi)
+    # np.save(f"data/0.001/0/unmasked/fb_V_r.npy", Phi)
+    np.save(f"data/stationary/fb_V_r.npy", Phi)
     freq = fbdmd.frequency[keep_idx]
     # plot_modes(freq, Phi, nx, ny, len(Lambda))
