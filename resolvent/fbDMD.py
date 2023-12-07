@@ -79,7 +79,7 @@ def plot_unmapped(qi, nx, ny, nt):
         ax.set_aspect(1)
         ax.set_xlabel(r"$x$")
         ax.set_ylabel(r"$y$")
-        plt.savefig(f"figures/mapping/stationary/{n}.png", dpi=600)
+        plt.savefig(f"figures/mapping/stationary/{n}.pdf", dpi=600)
         plt.close()
 
 
@@ -126,10 +126,9 @@ if __name__ == "__main__":
     d_dir = "data/stationary"
     snapshots = load()
     _, nx, ny, nt = snapshots.shape
-    # np.save(f"data/0.001/0/unmasked/nxyt.npy", np.array([nx, ny, nt]))
-    np.save(f"data/stationary/nxyt.npy", np.array([nx, ny, nt]))
+    np.save(f"{d_dir}/nxyt.npy", np.array([nx, ny, nt]))
     snap_flucs = preprocess(snapshots)
-    plot_unmapped(snap_flucs[:, :, :, :201], nx, ny, nt)
+    # plot_unmapped(snap_flucs, nx, ny, nt)
     flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
     r=40
@@ -141,11 +140,9 @@ if __name__ == "__main__":
     keep_idx = np.logical_and(np.abs(rho) < 15, np.abs(rho) > 0.)
     plot_eigs(rho, keep_idx)
     Lambda = np.log(rho[keep_idx]) / 0.005
-    # np.save(f"data/0.001/0/unmasked/fb_Lambda.npy", Lambda)
-    np.save(f"data/stationary/fb_Lambda.npy", Lambda)
+    np.save(f"{d_dir}/fb_Lambda.npy", Lambda)
 
     Phi = fbdmd.modes[:, keep_idx]
-    # np.save(f"data/0.001/0/unmasked/fb_V_r.npy", Phi)
-    np.save(f"data/stationary/fb_V_r.npy", Phi)
+    np.save(f"{d_dir}/fb_V_r.npy", Phi)
     freq = fbdmd.frequency[keep_idx]
-    # plot_modes(freq, Phi, nx, ny, len(Lambda))
+    plot_modes(freq, Phi, nx, ny, len(Lambda))

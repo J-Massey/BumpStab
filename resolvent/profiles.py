@@ -73,12 +73,10 @@ def normal_to_surface(x: np.ndarray, t):
     ny = -df_dy / mag
     return nx, ny
 
-def normal_to_stationary_surface(x: np.ndarray, t):
+def normal_to_stationary_surface(x: np.ndarray):
     y = np.array([naca_warp(xp) for xp in x])
-
     df_dx = np.gradient(y, x, edge_order=2)
     df_dy = -1
-
     # Calculate the normal vector to the surface
     mag = np.sqrt(df_dx**2 + df_dy**2)
     nx = -df_dx / mag
@@ -100,7 +98,7 @@ def tangent_to_surface(x: np.ndarray, t):
     return tangent_x, tangent_y
 
 
-def tangent_to_stationary_surface(x: np.ndarray, t):
+def tangent_to_stationary_surface(x: np.ndarray):
     # Evaluate the surface function y(x, t)
     y = np.array([naca_warp(xp) for xp in x])
 
@@ -238,7 +236,7 @@ def sn_profiles(case, prof_dist=0.3):
 
 def stat_sn_profiles(prof_dist=0.25):
     bod = np.load(f"data/stationary/uv.npy")
-    pxs = np.linspace(-0.35, 2, bod.shape[1])
+    pxs = np.linspace(0, 1, bod.shape[1])
     bod_mask = np.where((pxs > 0) & (pxs < 1))
     pys = np.linspace(-0.35, 0.35, bod.shape[2])
     num_points = int(prof_dist * 2048)
@@ -263,8 +261,8 @@ def stat_sn_profiles(prof_dist=0.25):
         )
         
         y_surface = np.array([naca_warp(xp) for xp in pxs])
-        nx, ny = normal_to_stationary_surface(pxs, t)
-        sx, sy = tangent_to_stationary_surface(pxs, t)
+        nx, ny = normal_to_stationary_surface(pxs)
+        sx, sy = tangent_to_stationary_surface(pxs)
 
         for pidx in range(pxs.size):
             x1, y1 = pxs[pidx], y_surface[pidx]

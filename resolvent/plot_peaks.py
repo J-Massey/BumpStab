@@ -100,8 +100,8 @@ def plot_field(qi, pxs, pys, path=None, _cmap="seismic", lim=None, ax=None):
 
 
 def save_f_r(n):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     omegas = smooth.peak_omegas[n]
     s_f_r_modes = np.empty((2, len(omegas), nx, ny))
     n_f_r_modes = np.empty((2, len(omegas), nx, ny))
@@ -116,18 +116,18 @@ def save_f_r(n):
         # mag = np.sqrt(response[1, :, :, n].real**2 +  response[0, :, :, n].real**2)
         s_f_r_modes[1, ido] = response[0, :, :, n].real
         n_f_r_modes[1, ido] = response[1, :, :, n].real
-    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/s_f_r_mode{n}.npy", s_f_r_modes)
-    np.save(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy", n_f_r_modes)
+    np.save(f"{d_dir}/s_f_r_mode{n}.npy", s_f_r_modes)
+    np.save(f"{d_dir}/n_f_r_mode{n}.npy", n_f_r_modes)
 
 
 def plot_f_r():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.1)
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/f_r_modes.npy")
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting modes"):
         mag = f_r_modes[0, ido, :, py_mask]
         lim = 0.005
@@ -137,9 +137,9 @@ def plot_f_r():
     
 
 def plot_spectra():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/f_r_modes.npy")
     for ido, omega in tqdm(enumerate(omegas), total=len(omegas), desc="Plotting spectra"):
         forcing = f_r_modes[0, ido, :, :-1]
         response = f_r_modes[1, ido, :, :-1]
@@ -218,13 +218,13 @@ def plot_spectra():
 
 
 def plot_large_forcing():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     py_mask = np.logical_and(pys > -0.25, pys < 0.25)
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/f_r_modes.npy")
     letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]
 
     fig, axs = plt.subplots(6,2, figsize=(6, 8.5))
@@ -304,14 +304,14 @@ def plot_large_forcing():
 
 
 def plot_large_response():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
 
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(-0.25, 0.25, ny)
     py_mask = np.logical_and(pys > -0.25, pys < 0.25)
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/f_r_modes.npy")
     letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]
 
     fig, axs = plt.subplots(6,2, figsize=(6, 8.5))
@@ -392,13 +392,13 @@ def plot_large_response():
 
 
 def plot_large_f_r():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.1)
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/f_r_modes.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(len(omegas),2, figsize=(6, 8.5), sharex=True, sharey=True)
     axs[0, 0].set_title("Forcing", fontsize=9)
@@ -451,13 +451,13 @@ def plot_large_f_r():
 
 
 def plot_large_s_f_r():
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "sp")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "sp")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.1)
     omegas = smooth.peak_omegas
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/s_f_r_modes.npy")
+    f_r_modes = np.load(f"{d_dir}/s_f_r_modes.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(len(omegas),2, figsize=(6, 8.5), sharex=True, sharey=True)
     axs[0, 0].set_title("Forcing", fontsize=9)
@@ -510,32 +510,38 @@ def plot_large_s_f_r():
 
 
 def plot_large_n_f_r(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.25)
     omegas = smooth.peak_omegas[n]
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
-    fig, axs = plt.subplots(len(omegas),2, figsize=(5.8, 8.5), sharex=True, sharey=True)
+
+    fig, axs = plt.subplots(3, 2, figsize=(5.8, 5.), sharex=True, sharey=True)
     axs[0, 0].set_title("Forcing", fontsize=9)
     axs[0, 1].set_title("Response", fontsize=9)
-    for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting bigun"):
+
+    ind_select = [2, 6]
+
+    lim=[-5, 5]
+    for ido, omega in tqdm(enumerate(omegas[ind_select]), total=len(smooth.peak_omegas), desc="Plotting bigun"):
         mag = f_r_modes[0, ido, :, py_mask]
         nx, ny = mag.shape
-        lim=[-5, 5]
         cs = axs[ido, 0].imshow(
             mag*1000,
             extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
             cmap=sns.color_palette("seismic", as_cmap=True),
-            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            vmin=lim[0],
+            vmax=lim[1],
+            # norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
             origin="lower",
             aspect='auto',
         )
         axs[ido, 0].set_ylabel(r"$n$")
-        axs[ido, 0].text(-0.3, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
-        axs[ido, 0].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(-0.25, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.15, 0.77, f"$f={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
 
         mag = f_r_modes[1, ido, :, py_mask]
         nx, ny = mag.shape
@@ -543,7 +549,9 @@ def plot_large_n_f_r(n=0):
             mag*1000,
             extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
             cmap=sns.color_palette("seismic", as_cmap=True),
-            norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            vmin=lim[0],
+            vmax=lim[1],
+            # norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
             origin="lower",
             aspect='auto',
         )
@@ -562,19 +570,19 @@ def plot_large_n_f_r(n=0):
     cb.ax.xaxis.set_label_position('top')  # Move label to top
     cb.set_label(r"$\vec{u_n} \quad \times 10^3$", labelpad=-37, rotation=0)
 
-    plt.savefig(f"figures/RA/norm_mode{n}.pdf")
-    plt.savefig(f"figures/RA/norm_mode{n}.png", dpi=700)
+    plt.savefig(f"figures/RA/stationary/stat_norm_mode{n}.pdf")
+    plt.savefig(f"figures/RA/stationary/norm_mode{n}.png", dpi=700)
     plt.close()
 
 
 def plot_large_n_f_r_specta(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.01)
     omegas = smooth.peak_omegas[n]
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(len(omegas),2, figsize=(5.8, 8.5), sharex=True, sharey=True)
     axs[0, 0].set_title("Forcing", fontsize=9)
@@ -664,13 +672,13 @@ def plot_large_n_f_r_specta(n=0):
 
 
 def plot_large_n_f_r_specta_convolution(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.01)
     omegas = smooth.peak_omegas[n]
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(1,2, figsize=(5.9, 3), sharex=True, sharey=True)
     axs[0].set_title("Forcing", fontsize=9)
@@ -739,13 +747,13 @@ def plot_large_n_f_r_specta_convolution(n=0):
 
 
 def plot_large_n_f_r_specta_convolution_max(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     py_mask = np.logical_and(pys > 0, pys < 0.025)
     omegas = smooth.peak_omegas[n]
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
     fig, axs = plt.subplots(1,2, figsize=(5.9, 3), sharex=True, sharey=True)
     axs[0].set_title("Forcing", fontsize=9)
@@ -823,14 +831,14 @@ def plot_large_n_f_r_specta_convolution_max(n=0):
 
 
 def plot_normal_mode_cut_conv(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     closest_idx = np.argmin(np.abs(pys - 0.005))
     omegas = smooth.peak_omegas[n]
     colours = sns.color_palette("winter", len(omegas))
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     fig, ax = plt.subplots(1,1, figsize=(4, 3), sharex=True, sharey=True)
     # ax.set_title("Forcing", fontsize=9)
     # ax.set_title("Response", fontsize=9)
@@ -866,14 +874,14 @@ def plot_normal_mode_cut_conv(n=0):
 
 
 def plot_normal_mode_cut(n=0):
-    smooth = PlotPeaks(f"{os.getcwd()}/data/0.001/0/unmasked", "fb")
-    nx, ny, nt = np.load(f"data/0.001/0/unmasked/nxyt.npy")
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
     pxs = np.linspace(0, 1, nx)
     pys = np.linspace(0, 0.25, ny)
     closest_idx = np.argmin(np.abs(pys - 0.005))
     omegas = smooth.peak_omegas[n]
     colours = sns.color_palette("winter", len(omegas))
-    f_r_modes = np.load(f"{os.getcwd()}/data/0.001/0/unmasked/n_f_r_mode{n}.npy")
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     fig, ax = plt.subplots(1,2, figsize=(6, 3), sharex=True, sharey=True)
     ax[0].set_title("Forcing", fontsize=9)
     ax[1].set_title("Response", fontsize=9)
@@ -902,10 +910,11 @@ def plot_normal_mode_cut(n=0):
     plt.close()
 
 if __name__ == "__main__":
+    d_dir = f"/home/jmom1n15/BumpStab/data/stationary"
     for i in range(2):
         # save_f_r(i)
-        # plot_large_n_f_r(i)
-        plot_normal_mode_cut(i)
+        plot_large_n_f_r(i)
+        # plot_normal_mode_cut(i)
         # plot_large_n_f_r_specta(i)
         # plot_large_n_f_r_specta_convolution(i)
         # plot_large_n_f_r_specta_convolution_max(i)
