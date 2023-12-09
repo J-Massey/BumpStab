@@ -34,7 +34,7 @@ def naca_warp(x):
             f * xp**6 + g * xp**7 + h * xp**8 + i * xp**9 + j * xp**10)
 
 
-def plot_eigs(eigs, keep_idx):
+def plot_eigs(stateigs, eigs):
     fig, ax = plt.subplots(figsize=(3, 3))
     ax.set_xlabel(r"$\Re(\varsigma)$")
     ax.set_ylabel(r"$\Im(\varsigma)$")
@@ -47,12 +47,12 @@ def plot_eigs(eigs, keep_idx):
     ax.plot(np.cos(theta), np.sin(theta), color="k", linewidth=0.4)
     # ax.plot(0.8*np.cos(theta), 0.8*np.sin(theta), color="k", linewidth=0.5)
 
-    ax.scatter(eigs.real, eigs.imag, s=1, color='purple')
-    ax.scatter(eigs[keep_idx].real, eigs[keep_idx].imag, s=1, color=colours[2])
+    ax.scatter(eigs.real, eigs.imag, s=1, color=colours[2])
+    ax.scatter(stateigs.real, stateigs.imag, s=1, color='red')
     ax.set_aspect(1)
 
-    plt.savefig(f"figures/eigs_stat.pdf")
-    plt.savefig(f"figures/eigs_stat.png", dpi=600)
+    plt.savefig(f"figures/eigs.pdf")
+    plt.savefig(f"figures/eigs.png", dpi=600)
     plt.close()
 
 
@@ -109,7 +109,7 @@ def plot_modes(freq, Phi, nx, ny, r):
         plt.close()
 
 
-def load(case="0"):
+def load():
     u = np.load(f"{d_dir}/s_profile.npy")
     v = np.load(f"{d_dir}/n_profile.npy")
     snapshots = np.stack((u, v), axis=0)
@@ -124,25 +124,34 @@ def preprocess(snapshots):
 
 if __name__ == "__main__":
     d_dir = "data/stationary"
-    snapshots = load()
-    _, nx, ny, nt = snapshots.shape
-    np.save(f"{d_dir}/nxyt.npy", np.array([nx, ny, nt]))
-    snap_flucs = preprocess(snapshots)
-    # plot_unmapped(snap_flucs, nx, ny, nt)
-    flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
+    # snapshots = load()
+    # _, nx, ny, nt = snapshots.shape
+    # np.save(f"{d_dir}/nxyt.npy", np.array([nx, ny, nt]))
+    # snap_flucs = preprocess(snapshots)
+    # # plot_unmapped(snap_flucs, nx, ny, nt)
+    # flat_snaps = snap_flucs.reshape(2*nx*ny, nt)
 
-    r=40
-    fbdmd = FbDMD(svd_rank=r)
-    fbdmd.fit(flat_snaps)
+    # r=40
+    # fbdmd = FbDMD(svd_rank=r)
+    # fbdmd.fit(flat_snaps)
     
-    A_tilde = fbdmd.operator._Atilde
-    rho, W = np.linalg.eig(A_tilde)
-    keep_idx = np.logical_and(np.abs(rho) < 15, np.abs(rho) > 0.)
-    plot_eigs(rho, keep_idx)
-    Lambda = np.log(rho[keep_idx]) / 0.005
-    np.save(f"{d_dir}/fb_Lambda.npy", Lambda)
+    # A_tilde = fbdmd.operator._Atilde
+    # rho, W = np.linalg.eig(A_tilde)
+    # keep_idx = np.logical_and(np.abs(rho) < 15, np.abs(rho) > 0.)
+    # plot_eigs(rho, keep_idx)
+    # Lambda = np.log(rho[keep_idx]) / 0.005
+    # np.save(f"{d_dir}/fb_Lambda.npy", Lambda)
 
-    Phi = fbdmd.modes[:, keep_idx]
-    np.save(f"{d_dir}/fb_V_r.npy", Phi)
-    freq = fbdmd.frequency[keep_idx]
-    plot_modes(freq, Phi, nx, ny, len(Lambda))
+    # Phi = fbdmd.modes[:, keep_idx]
+    # np.save(f"{d_dir}/fb_V_r.npy", Phi)
+    # freq = fbdmd.frequency[keep_idx]
+    # plot_modes(freq, Phi, nx, ny, len(Lambda))
+
+    Lambda = np.load(f"{d_dir}/fb_Lambda.npy")
+    statrho = np.exp(Lambda * 0.005)
+    print(np.load(f"{d_dir}/s_profile.npy", mmap_mode='r').shape)
+    d_dir = "data/0.001/0/unmasked"
+    Lambda = np.load(f"{d_dir}/fb_Lambda.npy")
+    rho = np.exp(Lambda * 0.005)
+    plot_eigs(statrho, rho)
+

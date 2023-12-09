@@ -298,6 +298,16 @@ def plot_body_velocity():
             vmax=lim,
             cmap=sns.color_palette("icefire", as_cmap=True),
     )
+
+    ax[1].contour(
+            pxs,
+            ts,
+            d2y_dx2.T,
+            levels=[2.5],
+            colors=["white"],
+            linewidths=0.5,
+    )
+    
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes("top", size="7%", pad=0.2)
     fig.add_axes(cax)
@@ -305,10 +315,11 @@ def plot_body_velocity():
     cb.ax.xaxis.tick_top()  # Move ticks to top
     cb.ax.xaxis.set_label_position("top")  # Move label to top
     cb.set_label(r"$ \kappa $", labelpad=-33, rotation=0)
-    
+
+    # Plot transparent white shaded area where d2y_dx2 > 2.5
+
     ax[0].text(-0.22, 0.98, r"(a)", fontsize=10)
     ax[1].text(-0.15, 0.98, r"(b)", fontsize=10)
-
 
     plt.savefig(f"figures/variable-roughness/velocity.pdf", dpi=450, transparent=True)
     plt.savefig(f"figures/variable-roughness/velocity.png", dpi=450, transparent=True)

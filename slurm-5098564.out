@@ -14,3 +14,24 @@ Job Output Follows ...
 ===============================================================================
 Starting calculation at Thu Dec  7 08:13:28 GMT 2023
 ---------------------------------------------------------------
+slurmstepd-gold55: error: *** JOB 5098564 ON gold55 CANCELLED AT 2023-12-07T18:13:54 DUE TO TIME LIMIT ***
+==============================================================================
+Running epilogue script on gold55.
+
+Submit time  : 2023-12-07T08:12:28
+Start time   : 2023-12-07T08:13:26
+End time     : 2023-12-07T18:13:54
+Elapsed time : 10:00:28 (Timelimit=10:00:00)
+
+Job ID: 5098564
+Cluster: i5
+User/Group: jmom1n15/mm
+State: TIMEOUT (exit code 0)
+Nodes: 1
+Cores per node: 8
+CPU Utilized: 00:12:54
+CPU Efficiency: 0.27% of 3-08:03:44 core-walltime
+Job Wall-clock time: 10:00:28
+Memory Utilized: 3.47 GB
+Memory Efficiency: 1.88% of 184.57 GB
+

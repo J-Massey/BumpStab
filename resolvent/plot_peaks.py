@@ -12,6 +12,8 @@ from scipy.signal import welch, find_peaks
 import seaborn as sns
 from matplotlib.colors import TwoSlopeNorm
 import string
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 plt.style.use(["science"])
 plt.rcParams["font.size"] = "10.5"
@@ -519,29 +521,30 @@ def plot_large_n_f_r(n=0):
     f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
     letters = [chr(97 + i) for i in range(len(omegas)*2)]
 
-    fig, axs = plt.subplots(3, 2, figsize=(5.8, 5.), sharex=True, sharey=True)
+    # ind_select = [1, 2, 6]
+    ind_select = [0, 2, 3, 5]
+
+    fig, axs = plt.subplots(len(ind_select), 2, figsize=(5.8, 5.), sharex=True, sharey=True)
+    fig.text(0.422, 0.92, r"$\vec{u_n} \quad \times 10^3$")
     axs[0, 0].set_title("Forcing", fontsize=9)
     axs[0, 1].set_title("Response", fontsize=9)
 
-    ind_select = [2, 6]
 
-    lim=[-5, 5]
-    for ido, omega in tqdm(enumerate(omegas[ind_select]), total=len(smooth.peak_omegas), desc="Plotting bigun"):
+    for ido, omega in tqdm(enumerate(omegas[ind_select]), total=len(ind_select), desc="Plotting bigun"):
         mag = f_r_modes[0, ido, :, py_mask]
+        lim = np.round(np.min((np.abs([mag.max(), mag.min()])))*1000, 1)
         nx, ny = mag.shape
         cs = axs[ido, 0].imshow(
             mag*1000,
             extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
             cmap=sns.color_palette("seismic", as_cmap=True),
-            vmin=lim[0],
-            vmax=lim[1],
-            # norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            norm=TwoSlopeNorm(vmin=-lim, vcenter=0, vmax=lim),
             origin="lower",
             aspect='auto',
         )
         axs[ido, 0].set_ylabel(r"$n$")
         axs[ido, 0].text(-0.25, 0.94, f"({letters[ido*2]})", transform=axs[ido, 0].transAxes, fontsize=10)
-        axs[ido, 0].text(0.15, 0.77, f"$f={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
+        axs[ido, 0].text(0.15, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 0].transAxes, fontsize=10)
 
         mag = f_r_modes[1, ido, :, py_mask]
         nx, ny = mag.shape
@@ -549,29 +552,33 @@ def plot_large_n_f_r(n=0):
             mag*1000,
             extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
             cmap=sns.color_palette("seismic", as_cmap=True),
-            vmin=lim[0],
-            vmax=lim[1],
-            # norm=TwoSlopeNorm(vmin=lim[0], vcenter=(lim[1]+lim[0])/2, vmax=lim[1]),
+            norm=TwoSlopeNorm(vmin=-lim, vcenter=0, vmax=lim),
             origin="lower",
             aspect='auto',
         )
         axs[ido, 1].text(-0.1, 0.94, f"({letters[ido*2+1]})", transform=axs[ido, 1].transAxes, fontsize=10)
         # axs[ido, 1].text(0.1, 0.77, f"$f^*={omega/(2*np.pi):.2f}$", transform=axs[ido, 1].transAxes, fontsize=10)
+        divider = make_axes_locatable(axs[ido, 0])
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+
+        plt.colorbar(cs, cax=cax, ticks=[-lim, 0, lim])
+        cax.set_aspect(7, adjustable='box')
+        cax.tick_params(labelsize=8)  # Add fontsize for tick labels
 
     axs[-1, 0].set_xlabel(r"$x$")
     axs[-1, 1].set_xlabel(r"$x$")
 
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.subplots_adjust(hspace=0.05)
 
-    cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
-    cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
-    cb.ax.xaxis.tick_top()  # Move ticks to top
-    cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$\vec{u_n} \quad \times 10^3$", labelpad=-37, rotation=0)
+    # cax1 = fig.add_axes([0.175, 1.01, 0.7, 0.02])
+    # cb = plt.colorbar(cs, cax=cax1, orientation="horizontal", ticks=np.linspace(lim[0], lim[1], 5))
+    # cb.ax.xaxis.tick_top()  # Move ticks to top
+    # cb.ax.xaxis.set_label_position('top')  # Move label to top
+    # fig.text(0.5, 1.1, r"$\vec{u_n} \quad \times 10^3$")
 
-    plt.savefig(f"figures/RA/stationary/stat_norm_mode{n}.pdf")
-    plt.savefig(f"figures/RA/stationary/norm_mode{n}.png", dpi=700)
+    plt.savefig(f"figures/RA/norm_mode{n}.pdf")
+    # plt.savefig(f"figures/RA/stationary/norm_mode{n}.png", dpi=700)
     plt.close()
 
 
@@ -910,10 +917,10 @@ def plot_normal_mode_cut(n=0):
     plt.close()
 
 if __name__ == "__main__":
-    d_dir = f"/home/jmom1n15/BumpStab/data/stationary"
-    for i in range(2):
+    d_dir = f"/home/jmom1n15/BumpStab/data/0.001/0/unmasked"
+    # for i in range(2):
         # save_f_r(i)
-        plot_large_n_f_r(i)
+    plot_large_n_f_r()
         # plot_normal_mode_cut(i)
         # plot_large_n_f_r_specta(i)
         # plot_large_n_f_r_specta_convolution(i)
