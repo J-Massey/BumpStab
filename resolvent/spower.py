@@ -618,6 +618,75 @@ def plot_cp_diff_var(ts, pxs, ph_avg, instant):
     plt.close()
 
 
+def plot_cp_diff_128(ts, pxs, ph_avg, instant):
+    fig, ax = plt.subplots(figsize=(4, 4), sharey=True)
+    ax = [ax]
+    fig.text(0.5, 0.07, r"$x$", ha="center", va="center")
+    ax[0].set_ylabel(r"$\varphi$")
+
+    ax[0].text(0.1, 0.85, r"$\lambda = 1/128$", fontsize=10)
+
+    for ax_id in ax:
+        ax_id.xaxis.tick_top()
+        ax_id.xaxis.set_label_position('top')
+
+        # Set major ticks and their labels at the top
+        ax_id.set_xticks([0.25, 0.5, 0.75])
+        ax_id.set_xticklabels([0.25, 0.5, 0.75])
+
+        # Set ticks at both top and bottom but no labels at the bottom
+        ax_id.xaxis.set_tick_params(which='both', top=True, bottom=True)
+        ax_id.xaxis.set_tick_params(which='both', labelbottom=False)
+
+    
+    ax[0].set_yticks([0.25, 0.5, 0.75])
+    ax[0].set_yticklabels([0.25, 0.5, 0.75])
+
+    lims = [-0.0002, 0.0002]
+    norm = TwoSlopeNorm(vcenter=0, vmin=lims[0], vmax=lims[1])
+    _cmap = custom_cmap()
+
+    ts, pxs, ph_avg_var, instant_var = load_phase_avg_cp_part()
+
+    # print(ph_avg_var[0].shape, ph_avg_var[0].shape)
+
+    diff_smooth = - ph_avg[0] + ph_avg_var[0]
+    inst_smooth = - instant[0] + instant_var[0]
+    diff_128 = - ph_avg[2] + ph_avg_var[0]
+    inst_128 = - instant[2] + instant_var[0]
+
+    
+    im128 = ax[0].imshow(
+        diff_128,
+        extent=[0, 1, 0, 1],
+        cmap=_cmap,
+        aspect="auto",
+        origin="lower",
+        norm=norm,
+    )
+    divider = make_axes_locatable(ax[0])    
+    hax2 = horizontal_integral(fig, divider, inst_128.sum(axis=1))
+    vax2 = vertical_integral(fig, divider, inst_128.sum(axis=2))
+    pxs, ts = np.linspace(0, 1, ph_avg[0].shape[1]), np.linspace(0, 1, ph_avg[0].shape[0])
+    # ax[0].contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.25, linestyles='--')
+    # ax[0].contourf(pxs, ts, kappa(pxs, ts).T, levels=[0, np.inf], colors='gray', alpha=0.2)
+
+    # ax[1].contour(pxs, ts, kappa(pxs, ts).T, levels=[2.5], colors='k', linewidths=0.25, linestyles='--')
+    # ax[1].contourf(pxs, ts, kappa(pxs, ts).T, levels=[0, np.inf], colors='gray', alpha=0.2)
+
+    cax = fig.add_axes([0.15, 0.95, 0.7, 0.07])
+    cb = plt.colorbar(im128, ticks=np.linspace(lims[0], lims[1], 5), cax=cax, orientation="horizontal")
+    tick_labels = [f"{tick:.1f}" for tick in np.linspace(lims[0], lims[1], 5) * 1e4]  # Adjust the format as needed
+    cb.set_ticklabels(tick_labels)
+    cb.ax.xaxis.tick_top()  # Move ticks to top
+    cb.ax.xaxis.set_label_position("top")  # Move label to top
+    cb.set_label(r"$ \Delta c_{P,variable}  \quad \times 10^{4}$", labelpad=-25, rotation=0, fontsize=9)
+
+    plt.savefig(f"figures/variable-roughness/diff128.pdf")
+    plt.savefig(f"figures/variable-roughness/diff128.png", dpi=450)
+    plt.close()
+
+
 if __name__ == "__main__":
     # extract arrays from fort.7
     lams = [1e9, 1 / 64, 1 / 128, 1/16, 1/32]
@@ -633,5 +702,5 @@ if __name__ == "__main__":
     # plot_cp(ts, pxs, ph_avg)
     # plot_cp_diff(ts, pxs, ph_avg, instant)
     # plot_difference_spectra(ts, pxs, instant.reshape(len(cases), instant.shape[1]*instant.shape[2], instant.shape[3]))
-    plot_cp_diff_var(ts, pxs, ph_avg, instant)
+    plot_cp_diff_128(ts, pxs, ph_avg, instant)
                                

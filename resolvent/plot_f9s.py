@@ -438,8 +438,8 @@ def field_eval_helper(L, crit_str='3d-check', interest='v', direction='x'):
 
 
 def plot_E():
-    lams = [16, 32, 64, 128]
-    order = [0, 3, 4, 1]
+    lams = [0, 16, 32, 64, 128]
+    order = [2, 0, 3, 4, 1]
 
     cases = [f"0.001/{lam}" for lam in lams]
 
@@ -449,18 +449,20 @@ def plot_E():
 
     t_sample = np.linspace(0.001, 0.999, 400)
 
-    fig, ax = plt.subplots(figsize=(3, 3))
-    ax.set_ylabel(r"$\langle E \rangle $")
-    ax.set_xlabel(r"$\phi/2\pi$")
+    fig, ax = plt.subplots(figsize=(4.5, 3))
+    ax.set_ylabel(r"$ E $")
+    ax.set_xlabel(r"$\varphi$")
+    ax.set_ylim(20, 37)
 
+    legend_elements = []
     for idx, case in enumerate(cases):
-        path = f"data/{case}/lotus-data/fort.9"
+        path = f"data/{case}/spressure/fort.9"
         t, enst = read_forces(path, interest="E", direction="")
-        t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
+        # t, enst = t[((t > 8.01) & (t < 12))], enst[((t > 8.01) & (t < 12))]
 
         t_new = t % 1
         
-        enst = enst/span(1/lams[idx])
+        enst = enst/span(lams[idx])
 
         ax.plot(
             t_new,
@@ -469,31 +471,14 @@ def plot_E():
             label=labels[idx],
             alpha=0.8,
             linestyle="none",
-            marker="o",
+            marker=".",
             markersize=0.1,
         )
-
-    path = f"data/test/span64/lotus-data/fort.9"
-    t, enst = read_forces(path, interest="E", direction="")
-    t, enst = t[((t > 12.01) & (t < 16))], enst[((t > 12.01) & (t < 16))]/(64*4)
-    t_new = t % 1
-
-    ax.plot(
-        t_new,
-        enst,
-        color=colours[2],
-        label="Smooth",
-        alpha=0.8,
-        linestyle="none",
-        marker="o",
-        markersize=0.1,
-    )
-
-    # ax.set_yscale("log")
-
-    save_path = f"figures/E.pdf"
-    ax.legend(loc="upper left")
-    plt.savefig(save_path, dpi=400)
+        legend_elements.append(Line2D([0], [0], ls='-', label=labels[idx], c=colours[order[idx]]))
+        
+    
+    ax.legend(handles=legend_elements, loc="upper right", fontsize=8)
+    plt.savefig('figures/E.pdf')
     plt.close()
 
 
@@ -552,10 +537,12 @@ def SA_enstrophy_scaling(span):
         )
 
 def span(lam):
-    if lam == 1/16:
+    if lam == 16:
         span = 128
-    elif lam == 1/32:
+    elif lam == 32:
         span = 128
+    elif lam == 0:
+        span=16
     else:
         span = 64
     
@@ -571,10 +558,10 @@ def generate_latex_table():
 
 if __name__ == "__main__":
     # test_E_scaling()
-    plot_power()
+    # plot_power()
     # plot_power_diff_fft()
     
-    # plot_E()
+    plot_E()
     # plot_E_fft()
     # plot_combined()
     # test_E_span_scaling()

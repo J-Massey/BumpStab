@@ -51,51 +51,52 @@ def plot_mapped_unmapped(qim, qi):
     _, nx, ny, nt = qi.shape
     pysu = np.linspace(-0.25, 0.25, ny)
     y_masku = np.logical_and(pysu <= 0.15, pysu >= -0.15)
-    fig, ax = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
-    ax[0].text(-0.12, 0.98, r"(a)", transform=ax[0].transAxes)
-    ax[1].text(-0.12, 0.98, r"(b)", transform=ax[1].transAxes)
+    for n in range(0, 205, 5):
+        fig, ax = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
+        ax[0].text(-0.12, 0.98, r"(a)", transform=ax[0].transAxes)
+        ax[1].text(-0.12, 0.98, r"(b)", transform=ax[1].transAxes)
 
-    # ax[0].set_xlabel(r"$x$")
-    ax[1].set_xlabel(r"$x$")
-    ax[0].set_ylabel(r"$y$")
-    ax[1].set_ylabel(r"$n$")
-    q_mapped = np.sqrt(qim[0, :, :, n]**2 + qim[1, :, :, n]**2)
-    q_unmapped = np.sqrt(qi[0, :, :, n]**2 + qi[1, :, :, n]**2)
-    lims = [0, 1.4]
-    norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[1]-lims[0])/2, vmax=lims[1])
-    _cmap = sns.color_palette("icefire_r", as_cmap=True)
+        # ax[0].set_xlabel(r"$x$")
+        ax[1].set_xlabel(r"$x$")
+        ax[0].set_ylabel(r"$y$")
+        ax[1].set_ylabel(r"$n$")
+        q_mapped = np.sqrt(qim[0, :, :, n]**2 + qim[1, :, :, n]**2)
+        q_unmapped = np.sqrt(qi[0, :, :, n]**2 + qi[1, :, :, n]**2)
+        lims = [0, 1.4]
+        norm = TwoSlopeNorm(vmin=lims[0], vcenter=(lims[1]-lims[0])/2, vmax=lims[1])
+        _cmap = sns.color_palette("icefire_r", as_cmap=True)
 
-    co1 = ax[0].imshow(
-        q_mapped[:, y_maskm].T,
-        extent=[0, 1, -0.15, 0.15],
-        cmap=_cmap,
-        norm=norm,
-        origin="lower",
-    )
-    ax[0].set_aspect(1)
-    ax[0].fill_between(pxs, [naca_warp(x)-fwarp(0, x) for x in pxs], [-naca_warp(x)-fwarp(0, x) for x in pxs], color="white")
+        co1 = ax[0].imshow(
+            q_mapped[:, y_maskm].T,
+            extent=[0, 1, -0.15, 0.15],
+            cmap=_cmap,
+            norm=norm,
+            origin="lower",
+        )
+        ax[0].set_aspect(1)
+        ax[0].fill_between(pxs, [naca_warp(x)-fwarp(n/200, x) for x in pxs], [-naca_warp(x)-fwarp(n/200, x) for x in pxs], color="white")
 
-    co2 = ax[1].imshow(
-        q_unmapped.T,
-        extent=[0, 1, 0, 0.25],
-        cmap=_cmap,
-        norm=norm,
-        origin="lower",
-    )
+        co2 = ax[1].imshow(
+            q_unmapped.T,
+            extent=[0, 1, 0, 0.25],
+            cmap=_cmap,
+            norm=norm,
+            origin="lower",
+        )
 
-    # Add space for arrow
-    fig.subplots_adjust(top=0.85)
+        # Add space for arrow
+        fig.subplots_adjust(top=0.85)
 
-    # Add colorbar
-    cax = fig.add_axes([0.15, 0.85, 0.7, 0.03])
-    cb = plt.colorbar(co1, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
-    cb.ax.xaxis.tick_top()  # Move ticks to top
-    cb.ax.xaxis.set_label_position('top')  # Move label to top
-    cb.set_label(r"$\left|\vec{u}\right|$", labelpad=-40, rotation=0)
+        # Add colorbar
+        cax = fig.add_axes([0.15, 0.85, 0.7, 0.03])
+        cb = plt.colorbar(co1, cax=cax, orientation="horizontal", ticks=np.linspace(lims[0], lims[1], 5))
+        cb.ax.xaxis.tick_top()  # Move ticks to top
+        cb.ax.xaxis.set_label_position('top')  # Move label to top
+        cb.set_label(r"$\left|\vec{u}\right|$", labelpad=-40, rotation=0)
 
-    plt.savefig(f"figures/mapping/unmapping.pdf")
-    plt.savefig(f"figures/mapping/unmapping.png", dpi=600)
-    plt.close()
+        # plt.savefig(f"figures/mapping/unmap-gif/unmapping.pdf")
+        plt.savefig(f"figures/mapping/unmap-gif/{n}.png", dpi=600)
+        plt.close()
 
 
 def plot_mapped_unmapped_stat(qim, qi):
@@ -175,10 +176,10 @@ if __name__ == "__main__":
     # n = np.load(f"data/0.001/0/unmasked/n_profile.npy")
     # qi = np.stack((s, n), axis=0)
     # qi = np.einsum("ijkl->iklj", qi)
-    # plot_mapped_unmapped(qim, qi)
+    plot_mapped_unmapped(qim, qi)
 
     # save_qim()
-    save_body()
+    # save_body()
     
     # qim = np.load(f"data/stationary/uv.npy", mmap_mode="r")
     # s = np.load(f"data/stationary/s_profile.npy")

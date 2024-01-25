@@ -1,3 +1,4 @@
+from matplotlib import cm
 import numpy as np
 from scipy.linalg import cholesky, svd, inv
 
@@ -10,7 +11,7 @@ from scipy.fft import fft2, ifft2, fftshift
 from scipy.signal import welch, find_peaks
 
 import seaborn as sns
-from matplotlib.colors import TwoSlopeNorm
+from matplotlib.colors import BoundaryNorm, ListedColormap, TwoSlopeNorm
 import string
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -892,6 +893,7 @@ def plot_normal_mode_cut(n=0):
     fig, ax = plt.subplots(1,2, figsize=(6, 3), sharex=True, sharey=True)
     ax[0].set_title("Forcing", fontsize=9)
     ax[1].set_title("Response", fontsize=9)
+    ax[0].set_xlim([1, 500])
     f_conv = 1
     r_conv = 1
     for ido, omega in tqdm(enumerate(omegas), total=len(smooth.peak_omegas), desc="Plotting fft cut"):
@@ -910,18 +912,101 @@ def plot_normal_mode_cut(n=0):
     ax[0].set_xlabel(r"$k_x$")
     ax[1].set_xlabel(r"$k_x$")
     ax[0].set_ylabel(r"$|\mathcal{F}(\vec{u}_n)|$")
-    ax[1].legend(fontsize=8)
+    divider = make_axes_locatable(ax[0])
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+
+    cmap = ListedColormap(colours)
+    bounds = np.arange(len(omegas) + 1)
+    norm = BoundaryNorm(bounds, cmap.N)
+    mid_points = 0.5 * (bounds[:-1] + bounds[1:])  # Calculate mid points for ticks
+    plt.colorbar(cm.ScalarMappable(cmap=cmap, norm=norm), cax=cax, ticks=mid_points, orientation="vertical")  # Changed to vertical
+    cax.set_yticklabels(np.round(omegas/(2*np.pi), 2), fontsize=8)  # Set labels to cuts values
+    cax.tick_params(labelsize=8)
+    cax.set_aspect(10, adjustable='box')
+    cax.set_title(r"$f^*$", fontsize=8)
 
     plt.savefig(f"figures/RA/cut_fft{n}.pdf")
     plt.savefig(f"figures/RA/cut_fft{n}.png", dpi=700)
     plt.close()
+
+
+def plot_zoomed_n_r(n=0):
+    smooth = PlotPeaks(f"{d_dir}", "fb")
+    nx, ny, nt = np.load(f"{d_dir}/nxyt.npy")
+    pxs = np.linspace(0, 1, nx)
+    pys = np.linspace(0, 0.25, ny)
+    py_mask = np.logical_and(pys > 0, pys < 0.01)
+    omegas = smooth.peak_omegas[n]
+    f_r_modes = np.load(f"{d_dir}/n_f_r_mode{n}.npy")
+
+    ind_select = 2
+
+    fig, ax = plt.subplots(2, 1, figsize=(5.8, 6))
+    # ax.set_title("Response", fontsize=9)
+
+    mag = f_r_modes[1, ind_select, :, py_mask]
+    lim = np.round(np.min((np.abs([mag.max(), mag.min()])))*1000, 1)
+    lim = 5
+    nx, ny = mag.T.shape
+    cs = ax[0].imshow(
+        mag*1000,
+        extent=[0, 1, pys[py_mask].min(), pys[py_mask].max()],
+        cmap=sns.color_palette("seismic", as_cmap=True),
+        norm=TwoSlopeNorm(vmin=-lim, vcenter=0, vmax=lim),
+        origin="lower",
+        aspect='auto',
+    )
+    ax[0].set_ylabel(r"$n$")
+    ax[0].set_xlabel(r"$x$")
+    ax[0].set_title(f"$f^*={omegas[ind_select]/(2*np.pi):.2f}$", fontsize=10)
+
+    divider = make_axes_locatable(ax[0])
+    cax = divider.append_axes("right", size="5%", pad=0.1)  # Moved to right side, adjust size and pad
+    plt.colorbar(cs, cax=cax, ticks=[-lim, 0, lim], orientation="vertical")  # Changed to vertical
+    cax.tick_params(labelsize=8)
+    cax.yaxis.set_ticks_position('right')  # Changed to right
+    cax.set_ylabel(r"$\vec{u_n} \quad \times 10^3$", fontsize=8)
+
+    cuts = np.arange(0.000, 0.005, 0.0005)
+    closest_idxs = [np.argmin(np.abs(pys[py_mask] - cut)) for cut in cuts]
+    [ax[0].axhline(pys[py_mask][closest_idx], color='k', ls="--", lw=0.5, alpha=0.5) for closest_idx in closest_idxs]
+    colours = sns.color_palette("Accent", len(cuts))
+    for id, c_idx in enumerate(closest_idxs):
+        f_fs = np.fft.fft(mag[c_idx])
+        f_fs = np.fft.fftshift(f_fs)
+        freqs = np.fft.fftshift(np.fft.fftfreq(nx, d=1/nx))
+        f_fs = np.abs(f_fs)
+        ax[1].loglog(freqs, f_fs, color=colours[id], ls="-", lw=0.5, label=f"$n={pys[py_mask][c_idx]:.3f}$")
+        # print(freqs[freqs>10][np.argmax(f_fs[freqs>10])])
+
+    ax[1].set_xlabel(r"$k_x$")
+    ax[1].set_ylabel(r"$|\mathcal{F}(\vec{u}_n)|$")
+    ax[1].set_xlim([10, 512])
+
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes("right", size="5%", pad=0.1)  # Moved to right side, adjust size and pad
+    cmap = ListedColormap(colours)
+    bounds = np.arange(len(cuts) + 1)
+    norm = BoundaryNorm(bounds, cmap.N)
+    mid_points = 0.5 * (bounds[:-1] + bounds[1:])  # Calculate mid points for ticks
+    plt.colorbar(cm.ScalarMappable(cmap=cmap, norm=norm), cax=cax, ticks=mid_points, orientation="vertical")  # Changed to vertical
+    cax.set_yticklabels(np.round(cuts*1000, 2), fontsize=8)  # Set labels to cuts values
+    cax.tick_params(labelsize=8)
+    cax.yaxis.set_ticks_position('right')  # Changed to right
+    cax.set_ylabel(r"$n\quad \times 10^3$", fontsize=8)
+
+    plt.savefig(f"figures/RA/zoomed_response{n}.pdf")
+    plt.savefig(f"figures/RA/zoomed_response{n}.png", dpi=700)
+    plt.close()
+
 
 if __name__ == "__main__":
     d_dir = f"/home/jmom1n15/BumpStab/data/0.001/0/unmasked"
     # for i in range(2):
         # save_f_r(i)
     plot_large_n_f_r()
-        # plot_normal_mode_cut(i)
+    plot_zoomed_n_r(0)
+    plot_normal_mode_cut(0)
         # plot_large_n_f_r_specta(i)
         # plot_large_n_f_r_specta_convolution(i)
         # plot_large_n_f_r_specta_convolution_max(i)

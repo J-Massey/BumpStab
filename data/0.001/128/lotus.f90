@@ -17,7 +17,7 @@ program swimming_plate
   !
   ! -- Hyperparameters
     real, parameter    :: thicc=0.03*L
-    real, parameter    :: A = 0.1*L, St_d = 0.3, k_x=128.0, k_z=128.0, h_roughness=0.001
+    real, parameter    :: A = 0.1*L, St_d = 0.3, k_x=32.0, k_z=32.0, h_roughness=0.0025
     real, parameter    :: a_coeff = 0.28, &
                           b_coeff = -0.13, &
                           c_coeff = 0.05, &
@@ -170,8 +170,8 @@ program swimming_plate
     real            :: degg_top(3)
     degg_top = 0
     degg_top(1) = (h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-pi/2)&
-                                  *cos((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
-    degg_top(3) = -(h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-pi/2)&
+                                  *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
+    degg_top(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-pi/2)&
                                   *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
     if(x(1)/L<0.25) degg_top = 0.
     if(x(1)/L>0.925) degg_top = 0.
@@ -193,8 +193,8 @@ program swimming_plate
     real            :: degg_bottom(3)
     degg_bottom = 0
     degg_bottom(1) = (h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-3*pi/2)&
-                                     *cos((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
-    degg_bottom(3) = -(h_roughness*L)*sin((k_x)*(2*pi*x(1)/L)-3*pi/2)&
+                                     *sin((k_z)*(2*pi*x(3)/L))*(k_x)*(2*pi/L)
+    degg_bottom(3) = -(h_roughness*L)*cos((k_x)*(2*pi*x(1)/L)-3*pi/2)&
                                       *sin((k_z)*(2*pi*x(3)/L))*(k_z)*(2*pi/L)
     if(x(1)/L<0.25) degg_bottom = 0.
     if(x(1)/L>0.925) degg_bottom = 0.

@@ -1,8 +1,8 @@
 #!/bin/bash
   
 #SBATCH --nodes=1
-#SBATCH --ntasks=16
-#SBATCH --partition=highmem
+#SBATCH --ntasks=64
+#SBATCH --partition=amd
 #SBATCH --time=03:50:00
 #SBATCH --output=paraview.out
 #SBATCH --error=paraview.out
